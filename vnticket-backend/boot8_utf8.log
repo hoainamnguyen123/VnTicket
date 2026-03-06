@@ -1,0 +1,51 @@
+﻿[INFO] Scanning for projects...
+[INFO] 
+[INFO] -------------------< com.vnticket:vnticket-backend >--------------------
+[INFO] Building vnticket-backend 0.0.1-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] >>> spring-boot:3.2.4:run (default-cli) > test-compile @ vnticket-backend >>>
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ vnticket-backend ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] Copying 0 resource from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ vnticket-backend ---
+[INFO] Changes detected - recompiling the module! :source
+[INFO] Compiling 42 source files with javac [debug release 17] to target\classes
+[INFO] -------------------------------------------------------------
+[WARNING] COMPILATION WARNING : 
+[INFO] -------------------------------------------------------------
+[WARNING] /D:/VNTicket/vnticket-backend/src/main/java/com/vnticket/entity/Event.java:[46,25] @Builder will ignore the initializing expression entirely. If you want the initializing expression to serve as default, add @Builder.Default. If it is not supposed to be settable during building, make the field final.
+[INFO] 1 warning
+[INFO] -------------------------------------------------------------
+[INFO] -------------------------------------------------------------
+[ERROR] COMPILATION ERROR : 
+[INFO] -------------------------------------------------------------
+[ERROR] /D:/VNTicket/vnticket-backend/src/main/java/com/vnticket/controller/EventController.java:[37,45] cannot find symbol
+  symbol:   method getAllEvents(java.lang.String,java.lang.String,org.springframework.data.domain.Pageable)
+  location: variable eventService of type com.vnticket.service.EventService
+[ERROR] /D:/VNTicket/vnticket-backend/src/main/java/com/vnticket/service/impl/EventServiceImpl.java:[23,8] com.vnticket.service.impl.EventServiceImpl is not abstract and does not override abstract method getPendingEventsForAdminVerification(org.springframework.data.domain.Pageable) in com.vnticket.service.EventService
+[ERROR] /D:/VNTicket/vnticket-backend/src/main/java/com/vnticket/service/impl/EventServiceImpl.java:[88,5] method does not override or implement a method from a supertype
+[INFO] 3 errors 
+[INFO] -------------------------------------------------------------
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  7.846 s
+[INFO] Finished at: 2026-03-03T17:26:22+07:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-compiler-plugin:3.11.0:compile (default-compile) on project vnticket-backend: Compilation failure: Compilation failure: 
+[ERROR] /D:/VNTicket/vnticket-backend/src/main/java/com/vnticket/controller/EventController.java:[37,45] cannot find symbol
+[ERROR]   symbol:   method getAllEvents(java.lang.String,java.lang.String,org.springframework.data.domain.Pageable)
+[ERROR]   location: variable eventService of type com.vnticket.service.EventService
+[ERROR] /D:/VNTicket/vnticket-backend/src/main/java/com/vnticket/service/impl/EventServiceImpl.java:[23,8] com.vnticket.service.impl.EventServiceImpl is not abstract and does not override abstract method getPendingEventsForAdminVerification(org.springframework.data.domain.Pageable) in com.vnticket.service.EventService
+[ERROR] /D:/VNTicket/vnticket-backend/src/main/java/com/vnticket/service/impl/EventServiceImpl.java:[88,5] method does not override or implement a method from a supertype
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException

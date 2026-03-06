@@ -1,0 +1,744 @@
+﻿[INFO] Scanning for projects...
+[INFO] 
+[INFO] -------------------< com.vnticket:vnticket-backend >--------------------
+[INFO] Building vnticket-backend 0.0.1-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] >>> spring-boot:3.2.4:run (default-cli) > test-compile @ vnticket-backend >>>
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ vnticket-backend ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] Copying 0 resource from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.11.0:compile (default-compile) @ vnticket-backend ---
+[INFO] Changes detected - recompiling the module! :input tree
+[INFO] Compiling 41 source files with javac [debug release 17] to target\classes
+[INFO] 
+[INFO] --- resources:3.3.1:testResources (default-testResources) @ vnticket-backend ---
+[INFO] skip non existing resourceDirectory D:\VNTicket\vnticket-backend\src\test\resources
+[INFO] 
+[INFO] --- compiler:3.11.0:testCompile (default-testCompile) @ vnticket-backend ---
+[INFO] No sources to compile
+[INFO] 
+[INFO] <<< spring-boot:3.2.4:run (default-cli) < test-compile @ vnticket-backend <<<
+[INFO] 
+[INFO] 
+[INFO] --- spring-boot:3.2.4:run (default-cli) @ vnticket-backend ---
+[INFO] Attaching agents: []
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+ :: Spring Boot ::                (v3.2.4)
+
+2026-03-03T11:29:42.138+07:00  INFO 8768 --- [vnticket-backend] [           main] com.vnticket.VnTicketApplication         : Starting VnTicketApplication using Java 17.0.9 with PID 8768 (D:\VNTicket\vnticket-backend\target\classes started by Admin in D:\VNTicket\vnticket-backend)
+2026-03-03T11:29:42.141+07:00  INFO 8768 --- [vnticket-backend] [           main] com.vnticket.VnTicketApplication         : No active profile set, falling back to 1 default profile: "default"
+2026-03-03T11:29:42.991+07:00  INFO 8768 --- [vnticket-backend] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-03-03T11:29:43.100+07:00  INFO 8768 --- [vnticket-backend] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 101 ms. Found 5 JPA repository interfaces.
+2026-03-03T11:29:48.734+07:00  INFO 8768 --- [vnticket-backend] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8080 (http)
+2026-03-03T11:29:48.744+07:00  INFO 8768 --- [vnticket-backend] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-03-03T11:29:48.744+07:00  INFO 8768 --- [vnticket-backend] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.19]
+2026-03-03T11:29:48.809+07:00  INFO 8768 --- [vnticket-backend] [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2026-03-03T11:29:48.815+07:00  INFO 8768 --- [vnticket-backend] [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 6627 ms
+2026-03-03T11:29:48.926+07:00  INFO 8768 --- [vnticket-backend] [           main] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-03-03T11:29:48.985+07:00  INFO 8768 --- [vnticket-backend] [           main] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 6.4.4.Final
+2026-03-03T11:29:49.018+07:00  INFO 8768 --- [vnticket-backend] [           main] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2026-03-03T11:29:49.223+07:00  INFO 8768 --- [vnticket-backend] [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-03-03T11:29:49.245+07:00  INFO 8768 --- [vnticket-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-03-03T11:29:49.484+07:00  INFO 8768 --- [vnticket-backend] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@505d2bac
+2026-03-03T11:29:49.484+07:00  INFO 8768 --- [vnticket-backend] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-03-03T11:29:49.540+07:00  WARN 8768 --- [vnticket-backend] [           main] org.hibernate.orm.deprecation            : HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2026-03-03T11:29:50.494+07:00  INFO 8768 --- [vnticket-backend] [           main] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-03-03T11:29:50.631+07:00  INFO 8768 --- [vnticket-backend] [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-03-03T11:29:51.009+07:00  INFO 8768 --- [vnticket-backend] [           main] o.s.d.j.r.query.QueryEnhancerFactory     : Hibernate is in classpath; If applicable, HQL parser will be used.
+2026-03-03T11:29:51.438+07:00  WARN 8768 --- [vnticket-backend] [           main] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2026-03-03T11:29:51.676+07:00  INFO 8768 --- [vnticket-backend] [           main] o.s.s.web.DefaultSecurityFilterChain     : Will secure any request with [org.springframework.security.web.session.DisableEncodeUrlFilter@3a42610, org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@1107cbd8, org.springframework.security.web.context.SecurityContextHolderFilter@45c57dbd, org.springframework.security.web.header.HeaderWriterFilter@6f3f2340, org.springframework.web.filter.CorsFilter@610640e3, org.springframework.security.web.authentication.logout.LogoutFilter@66227940, com.vnticket.security.jwt.AuthTokenFilter@21f94fe3, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@316975be, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@6b09fcda, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@95f61c2, org.springframework.security.web.session.SessionManagementFilter@227cba85, org.springframework.security.web.access.ExceptionTranslationFilter@58581ab6, org.springframework.security.web.access.intercept.AuthorizationFilter@4d2dc60]
+2026-03-03T11:29:51.904+07:00  INFO 8768 --- [vnticket-backend] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8080 (http) with context path ''
+2026-03-03T11:29:51.912+07:00  INFO 8768 --- [vnticket-backend] [           main] com.vnticket.VnTicketApplication         : Started VnTicketApplication in 10.195 seconds (process running for 10.79)
+2026-03-03T11:31:38.633+07:00  INFO 8768 --- [vnticket-backend] [nio-8080-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-03-03T11:31:38.634+07:00  INFO 8768 --- [vnticket-backend] [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-03-03T11:31:38.642+07:00  INFO 8768 --- [vnticket-backend] [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 8 ms
+2026-03-03T11:31:38.924+07:00  INFO 8768 --- [vnticket-backend] [nio-8080-exec-3] com.vnticket.controller.AuthController   : Processing login request for user: admin
+Hibernate: 
+    select
+        u1_0.id,
+        u1_0.email,
+        u1_0.full_name,
+        u1_0.password,
+        u1_0.phone,
+        u1_0.role,
+        u1_0.username 
+    from
+        users u1_0 
+    where
+        u1_0.username=?
+2026-03-03T11:31:39.795+07:00  INFO 8768 --- [vnticket-backend] [nio-8080-exec-3] c.vnticket.service.impl.AuthServiceImpl  : User admin authenticated successfully, assigned role: ROLE_ADMIN
+2026-03-03T11:31:39.795+07:00  INFO 8768 --- [vnticket-backend] [nio-8080-exec-3] com.vnticket.controller.AuthController   : User admin logged in successfully
+Hibernate: 
+    select
+        u1_0.id,
+        u1_0.email,
+        u1_0.full_name,
+        u1_0.password,
+        u1_0.phone,
+        u1_0.role,
+        u1_0.username 
+    from
+        users u1_0 
+    where
+        u1_0.username=?
+2026-03-03T11:31:40.193+07:00  INFO 8768 --- [vnticket-backend] [nio-8080-exec-4] c.vnticket.controller.EventController    : Fetching events with type: null, search: null, page: 0, size: 20
+Hibernate: 
+    select
+        e1_0.id,
+        e1_0.description,
+        e1_0.image_url,
+        e1_0.location,
+        e1_0.name,
+        e1_0.start_time,
+        e1_0.type 
+    from
+        events e1_0 
+    order by
+        e1_0.start_time 
+    offset
+        ? rows 
+    fetch
+        first ? rows only
+Hibernate: 
+    select
+        tt1_0.event_id,
+        tt1_0.id,
+        tt1_0.price,
+        tt1_0.remaining_quantity,
+        tt1_0.total_quantity,
+        tt1_0.version,
+        tt1_0.zone_name 
+    from
+        ticket_types tt1_0 
+    where
+        tt1_0.event_id=?
+Hibernate: 
+    select
+        tt1_0.event_id,
+        tt1_0.id,
+        tt1_0.price,
+        tt1_0.remaining_quantity,
+        tt1_0.total_quantity,
+        tt1_0.version,
+        tt1_0.zone_name 
+    from
+        ticket_types tt1_0 
+    where
+        tt1_0.event_id=?
+Hibernate: 
+    select
+        tt1_0.event_id,
+        tt1_0.id,
+        tt1_0.price,
+        tt1_0.remaining_quantity,
+        tt1_0.total_quantity,
+        tt1_0.version,
+        tt1_0.zone_name 
+    from
+        ticket_types tt1_0 
+    where
+        tt1_0.event_id=?
+Hibernate: 
+    select
+        tt1_0.event_id,
+        tt1_0.id,
+        tt1_0.price,
+        tt1_0.remaining_quantity,
+        tt1_0.total_quantity,
+        tt1_0.version,
+        tt1_0.zone_name 
+    from
+        ticket_types tt1_0 
+    where
+        tt1_0.event_id=?
+Hibernate: 
+    select
+        u1_0.id,
+        u1_0.email,
+        u1_0.full_name,
+        u1_0.password,
+        u1_0.phone,
+        u1_0.role,
+        u1_0.username 
+    from
+        users u1_0 
+    where
+        u1_0.username=?
+2026-03-03T11:31:40.383+07:00  INFO 8768 --- [vnticket-backend] [nio-8080-exec-5] c.vnticket.controller.EventController    : Fetching events with type: null, search: null, page: 0, size: 20
+Hibernate: 
+    select
+        e1_0.id,
+        e1_0.description,
+        e1_0.image_url,
+        e1_0.location,
+        e1_0.name,
+        e1_0.start_time,
+        e1_0.type 
+    from
+        events e1_0 
+    order by
+        e1_0.start_time 
+    offset
+        ? rows 
+    fetch
+        first ? rows only
+Hibernate: 
+    select
+        tt1_0.event_id,
+        tt1_0.id,
+        tt1_0.price,
+        tt1_0.remaining_quantity,
+        tt1_0.total_quantity,
+        tt1_0.version,
+        tt1_0.zone_name 
+    from
+        ticket_types tt1_0 
+    where
+        tt1_0.event_id=?
+Hibernate: 
+    select
+        tt1_0.event_id,
+        tt1_0.id,
+        tt1_0.price,
+        tt1_0.remaining_quantity,
+        tt1_0.total_quantity,
+        tt1_0.version,
+        tt1_0.zone_name 
+    from
+        ticket_types tt1_0 
+    where
+        tt1_0.event_id=?
+Hibernate: 
+    select
+        tt1_0.event_id,
+        tt1_0.id,
+        tt1_0.price,
+        tt1_0.remaining_quantity,
+        tt1_0.total_quantity,
+        tt1_0.version,
+        tt1_0.zone_name 
+    from
+        ticket_types tt1_0 
+    where
+        tt1_0.event_id=?
+Hibernate: 
+    select
+        tt1_0.event_id,
+        tt1_0.id,
+        tt1_0.price,
+        tt1_0.remaining_quantity,
+        tt1_0.total_quantity,
+        tt1_0.version,
+        tt1_0.zone_name 
+    from
+        ticket_types tt1_0 
+    where
+        tt1_0.event_id=?
+Hibernate: 
+    select
+        u1_0.id,
+        u1_0.email,
+        u1_0.full_name,
+        u1_0.password,
+        u1_0.phone,
+        u1_0.role,
+        u1_0.username 
+    from
+        users u1_0 
+    where
+        u1_0.username=?
+2026-03-03T11:31:43.176+07:00  INFO 8768 --- [vnticket-backend] [nio-8080-exec-9] c.vnticket.controller.EventController    : Fetching events with type: null, search: null, page: 0, size: 10
+Hibernate: 
+    select
+        e1_0.id,
+        e1_0.description,
+        e1_0.image_url,
+        e1_0.location,
+        e1_0.name,
+        e1_0.start_time,
+        e1_0.type 
+    from
+        events e1_0 
+    order by
+        e1_0.start_time 
+    offset
+        ? rows 
+    fetch
+        first ? rows only
+Hibernate: 
+    select
+        tt1_0.event_id,
+        tt1_0.id,
+        tt1_0.price,
+        tt1_0.remaining_quantity,
+        tt1_0.total_quantity,
+        tt1_0.version,
+        tt1_0.zone_name 
+    from
+        ticket_types tt1_0 
+    where
+        tt1_0.event_id=?
+Hibernate: 
+    select
+        tt1_0.event_id,
+        tt1_0.id,
+        tt1_0.price,
+        tt1_0.remaining_quantity,
+        tt1_0.total_quantity,
+        tt1_0.version,
+        tt1_0.zone_name 
+    from
+        ticket_types tt1_0 
+    where
+        tt1_0.event_id=?
+Hibernate: 
+    select
+        tt1_0.event_id,
+        tt1_0.id,
+        tt1_0.price,
+        tt1_0.remaining_quantity,
+        tt1_0.total_quantity,
+        tt1_0.version,
+        tt1_0.zone_name 
+    from
+        ticket_types tt1_0 
+    where
+        tt1_0.event_id=?
+Hibernate: 
+    select
+        tt1_0.event_id,
+        tt1_0.id,
+        tt1_0.price,
+        tt1_0.remaining_quantity,
+        tt1_0.total_quantity,
+        tt1_0.version,
+        tt1_0.zone_name 
+    from
+        ticket_types tt1_0 
+    where
+        tt1_0.event_id=?
+Hibernate: 
+    select
+        u1_0.id,
+        u1_0.email,
+        u1_0.full_name,
+        u1_0.password,
+        u1_0.phone,
+        u1_0.role,
+        u1_0.username 
+    from
+        users u1_0 
+    where
+        u1_0.username=?
+2026-03-03T11:31:43.205+07:00  INFO 8768 --- [vnticket-backend] [io-8080-exec-10] c.vnticket.controller.EventController    : Fetching events with type: null, search: null, page: 0, size: 10
+Hibernate: 
+    select
+        e1_0.id,
+        e1_0.description,
+        e1_0.image_url,
+        e1_0.location,
+        e1_0.name,
+        e1_0.start_time,
+        e1_0.type 
+    from
+        events e1_0 
+    order by
+        e1_0.start_time 
+    offset
+        ? rows 
+    fetch
+        first ? rows only
+Hibernate: 
+    select
+        tt1_0.event_id,
+        tt1_0.id,
+        tt1_0.price,
+        tt1_0.remaining_quantity,
+        tt1_0.total_quantity,
+        tt1_0.version,
+        tt1_0.zone_name 
+    from
+        ticket_types tt1_0 
+    where
+        tt1_0.event_id=?
+Hibernate: 
+    select
+        tt1_0.event_id,
+        tt1_0.id,
+        tt1_0.price,
+        tt1_0.remaining_quantity,
+        tt1_0.total_quantity,
+        tt1_0.version,
+        tt1_0.zone_name 
+    from
+        ticket_types tt1_0 
+    where
+        tt1_0.event_id=?
+Hibernate: 
+    select
+        tt1_0.event_id,
+        tt1_0.id,
+        tt1_0.price,
+        tt1_0.remaining_quantity,
+        tt1_0.total_quantity,
+        tt1_0.version,
+        tt1_0.zone_name 
+    from
+        ticket_types tt1_0 
+    where
+        tt1_0.event_id=?
+Hibernate: 
+    select
+        tt1_0.event_id,
+        tt1_0.id,
+        tt1_0.price,
+        tt1_0.remaining_quantity,
+        tt1_0.total_quantity,
+        tt1_0.version,
+        tt1_0.zone_name 
+    from
+        ticket_types tt1_0 
+    where
+        tt1_0.event_id=?
+Hibernate: 
+    select
+        u1_0.id,
+        u1_0.email,
+        u1_0.full_name,
+        u1_0.password,
+        u1_0.phone,
+        u1_0.role,
+        u1_0.username 
+    from
+        users u1_0 
+    where
+        u1_0.username=?
+2026-03-03T11:31:51.878+07:00  INFO 8768 --- [vnticket-backend] [nio-8080-exec-2] c.vnticket.controller.EventController    : Fetching events with type: null, search: null, page: 0, size: 20
+Hibernate: 
+    select
+        e1_0.id,
+        e1_0.description,
+        e1_0.image_url,
+        e1_0.location,
+        e1_0.name,
+        e1_0.start_time,
+        e1_0.type 
+    from
+        events e1_0 
+    order by
+        e1_0.start_time 
+    offset
+        ? rows 
+    fetch
+        first ? rows only
+Hibernate: 
+    select
+        tt1_0.event_id,
+        tt1_0.id,
+        tt1_0.price,
+        tt1_0.remaining_quantity,
+        tt1_0.total_quantity,
+        tt1_0.version,
+        tt1_0.zone_name 
+    from
+        ticket_types tt1_0 
+    where
+        tt1_0.event_id=?
+Hibernate: 
+    select
+        tt1_0.event_id,
+        tt1_0.id,
+        tt1_0.price,
+        tt1_0.remaining_quantity,
+        tt1_0.total_quantity,
+        tt1_0.version,
+        tt1_0.zone_name 
+    from
+        ticket_types tt1_0 
+    where
+        tt1_0.event_id=?
+Hibernate: 
+    select
+        tt1_0.event_id,
+        tt1_0.id,
+        tt1_0.price,
+        tt1_0.remaining_quantity,
+        tt1_0.total_quantity,
+        tt1_0.version,
+        tt1_0.zone_name 
+    from
+        ticket_types tt1_0 
+    where
+        tt1_0.event_id=?
+Hibernate: 
+    select
+        tt1_0.event_id,
+        tt1_0.id,
+        tt1_0.price,
+        tt1_0.remaining_quantity,
+        tt1_0.total_quantity,
+        tt1_0.version,
+        tt1_0.zone_name 
+    from
+        ticket_types tt1_0 
+    where
+        tt1_0.event_id=?
+Hibernate: 
+    select
+        u1_0.id,
+        u1_0.email,
+        u1_0.full_name,
+        u1_0.password,
+        u1_0.phone,
+        u1_0.role,
+        u1_0.username 
+    from
+        users u1_0 
+    where
+        u1_0.username=?
+2026-03-03T11:31:51.903+07:00  INFO 8768 --- [vnticket-backend] [nio-8080-exec-6] c.vnticket.controller.EventController    : Fetching events with type: null, search: null, page: 0, size: 20
+Hibernate: 
+    select
+        e1_0.id,
+        e1_0.description,
+        e1_0.image_url,
+        e1_0.location,
+        e1_0.name,
+        e1_0.start_time,
+        e1_0.type 
+    from
+        events e1_0 
+    order by
+        e1_0.start_time 
+    offset
+        ? rows 
+    fetch
+        first ? rows only
+Hibernate: 
+    select
+        tt1_0.event_id,
+        tt1_0.id,
+        tt1_0.price,
+        tt1_0.remaining_quantity,
+        tt1_0.total_quantity,
+        tt1_0.version,
+        tt1_0.zone_name 
+    from
+        ticket_types tt1_0 
+    where
+        tt1_0.event_id=?
+Hibernate: 
+    select
+        tt1_0.event_id,
+        tt1_0.id,
+        tt1_0.price,
+        tt1_0.remaining_quantity,
+        tt1_0.total_quantity,
+        tt1_0.version,
+        tt1_0.zone_name 
+    from
+        ticket_types tt1_0 
+    where
+        tt1_0.event_id=?
+Hibernate: 
+    select
+        tt1_0.event_id,
+        tt1_0.id,
+        tt1_0.price,
+        tt1_0.remaining_quantity,
+        tt1_0.total_quantity,
+        tt1_0.version,
+        tt1_0.zone_name 
+    from
+        ticket_types tt1_0 
+    where
+        tt1_0.event_id=?
+Hibernate: 
+    select
+        tt1_0.event_id,
+        tt1_0.id,
+        tt1_0.price,
+        tt1_0.remaining_quantity,
+        tt1_0.total_quantity,
+        tt1_0.version,
+        tt1_0.zone_name 
+    from
+        ticket_types tt1_0 
+    where
+        tt1_0.event_id=?
+Hibernate: 
+    select
+        u1_0.id,
+        u1_0.email,
+        u1_0.full_name,
+        u1_0.password,
+        u1_0.phone,
+        u1_0.role,
+        u1_0.username 
+    from
+        users u1_0 
+    where
+        u1_0.username=?
+2026-03-03T11:31:56.115+07:00  INFO 8768 --- [vnticket-backend] [nio-8080-exec-7] c.vnticket.controller.EventController    : Fetching events with type: null, search: null, page: 0, size: 10
+Hibernate: 
+    select
+        e1_0.id,
+        e1_0.description,
+        e1_0.image_url,
+        e1_0.location,
+        e1_0.name,
+        e1_0.start_time,
+        e1_0.type 
+    from
+        events e1_0 
+    order by
+        e1_0.start_time 
+    offset
+        ? rows 
+    fetch
+        first ? rows only
+Hibernate: 
+    select
+        tt1_0.event_id,
+        tt1_0.id,
+        tt1_0.price,
+        tt1_0.remaining_quantity,
+        tt1_0.total_quantity,
+        tt1_0.version,
+        tt1_0.zone_name 
+    from
+        ticket_types tt1_0 
+    where
+        tt1_0.event_id=?
+Hibernate: 
+    select
+        tt1_0.event_id,
+        tt1_0.id,
+        tt1_0.price,
+        tt1_0.remaining_quantity,
+        tt1_0.total_quantity,
+        tt1_0.version,
+        tt1_0.zone_name 
+    from
+        ticket_types tt1_0 
+    where
+        tt1_0.event_id=?
+Hibernate: 
+    select
+        tt1_0.event_id,
+        tt1_0.id,
+        tt1_0.price,
+        tt1_0.remaining_quantity,
+        tt1_0.total_quantity,
+        tt1_0.version,
+        tt1_0.zone_name 
+    from
+        ticket_types tt1_0 
+    where
+        tt1_0.event_id=?
+Hibernate: 
+    select
+        tt1_0.event_id,
+        tt1_0.id,
+        tt1_0.price,
+        tt1_0.remaining_quantity,
+        tt1_0.total_quantity,
+        tt1_0.version,
+        tt1_0.zone_name 
+    from
+        ticket_types tt1_0 
+    where
+        tt1_0.event_id=?
+Hibernate: 
+    select
+        u1_0.id,
+        u1_0.email,
+        u1_0.full_name,
+        u1_0.password,
+        u1_0.phone,
+        u1_0.role,
+        u1_0.username 
+    from
+        users u1_0 
+    where
+        u1_0.username=?
+2026-03-03T11:31:56.144+07:00  INFO 8768 --- [vnticket-backend] [nio-8080-exec-8] c.vnticket.controller.EventController    : Fetching events with type: null, search: null, page: 0, size: 10
+Hibernate: 
+    select
+        e1_0.id,
+        e1_0.description,
+        e1_0.image_url,
+        e1_0.location,
+        e1_0.name,
+        e1_0.start_time,
+        e1_0.type 
+    from
+        events e1_0 
+    order by
+        e1_0.start_time 
+    offset
+        ? rows 
+    fetch
+        first ? rows only
+Hibernate: 
+    select
+        tt1_0.event_id,
+        tt1_0.id,
+        tt1_0.price,
+        tt1_0.remaining_quantity,
+        tt1_0.total_quantity,
+        tt1_0.version,
+        tt1_0.zone_name 
+    from
+        ticket_types tt1_0 
+    where
+        tt1_0.event_id=?
+Hibernate: 
+    select
+        tt1_0.event_id,
+        tt1_0.id,
+        tt1_0.price,
+        tt1_0.remaining_quantity,
+        tt1_0.total_quantity,
+        tt1_0.version,
+        tt1_0.zone_name 
+    from
+        ticket_types tt1_0 
+    where
+        tt1_0.event_id=?
+Hibernate: 
+    select
+        tt1_0.event_id,
+        tt1_0.id,
+        tt1_0.price,
+        tt1_0.remaining_quantity,
+        tt1_0.total_quantity,
+        tt1_0.version,
+        tt1_0.zone_name 
+    from
+        ticket_types tt1_0 
+    where
+        tt1_0.event_id=?
+Hibernate: 
+    select
+        tt1_0.event_id,
+        tt1_0.id,
+        tt1_0.price,
+        tt1_0.remaining_quantity,
+        tt1_0.total_quantity,
+        tt1_0.version,
+        tt1_0.zone_name 
+    from
+        ticket_types tt1_0 
+    where
+        tt1_0.event_id=?
