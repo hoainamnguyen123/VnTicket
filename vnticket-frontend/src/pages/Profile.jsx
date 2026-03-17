@@ -10,7 +10,7 @@ import axiosClient from '../api/axiosClient';
 const { Title } = Typography;
 
 const Profile = () => {
-    const { user, setUser } = useContext(AuthContext); // In case we need to update the basic context user data
+    const { user, setUser, loading: authLoading } = useContext(AuthContext); // In case we need to update the basic context user data
     const [profileData, setProfileData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [editing, setEditing] = useState(false);
@@ -55,6 +55,10 @@ const Profile = () => {
             message.error(error.response?.data?.message || 'Có lỗi xảy ra khi cập nhật.');
         }
     };
+
+    if (authLoading) {
+        return <Spin size="large" style={{ display: 'flex', justifyContent: 'center', marginTop: '100px' }} />;
+    }
 
     if (!user) {
         return <Navigate to="/login" />;

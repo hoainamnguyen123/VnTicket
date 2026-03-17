@@ -3,6 +3,7 @@ package com.vnticket.controller;
 import com.vnticket.dto.BookingDto;
 import com.vnticket.dto.request.BookingRequest;
 import com.vnticket.dto.response.ApiResponse;
+import com.vnticket.dto.TicketDto;
 import com.vnticket.security.services.UserDetailsImpl;
 import com.vnticket.service.BookingService;
 import jakarta.validation.Valid;
@@ -17,7 +18,6 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import java.util.List;
 
 @Slf4j
-@CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
 @RequestMapping("/api/bookings")
 public class BookingController {
@@ -89,5 +89,21 @@ public class BookingController {
         BookingDto booking = bookingService.cancelBooking(id, userId);
         log.info("Booking ID: {} cancelled successfully by User ID [{}]", id, userId);
         return ResponseEntity.ok(ApiResponse.success("Booking cancelled successfully", booking));
+    }
+
+    @PutMapping("/{id}/pay-mock")
+    public ResponseEntity<ApiResponse<BookingDto>> mockPayBooking(@PathVariable Long id) {
+        Long userId = getCurrentUserId();
+        log.info("User ID [{}] attempting to mock pay Booking ID: {}", userId, id);
+        BookingDto booking = bookingService.mockPayBooking(id, userId);
+        return ResponseEntity.ok(ApiResponse.success("Mock Payment successful", booking));
+    }
+
+    @GetMapping("/{id}/tickets")
+    public ResponseEntity<ApiResponse<List<TicketDto>>> getTicketsByBooking(@PathVariable Long id) {
+        Long userId = getCurrentUserId();
+        log.info("Fetching tickets for Booking ID [{}] by User ID [{}]", id, userId);
+        List<TicketDto> tickets = bookingService.getTicketsByBooking(id, userId);
+        return ResponseEntity.ok(ApiResponse.success("Fetched tickets successfully", tickets));
     }
 }

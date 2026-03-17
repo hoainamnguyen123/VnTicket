@@ -48,6 +48,14 @@ public class Event {
     @Builder.Default
     private EventStatus status = EventStatus.APPROVED;
 
+    @Column(name = "is_slider", columnDefinition = "boolean default false")
+    @Builder.Default
+    private Boolean isSlider = false;
+
+    @Column(name = "is_featured", columnDefinition = "boolean default false")
+    @Builder.Default
+    private Boolean isFeatured = false;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "organizer_id")
     private User organizer;

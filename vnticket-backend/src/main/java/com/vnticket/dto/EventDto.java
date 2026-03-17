@@ -25,5 +25,7 @@ public class EventDto {
     private String organizerName;
     private List<TicketTypeDto> ticketTypes;
     private EventStatus status;
+    private Boolean isSlider;
+    private Boolean isFeatured;
     private Long organizerId;
 }

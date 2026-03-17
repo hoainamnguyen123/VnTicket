@@ -197,7 +197,7 @@ const MyEvents = () => {
                         </Col>
                     </Row>
                 ) : (
-                    <p>Đang tải dữ liệu...</p>
+                    <p>Đang tải dữ liệu chờ xíu nhe...</p>
                 )}
             </Modal>
         </div>

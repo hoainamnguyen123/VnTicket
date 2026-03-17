@@ -7,10 +7,13 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 
 public interface BookingRepository extends JpaRepository<Booking, Long> {
     List<Booking> findByUserIdOrderByBookingTimeDesc(Long userId);
+
+    List<Booking> findByStatusAndBookingTimeBefore(BookingStatus status, LocalDateTime time);
 
     long countByStatus(BookingStatus status);
 

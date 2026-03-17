@@ -2,6 +2,7 @@ package com.vnticket.security.services;
 
 import com.vnticket.entity.User;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import lombok.Getter;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -13,8 +14,10 @@ import java.util.Objects;
 public class UserDetailsImpl implements UserDetails {
     private static final long serialVersionUID = 1L;
 
+    @Getter
     private Long id;
     private String username;
+    @Getter
     private String email;
 
     @JsonIgnore
@@ -45,14 +48,6 @@ public class UserDetailsImpl implements UserDetails {
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return authorities;
-    }
-
-    public Long getId() {
-        return id;
-    }
-
-    public String getEmail() {
-        return email;
     }
 
     @Override

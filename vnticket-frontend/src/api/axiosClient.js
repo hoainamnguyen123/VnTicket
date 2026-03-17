@@ -2,6 +2,7 @@ import axios from 'axios';
 
 const axiosClient = axios.create({
     baseURL: 'http://localhost:8080/api',
+    withCredentials: true,
     headers: {
         'Content-Type': 'application/json',
     },
@@ -26,12 +27,28 @@ axiosClient.interceptors.response.use(
     (response) => {
         return response.data; // Only return the data part (ApiResponse format)
     },
-    (error) => {
-        if (error.response && error.response.status === 401) {
-            // Handle unauthorized error
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
-            // Can add redirect to login here if necessary, but usually handled in UI
+    async (error) => {
+        const originalConfig = error.config;
+        if (error.response && error.response.status === 401 && !originalConfig._retry && originalConfig.url !== '/auth/login') {
+            originalConfig._retry = true;
+            try {
+                // Call raw axios to avoid interceptor loop
+                const rs = await axios.post('http://localhost:8080/api/auth/refreshtoken', {}, { withCredentials: true });
+                const newToken = rs.data.data.token;
+
+                // Update new token
+                localStorage.setItem('token', newToken);
+                originalConfig.headers['Authorization'] = `Bearer ${newToken}`;
+
+                // Replay original request
+                return axiosClient(originalConfig);
+            } catch (_error) {
+                // Refresh expired/failed -> force logout
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+                window.location.href = '/login';
+                return Promise.reject(_error);
+            }
         }
         return Promise.reject(error.response?.data || error);
     }

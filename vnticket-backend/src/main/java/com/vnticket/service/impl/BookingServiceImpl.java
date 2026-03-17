@@ -4,6 +4,7 @@ import com.vnticket.dto.BookingDetailDto;
 import com.vnticket.dto.BookingDto;
 import com.vnticket.dto.request.BookingRequest;
 import com.vnticket.dto.response.BookingStatsDto;
+import com.vnticket.dto.TicketDto;
 import com.vnticket.entity.*;
 import com.vnticket.exception.BadRequestException;
 import com.vnticket.exception.ResourceNotFoundException;
@@ -161,6 +162,19 @@ public class BookingServiceImpl implements BookingService {
                 .quantity(request.getQuantity())
                 .price(ticketType.getPrice()) // save price at booking time
                 .build();
+
+        // 5. Generate Electronic Tickets
+        java.util.List<Ticket> tickets = new java.util.ArrayList<>();
+        for (int i = 0; i < request.getQuantity(); i++) {
+            String code = "VNT-" + java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+            tickets.add(Ticket.builder()
+                    .ticketCode(code)
+                    .bookingDetail(detail)
+                    .status(TicketStatus.VALID)
+                    .build());
+        }
+        detail.setTickets(tickets);
+
         bookingDetailRepository.save(detail);
 
         savedBooking.setBookingDetails(List.of(detail));
@@ -211,10 +225,56 @@ public class BookingServiceImpl implements BookingService {
             log.debug("Restoring {} tickets for TicketType ID: {}", detail.getQuantity(), ticketType.getId());
             ticketType.setRemainingQuantity(ticketType.getRemainingQuantity() + detail.getQuantity());
             ticketTypeRepository.save(ticketType);
+
+            // Cancel associated electronic tickets
+            if (detail.getTickets() != null) {
+                detail.getTickets().forEach(t -> t.setStatus(TicketStatus.CANCELLED));
+            }
         }
 
         Booking savedBooking = bookingRepository.save(booking);
         log.info("Successfully cancelled Booking ID: {} for User ID: {}", bookingId, userId);
+        return mapToDto(savedBooking);
+    }
+
+    @Override
+    @Transactional
+    public BookingDto mockPayBooking(Long bookingId, Long userId) {
+        log.info("Mocking payment for Booking ID: {}, Requested by User ID: {}", bookingId, userId);
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new ResourceNotFoundException("Booking not found"));
+
+        if (!booking.getUser().getId().equals(userId)) {
+            throw new BadRequestException("You can only pay for your own bookings");
+        }
+
+        if (booking.getStatus() != BookingStatus.PENDING) {
+            throw new BadRequestException("Booking is not in PENDING state");
+        }
+
+        // Check active expiration
+        if (java.time.Duration.between(booking.getBookingTime(), java.time.LocalDateTime.now()).toMinutes() >= 15) {
+            log.warn("Mock payment rejected: Booking ID {} has expired", bookingId);
+
+            // Auto-cancel if expired during payment attempt
+            booking.setStatus(BookingStatus.CANCELLED);
+            for (BookingDetail detail : booking.getBookingDetails()) {
+                TicketType ticketType = detail.getTicketType();
+                ticketType.setRemainingQuantity(ticketType.getRemainingQuantity() + detail.getQuantity());
+                ticketTypeRepository.save(ticketType);
+                if (detail.getTickets() != null) {
+                    detail.getTickets().forEach(t -> t.setStatus(TicketStatus.CANCELLED));
+                }
+            }
+            bookingRepository.save(booking);
+            throw new BadRequestException("Thời gian thanh toán đã hết hạn (15 phút). Đơn hàng đã tự động bị hủy.");
+        }
+
+        log.debug("Updating booking status to PAID for Booking ID: {}", bookingId);
+        booking.setStatus(BookingStatus.PAID);
+
+        Booking savedBooking = bookingRepository.save(booking);
+        log.info("Successfully paid Booking ID: {} for User ID: {}", bookingId, userId);
         return mapToDto(savedBooking);
     }
 
@@ -240,5 +300,82 @@ public class BookingServiceImpl implements BookingService {
                 .totalAmount(booking.getTotalAmount())
                 .bookingDetails(detailDtos)
                 .build();
+    }
+
+    @Override
+    public List<TicketDto> getTicketsByBooking(Long bookingId, Long userId) {
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new ResourceNotFoundException("Booking not found"));
+
+        if (!booking.getUser().getId().equals(userId)) {
+            throw new BadRequestException("You cannot view these tickets");
+        }
+
+        List<Ticket> tickets = booking.getBookingDetails().stream()
+                .flatMap(detail -> {
+                    if (detail.getTickets() == null)
+                        return java.util.stream.Stream.empty();
+                    return detail.getTickets().stream();
+                })
+                .collect(Collectors.toList());
+
+        return tickets.stream().map(t -> TicketDto.builder()
+                .id(t.getId())
+                .ticketCode(t.getTicketCode())
+                .status(t.getStatus())
+                .eventName(t.getBookingDetail().getTicketType().getEvent().getName())
+                .eventImageUrl(t.getBookingDetail().getTicketType().getEvent().getImageUrl())
+                .eventLocation(t.getBookingDetail().getTicketType().getEvent().getLocation())
+                .startTime(t.getBookingDetail().getTicketType().getEvent().getStartTime() != null
+                        ? t.getBookingDetail().getTicketType().getEvent().getStartTime().toString()
+                        : null)
+                .zoneName(t.getBookingDetail().getTicketType().getZoneName())
+                .price(t.getBookingDetail().getPrice())
+                .build()).collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public void cancelExpiredBookings() {
+        LocalDateTime expiryTime = LocalDateTime.now().minusMinutes(15);
+        List<Booking> expiredBookings = bookingRepository.findByStatusAndBookingTimeBefore(BookingStatus.PENDING,
+                expiryTime);
+
+        if (!expiredBookings.isEmpty()) {
+            log.info("Found {} expired PENDING bookings to auto-cancel.", expiredBookings.size());
+            for (Booking booking : expiredBookings) {
+                log.debug("Auto-cancelling expired Booking ID: {}", booking.getId());
+                booking.setStatus(BookingStatus.CANCELLED);
+
+                // Restore ticket quantities and cancel electronic tickets
+                for (BookingDetail detail : booking.getBookingDetails()) {
+                    TicketType ticketType = detail.getTicketType();
+                    ticketType.setRemainingQuantity(ticketType.getRemainingQuantity() + detail.getQuantity());
+                    ticketTypeRepository.save(ticketType);
+
+                    if (detail.getTickets() != null) {
+                        detail.getTickets().forEach(t -> t.setStatus(TicketStatus.CANCELLED));
+                    }
+                }
+            }
+            bookingRepository.saveAll(expiredBookings);
+        }
+    }
+
+    @Override
+    @Transactional
+    public void processVnPayPayment(Long bookingId) {
+        log.info("Processing VNPay payment confirmation for Booking ID: {}", bookingId);
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new ResourceNotFoundException("Booking not found"));
+
+        if (booking.getStatus() != BookingStatus.PENDING) {
+            log.warn("Booking ID {} is not PENDING, skipping VNPay payment processing", bookingId);
+            return;
+        }
+
+        booking.setStatus(BookingStatus.PAID);
+        bookingRepository.save(booking);
+        log.info("VNPay payment confirmed. Booking ID: {} status updated to PAID", bookingId);
     }
 }

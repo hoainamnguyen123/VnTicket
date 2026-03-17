@@ -9,16 +9,26 @@ spring:
     username: postgres
     password: 123456
     driver-class-name: org.postgresql.Driver
+  data:
+    redis:
+      host: localhost
+      port: 6379
   jpa:
     hibernate:
       ddl-auto: update
-    show-sql: true
     properties:
       hibernate:
         format_sql: true
-        dialect: org.hibernate.dialect.PostgreSQLDialect
 
 app:
   jwt:
     secret: VNTicketSuperSecretKeyForJwtGenerationMustBeLongEnoughToBeSecureVNTicketSuperSecretKeyForJwtGenerationMustBeLongEnoughToBeSecure
-    expirationMs: 86400000 # 24 hours
+    expirationMs: 600000 # 10 minutes
+    jwtRefreshExpirationMs: 2592000000 # 30 days
+  google:
+    clientId: 626920740184-b50brg5oc6psqva23adt7f9a7632fhp4.apps.googleusercontent.com
+  vnpay:
+    tmnCode: JLQON1G3
+    hashSecret: R1HINBAXZXBR7SOMK9IZEJBQTW3MT4WD
+    payUrl: https://sandbox.vnpayment.vn/paymentv2/vpcpay.html
+    returnUrl: http://localhost:5173/payment-return

@@ -1,0 +1,48 @@
+# ============================================================
+# VNTicket - .gitignore
+# ============================================================
+
+# ─── Thông tin nhạy cảm / Secrets ───────────────────────────
+**/application.yml
+**/application-*.yml
+**/.env
+**/.env.*
+!**/.env.example
+
+# ─── Java / Maven (Backend) ──────────────────────────────────
+vnticket-backend/target/
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+
+# ─── IDE ─────────────────────────────────────────────────────
+.idea/
+*.iml
+.vscode/*
+!.vscode/extensions.json
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# ─── Node / Frontend ─────────────────────────────────────────
+node_modules/
+vnticket-frontend/dist/
+vnticket-frontend/dist-ssr/
+
+# ─── Logs ────────────────────────────────────────────────────
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ─── OS ──────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ─── Misc ────────────────────────────────────────────────────
+hash_debug.txt

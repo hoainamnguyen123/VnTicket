@@ -18,7 +18,7 @@ public class User {
     @Column(nullable = false, unique = true)
     private String username;
 
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String password;
 
     private String fullName;
@@ -27,6 +27,8 @@ public class User {
     private String email;
 
     private String phone;
+
+    private String googleId;
 
     @Enumerated(EnumType.STRING)
     @Column(length = 20)

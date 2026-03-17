@@ -12,11 +12,13 @@ com\vnticket\entity\User.class
 com\vnticket\dto\TicketTypeDto.class
 com\vnticket\service\impl\EventServiceImpl.class
 com\vnticket\entity\Booking$BookingBuilder.class
+com\vnticket\repository\TicketRepository.class
 com\vnticket\controller\AuthController.class
 com\vnticket\VnTicketApplication.class
 com\vnticket\dto\request\BookingRequest.class
 com\vnticket\security\services\UserDetailsServiceImpl.class
 com\vnticket\security\services\UserDetailsImpl.class
+com\vnticket\security\services\RefreshTokenService.class
 com\vnticket\entity\Event.class
 com\vnticket\repository\TicketTypeRepository.class
 com\vnticket\entity\EventStatus.class
@@ -31,6 +33,8 @@ com\vnticket\entity\BookingDetail$BookingDetailBuilder.class
 com\vnticket\security\jwt\AuthTokenFilter.class
 com\vnticket\repository\BookingRepository.class
 com\vnticket\dto\EventDto$EventDtoBuilder.class
+com\vnticket\entity\Ticket.class
+com\vnticket\scheduler\BookingCleanupTask.class
 com\vnticket\dto\request\LoginRequest.class
 com\vnticket\service\EventService.class
 com\vnticket\controller\UserController.class
@@ -40,6 +44,7 @@ com\vnticket\dto\response\ApiResponse.class
 com\vnticket\entity\User$UserBuilder.class
 com\vnticket\entity\TicketType$TicketTypeBuilder.class
 com\vnticket\entity\Event$EventBuilder.class
+com\vnticket\entity\TicketStatus.class
 com\vnticket\repository\UserRepository.class
 com\vnticket\dto\BookingDto$BookingDtoBuilder.class
 com\vnticket\controller\BookingController.class
@@ -47,12 +52,16 @@ com\vnticket\dto\response\JwtResponse.class
 com\vnticket\dto\TicketTypeDto$TicketTypeDtoBuilder.class
 com\vnticket\entity\Booking.class
 com\vnticket\service\impl\BookingServiceImpl.class
+com\vnticket\exception\TokenRefreshException.class
 com\vnticket\repository\BookingDetailRepository.class
 com\vnticket\entity\BookingStatus.class
+com\vnticket\entity\Ticket$TicketBuilder.class
 com\vnticket\exception\GlobalExceptionHandler.class
+com\vnticket\dto\TicketDto.class
 com\vnticket\entity\TicketType.class
 com\vnticket\dto\BookingDto.class
 com\vnticket\controller\EventController.class
 com\vnticket\security\WebSecurityConfig.class
+com\vnticket\dto\TicketDto$TicketDtoBuilder.class
 com\vnticket\dto\EventDto.class
 com\vnticket\exception\BadRequestException.class

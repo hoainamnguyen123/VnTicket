@@ -1,39 +1,237 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { Table, Typography, Tag, Button, Modal, message, Skeleton } from 'antd';
-import { ExclamationCircleOutlined, SyncOutlined } from '@ant-design/icons';
+import { Table, Typography, Tag, Button, Modal, message, Skeleton, Card } from 'antd';
+import { ExclamationCircleOutlined, SyncOutlined, WalletOutlined, CreditCardOutlined, EyeOutlined, CloseCircleOutlined } from '@ant-design/icons';
 import axiosClient from '../api/axiosClient';
 import { formatCurrency, formatDate } from '../utils/formatters';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import ElectronicTicketModal from '../components/ElectronicTicketModal';
 
 const { Title, Text } = Typography;
 const { confirm } = Modal;
 
+/* ── Hook: theo dõi kích thước màn hình ── */
+const useIsMobile = (breakpoint = 768) => {
+    const [isMobile, setIsMobile] = useState(window.innerWidth < breakpoint);
+    useEffect(() => {
+        const handler = () => setIsMobile(window.innerWidth < breakpoint);
+        window.addEventListener('resize', handler);
+        return () => window.removeEventListener('resize', handler);
+    }, [breakpoint]);
+    return isMobile;
+};
+
+/* ── Countdown Timer ── */
+const CountdownTimer = ({ bookingTime, onExpire }) => {
+    const [timeLeft, setTimeLeft] = useState(null);
+
+    useEffect(() => {
+        const calculateTimeLeft = () => {
+            const bookingDate = new Date(bookingTime);
+            const expiryDate = new Date(bookingDate.getTime() + 15 * 60000);
+            const now = new Date();
+            const diff = expiryDate.getTime() - now.getTime();
+
+            if (diff <= 0) {
+                setTimeLeft('00:00');
+                return true;
+            } else {
+                const minutes = Math.floor((diff / 1000) / 60);
+                const seconds = Math.floor((diff / 1000) % 60);
+                setTimeLeft(`${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
+                return false;
+            }
+        };
+
+        const isExpired = calculateTimeLeft();
+        if (isExpired) {
+            onExpire();
+            return;
+        }
+
+        const interval = setInterval(() => {
+            const expired = calculateTimeLeft();
+            if (expired) {
+                clearInterval(interval);
+                onExpire();
+            }
+        }, 1000);
+
+        return () => clearInterval(interval);
+    }, [bookingTime, onExpire]);
+
+    if (!timeLeft) return null;
+    return (
+        <Text type="danger" style={{ fontSize: '12px', fontWeight: 'bold' }}>
+            ⏱ {timeLeft}
+        </Text>
+    );
+};
+
+/* ── Payment Method Card ── */
+const PaymentMethodCard = ({ name, imgSrc, borderColor, bgColor, disabled, comingSoon, onClick, selected }) => (
+    <div
+        onClick={disabled ? undefined : onClick}
+        style={{
+            border: `2px solid ${selected ? borderColor : '#e8e8e8'}`,
+            borderRadius: '12px',
+            padding: '20px 16px',
+            cursor: disabled ? 'not-allowed' : 'pointer',
+            opacity: disabled ? 0.5 : 1,
+            background: selected ? bgColor : '#fff',
+            transition: 'all 0.3s ease',
+            position: 'relative',
+            textAlign: 'center',
+            minHeight: '120px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            boxShadow: selected ? `0 4px 12px ${borderColor}40` : '0 1px 4px rgba(0,0,0,0.08)',
+        }}
+        onMouseEnter={(e) => { if (!disabled) { e.currentTarget.style.borderColor = borderColor; e.currentTarget.style.boxShadow = `0 4px 12px ${borderColor}40`; } }}
+        onMouseLeave={(e) => { if (!disabled && !selected) { e.currentTarget.style.borderColor = '#e8e8e8'; e.currentTarget.style.boxShadow = '0 1px 4px rgba(0,0,0,0.08)'; } }}
+    >
+        {comingSoon && (
+            <Tag color="default" style={{ position: 'absolute', top: '8px', right: '8px', fontSize: '10px', margin: 0 }}>
+                Sắp ra mắt
+            </Tag>
+        )}
+        <img
+            src={imgSrc}
+            alt={name}
+            style={{ width: '56px', height: '56px', objectFit: 'contain' }}
+        />
+        <Text strong style={{ fontSize: '14px', color: selected ? borderColor : '#333' }}>{name}</Text>
+    </div>
+);
+
+/* ── Booking Card cho Mobile ── */
+const BookingCard = ({ booking, onPay, onViewTickets, onCancel, onExpire }) => {
+    const statusColor = booking.status === 'PAID' ? 'green' : (booking.status === 'PENDING' ? 'gold' : 'red');
+    const statusText = booking.status === 'PAID' ? 'Đã Thanh Toán' : (booking.status === 'PENDING' ? 'Chờ Thanh Toán' : 'Đã Hủy');
+
+    return (
+        <Card
+            size="small"
+            style={{
+                marginBottom: '12px',
+                borderRadius: '12px',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                border: booking.status === 'PENDING' ? '1px solid #faad14' : (booking.status === 'PAID' ? '1px solid #52c41a' : '1px solid #f0f0f0'),
+            }}
+        >
+            {/* Header: Mã đơn + Trạng thái */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                <Text strong style={{ fontSize: '14px' }}>#{booking.id}</Text>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Tag color={statusColor} style={{ margin: 0 }}>{statusText}</Tag>
+                    {booking.status === 'PENDING' && (
+                        <CountdownTimer bookingTime={booking.bookingTime} onExpire={onExpire} />
+                    )}
+                </div>
+            </div>
+
+            {/* Tên sự kiện */}
+            <Text strong style={{ color: '#1890ff', fontSize: '15px', display: 'block', marginBottom: '6px' }}>
+                {booking.eventName}
+            </Text>
+
+            {/* Ngày đặt */}
+            <Text type="secondary" style={{ fontSize: '12px', display: 'block', marginBottom: '6px' }}>
+                📅 {formatDate(booking.bookingTime)}
+            </Text>
+
+            {/* Chi tiết vé */}
+            <div style={{ marginBottom: '8px' }}>
+                {booking.bookingDetails?.map((d, index) => (
+                    <span key={index} style={{ marginRight: '6px' }}>
+                        <Tag color="blue" style={{ margin: '2px 0' }}>{d.zoneName}</Tag>
+                        <Text style={{ fontSize: '12px' }}>x{d.quantity}</Text>
+                    </span>
+                ))}
+            </div>
+
+            {/* Tổng tiền */}
+            <Text type="danger" strong style={{ fontSize: '16px', display: 'block', marginBottom: '10px' }}>
+                {formatCurrency(booking.totalAmount)}
+            </Text>
+
+            {/* Nút hành động */}
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                {booking.status === 'PAID' && (
+                    <Button
+                        type="primary"
+                        ghost
+                        size="small"
+                        icon={<EyeOutlined />}
+                        onClick={() => onViewTickets(booking.id)}
+                    >
+                        Xem Vé
+                    </Button>
+                )}
+                {booking.status === 'PENDING' && (
+                    <>
+                        <Button
+                            type="primary"
+                            size="small"
+                            icon={<WalletOutlined />}
+                            style={{ background: 'linear-gradient(135deg, #1890ff, #722ed1)', borderColor: 'transparent' }}
+                            onClick={() => onPay(booking.id)}
+                        >
+                            Thanh Toán
+                        </Button>
+                        <Button
+                            danger
+                            size="small"
+                            icon={<CloseCircleOutlined />}
+                            onClick={() => onCancel(booking.id)}
+                        >
+                            Hủy Vé
+                        </Button>
+                    </>
+                )}
+            </div>
+        </Card>
+    );
+};
+
+/* ── Main Component ── */
 const History = () => {
     const [bookings, setBookings] = useState([]);
     const [loading, setLoading] = useState(true);
-    const { user } = useContext(AuthContext);
+    const [tickets, setTickets] = useState([]);
+    const [isModalVisible, setIsModalVisible] = useState(false);
+    const [paymentModalVisible, setPaymentModalVisible] = useState(false);
+    const [selectedBookingId, setSelectedBookingId] = useState(null);
+    const [selectedMethod, setSelectedMethod] = useState(null);
+    const [paymentLoading, setPaymentLoading] = useState(false);
+    const { user, loading: authLoading } = useContext(AuthContext);
     const navigate = useNavigate();
+    const isMobile = useIsMobile();
+
+    const fetchBookings = React.useCallback(async (silent = false) => {
+        if (!silent) setLoading(true);
+        try {
+            const response = await axiosClient.get('/bookings/my');
+            setBookings(response.data);
+        } catch (error) {
+            console.error('Fetch bookings error:', error);
+            if (!silent) message.error('Không thể tải lịch sử đặt vé!');
+        } finally {
+            if (!silent) setLoading(false);
+        }
+    }, []);
 
     useEffect(() => {
+        if (authLoading) return;
         if (!user) {
             navigate('/login');
         } else {
             fetchBookings();
         }
-    }, [user, navigate]);
-
-    const fetchBookings = async () => {
-        setLoading(true);
-        try {
-            const response = await axiosClient.get('/bookings/my');
-            setBookings(response.data);
-        } catch (error) {
-            message.error('Không thể tải lịch sử đặt vé!');
-        } finally {
-            setLoading(false);
-        }
-    };
+    }, [user, navigate, authLoading, fetchBookings]);
 
     const handleCancel = (bookingId) => {
         confirm({
@@ -47,7 +245,7 @@ const History = () => {
                 try {
                     await axiosClient.put(`/bookings/${bookingId}/cancel`);
                     message.success('Hủy vé thành công!');
-                    fetchBookings(); // Tải lại danh sách
+                    fetchBookings();
                 } catch (error) {
                     message.error(error.message || 'Hủy vé thất bại!');
                 }
@@ -55,11 +253,44 @@ const History = () => {
         });
     };
 
+    const handleViewTickets = async (bookingId) => {
+        try {
+            const response = await axiosClient.get(`/bookings/${bookingId}/tickets`);
+            setTickets(response.data);
+            setIsModalVisible(true);
+        } catch (error) {
+            message.error('Không thể tải vé điện tử!');
+        }
+    };
+
+    const openPaymentModal = (bookingId) => {
+        setSelectedBookingId(bookingId);
+        setSelectedMethod(null);
+        setPaymentModalVisible(true);
+    };
+
+    const handleConfirmPayment = async () => {
+        if (selectedMethod === 'vnpay') {
+            setPaymentLoading(true);
+            try {
+                const response = await axiosClient.get(`/payment/create?bookingId=${selectedBookingId}`);
+                const paymentUrl = response.data;
+                window.location.href = paymentUrl;
+            } catch (error) {
+                message.error(error.message || 'Không thể tạo liên kết thanh toán!');
+            } finally {
+                setPaymentLoading(false);
+            }
+        }
+    };
+
+    /* ── Columns cho Table (Desktop) ── */
     const columns = [
         {
             title: 'Mã đơn',
             dataIndex: 'id',
             key: 'id',
+            width: 80,
             render: id => <strong>#{id}</strong>
         },
         {
@@ -72,6 +303,7 @@ const History = () => {
             title: 'Ngày đặt',
             dataIndex: 'bookingTime',
             key: 'bookingTime',
+            width: 160,
             render: time => formatDate(time)
         },
         {
@@ -92,30 +324,57 @@ const History = () => {
             title: 'Tổng tiền',
             dataIndex: 'totalAmount',
             key: 'totalAmount',
+            width: 130,
             render: amount => <Text type="danger" strong>{formatCurrency(amount)}</Text>
         },
         {
             title: 'Trạng thái',
             dataIndex: 'status',
             key: 'status',
-            render: status => {
+            width: 150,
+            render: (status, record) => {
                 let color = status === 'PAID' ? 'green' : (status === 'PENDING' ? 'gold' : 'red');
                 let text = status === 'PAID' ? 'Đã Thanh Toán' : (status === 'PENDING' ? 'Chờ Thanh Toán' : 'Đã Hủy');
-                return <Tag color={color}>{text}</Tag>;
+                return (
+                    <div>
+                        <Tag color={color}>{text}</Tag>
+                        {status === 'PENDING' && (
+                            <CountdownTimer bookingTime={record.bookingTime} onExpire={() => fetchBookings()} />
+                        )}
+                    </div>
+                );
             }
         },
         {
             title: 'Hành động',
             key: 'action',
+            width: 220,
             render: (_, record) => (
-                <Button
-                    type="link"
-                    danger
-                    disabled={record.status !== 'PENDING'}
-                    onClick={() => handleCancel(record.id)}
-                >
-                    Hủy Vé
-                </Button>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                    {record.status === 'PAID' && (
+                        <Button type="primary" ghost onClick={() => handleViewTickets(record.id)}>
+                            Xem Vé
+                        </Button>
+                    )}
+                    {record.status === 'PENDING' && (
+                        <Button
+                            type="primary"
+                            icon={<WalletOutlined />}
+                            style={{ background: 'linear-gradient(135deg, #1890ff, #722ed1)', borderColor: 'transparent' }}
+                            onClick={() => openPaymentModal(record.id)}
+                        >
+                            Thanh Toán
+                        </Button>
+                    )}
+                    <Button
+                        type="link"
+                        danger
+                        disabled={record.status !== 'PENDING'}
+                        onClick={() => handleCancel(record.id)}
+                    >
+                        Hủy Vé
+                    </Button>
+                </div>
             ),
         }
     ];
@@ -124,18 +383,113 @@ const History = () => {
 
     return (
         <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-                <Title level={2} style={{ margin: 0 }}>Lịch sử đặt vé</Title>
-                <Button icon={<SyncOutlined />} onClick={fetchBookings}>Làm mới</Button>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                <Title level={isMobile ? 4 : 2} style={{ margin: 0 }}>Vé của tôi</Title>
+                <Button icon={<SyncOutlined />} onClick={fetchBookings} size={isMobile ? 'small' : 'middle'}>
+                    Làm mới
+                </Button>
             </div>
 
-            <Table
-                columns={columns}
-                dataSource={bookings}
-                rowKey="id"
-                pagination={{ pageSize: 10 }}
-                style={{ background: '#fff' }}
+            {/* Desktop: Table | Mobile: Cards */}
+            {isMobile ? (
+                <div>
+                    {bookings.length === 0 ? (
+                        <Card style={{ textAlign: 'center', padding: '40px' }}>
+                            <Text type="secondary">Bạn chưa có đơn đặt vé nào.</Text>
+                        </Card>
+                    ) : (
+                        bookings.map(booking => (
+                            <BookingCard
+                                key={booking.id}
+                                booking={booking}
+                                onPay={openPaymentModal}
+                                onViewTickets={handleViewTickets}
+                                onCancel={handleCancel}
+                                onExpire={() => fetchBookings()}
+                            />
+                        ))
+                    )}
+                </div>
+            ) : (
+                <Table
+                    columns={columns}
+                    dataSource={bookings}
+                    rowKey="id"
+                    pagination={{ pageSize: 10 }}
+                    style={{ background: '#fff' }}
+                    scroll={{ x: 900 }}
+                />
+            )}
+
+            <ElectronicTicketModal
+                visible={isModalVisible}
+                onClose={() => setIsModalVisible(false)}
+                tickets={tickets}
             />
+
+            {/* ── Modal chọn phương thức thanh toán ── */}
+            <Modal
+                title={
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <CreditCardOutlined style={{ fontSize: '20px', color: '#1890ff' }} />
+                        <span style={{ fontSize: '16px', fontWeight: 600 }}>Chọn phương thức thanh toán</span>
+                    </div>
+                }
+                open={paymentModalVisible}
+                onCancel={() => { setPaymentModalVisible(false); setSelectedMethod(null); }}
+                footer={[
+                    <Button key="cancel" onClick={() => { setPaymentModalVisible(false); setSelectedMethod(null); }}>
+                        Hủy
+                    </Button>,
+                    <Button
+                        key="confirm"
+                        type="primary"
+                        disabled={!selectedMethod}
+                        loading={paymentLoading}
+                        onClick={handleConfirmPayment}
+                        style={{
+                            background: selectedMethod ? 'linear-gradient(135deg, #1890ff, #722ed1)' : undefined,
+                            borderColor: selectedMethod ? 'transparent' : undefined,
+                        }}
+                    >
+                        Xác nhận thanh toán
+                    </Button>
+                ]}
+                width={isMobile ? '95%' : 520}
+                centered
+            >
+                <div style={{ padding: '12px 0' }}>
+                    <Text type="secondary" style={{ display: 'block', marginBottom: '16px' }}>
+                        Vui lòng chọn một phương thức thanh toán bên dưới:
+                    </Text>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
+                        <PaymentMethodCard
+                            name="VNPay"
+                            imgSrc="/images/vnpay-logo.png"
+                            bgColor="#e6f4ff"
+                            borderColor="#0060af"
+                            selected={selectedMethod === 'vnpay'}
+                            onClick={() => setSelectedMethod('vnpay')}
+                        />
+                        <PaymentMethodCard
+                            name="MoMo"
+                            imgSrc="/images/momo-logo.png"
+                            bgColor="#fff0f6"
+                            borderColor="#ae2070"
+                            disabled
+                            comingSoon
+                        />
+                        <PaymentMethodCard
+                            name="ZaloPay"
+                            imgSrc="/images/zalopay-logo.png"
+                            bgColor="#e6f7ff"
+                            borderColor="#008fe5"
+                            disabled
+                            comingSoon
+                        />
+                    </div>
+                </div>
+            </Modal>
         </div>
     );
 };

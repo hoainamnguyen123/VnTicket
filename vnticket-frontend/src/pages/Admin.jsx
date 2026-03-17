@@ -86,7 +86,9 @@ const Admin = () => {
             startTime: dayjs(record.startTime),
             province,
             ward,
-            detailAddress
+            detailAddress,
+            isSlider: record.isSlider || false,
+            isFeatured: record.isFeatured || false
         });
         setIsModalVisible(true);
     };
@@ -127,6 +129,8 @@ const Admin = () => {
                 ...values,
                 location: combinedLocation,
                 startTime: values.startTime.format('YYYY-MM-DDTHH:mm:ss'),
+                isSlider: values.isSlider || false,
+                isFeatured: values.isFeatured || false
             };
 
             delete payload.province;
@@ -152,7 +156,20 @@ const Admin = () => {
 
     const columns = [
         { title: 'ID', dataIndex: 'id', key: 'id', width: 60 },
-        { title: 'Tên Sự Kiện', dataIndex: 'name', key: 'name' },
+        {
+            title: 'Tên Sự Kiện',
+            dataIndex: 'name',
+            key: 'name',
+            render: (text, record) => (
+                <div>
+                    <div style={{ fontWeight: '500' }}>{text}</div>
+                    <Space size="small" style={{ marginTop: 4 }}>
+                        {record.isSlider && <Tag color="magenta">Slider</Tag>}
+                        {record.isFeatured && <Tag color="geekblue">Nổi Bật</Tag>}
+                    </Space>
+                </div>
+            )
+        },
         { title: 'Loại', dataIndex: 'type', key: 'type', width: 100 },
         {
             title: 'Thời Gian',

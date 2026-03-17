@@ -30,4 +30,7 @@ public class BookingDetail {
 
     @Column(nullable = false)
     private BigDecimal price; // Price per ticket at time of booking
+
+    @OneToMany(mappedBy = "bookingDetail", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private java.util.List<Ticket> tickets;
 }

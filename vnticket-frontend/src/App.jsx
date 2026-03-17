@@ -8,6 +8,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import EventDetail from './pages/EventDetail';
 import History from './pages/History';
+import AllEvents from './pages/AllEvents';
 import Admin from './pages/Admin';
 import Profile from './pages/Profile';
 import PrivacyPolicy from './pages/PrivacyPolicy';
@@ -15,6 +16,7 @@ import TermsOfService from './pages/TermsOfService';
 import RefundPolicy from './pages/RefundPolicy';
 import FAQ from './pages/FAQ';
 import OperatingRules from './pages/OperatingRules';
+import PaymentReturn from './pages/PaymentReturn';
 import { Layout } from 'antd';
 
 const { Content } = Layout;
@@ -32,6 +34,7 @@ function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/event/:id" element={<EventDetail />} />
+            <Route path="/events" element={<AllEvents />} />
             <Route path="/history" element={<History />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="/profile" element={<Profile />} />
@@ -40,6 +43,7 @@ function App() {
             <Route path="/refund-policy" element={<RefundPolicy />} />
             <Route path="/faq" element={<FAQ />} />
             <Route path="/operating-rules" element={<OperatingRules />} />
+            <Route path="/payment-return" element={<PaymentReturn />} />
           </Routes>
         </div>
       </Content>

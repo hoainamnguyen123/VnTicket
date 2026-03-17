@@ -110,6 +110,12 @@ public class EventServiceImpl implements EventService {
         if (eventDto.getStatus() != null) {
             event.setStatus(eventDto.getStatus());
         }
+        if (eventDto.getIsSlider() != null) {
+            event.setIsSlider(eventDto.getIsSlider());
+        }
+        if (eventDto.getIsFeatured() != null) {
+            event.setIsFeatured(eventDto.getIsFeatured());
+        }
 
         Event updatedEvent = eventRepository.save(event);
         log.info("Successfully updated event ID: {}", id);
@@ -204,6 +210,8 @@ public class EventServiceImpl implements EventService {
                 .status(event.getStatus())
                 .organizerId(event.getOrganizer() != null ? event.getOrganizer().getId() : null)
                 .ticketTypes(ticketTypeDtos)
+                .isSlider(event.getIsSlider())
+                .isFeatured(event.getIsFeatured())
                 .build();
     }
 
@@ -217,6 +225,9 @@ public class EventServiceImpl implements EventService {
                 .location(dto.getLocation())
                 .type(dto.getType())
                 .organizerName(dto.getOrganizerName())
+                .status(dto.getStatus() != null ? dto.getStatus() : com.vnticket.entity.EventStatus.APPROVED)
+                .isSlider(dto.getIsSlider() != null ? dto.getIsSlider() : false)
+                .isFeatured(dto.getIsFeatured() != null ? dto.getIsFeatured() : false)
                 .build();
     }
 

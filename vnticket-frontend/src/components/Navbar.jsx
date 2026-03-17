@@ -2,7 +2,7 @@ import React, { useContext, useState } from 'react';
 import { Layout, Menu, Button, Dropdown, Form, message, Drawer, Grid } from 'antd';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
-import { UserOutlined, LogoutOutlined, HistoryOutlined, PlusOutlined, MenuOutlined } from '@ant-design/icons';
+import { UserOutlined, LogoutOutlined, HistoryOutlined, PlusOutlined, MenuOutlined, TagsOutlined } from '@ant-design/icons';
 import EventFormModal from './EventFormModal';
 import axiosClient from '../api/axiosClient';
 
@@ -23,8 +23,14 @@ const Navbar = () => {
         {
             key: 'profile',
             icon: <UserOutlined />,
-            label: 'Hồ sơ cá nhân / Lịch sử đặt vé',
+            label: 'Hồ sơ cá nhân',
             onClick: () => navigate('/profile'),
+        },
+        {
+            key: 'my-tickets',
+            icon: <TagsOutlined />,
+            label: 'Vé của tôi',
+            onClick: () => navigate('/history'),
         },
         {
             type: 'divider',
@@ -97,22 +103,58 @@ const Navbar = () => {
                     marginRight: isMobile ? 'auto' : '60px',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '10px'
+                    gap: '12px'
                 }}
                 onClick={() => navigate('/')}
             >
-                <span style={{ fontSize: isMobile ? '22px' : '28px', lineHeight: 1 }}>🎫</span>
+                <div 
+                    className="logo-icon"
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        width: isMobile ? '36px' : '44px',
+                        height: isMobile ? '36px' : '44px',
+                        borderRadius: '12px',
+                        background: 'linear-gradient(135deg, #1890ff 0%, #722ed1 100%)',
+                        boxShadow: '0 4px 14px rgba(114, 46, 209, 0.4)',
+                        transform: 'rotate(-5deg)'
+                    }}
+                >
+                    <span style={{ 
+                        color: 'white', 
+                        fontSize: isMobile ? '20px' : '24px', 
+                        fontWeight: '900', 
+                        fontStyle: 'italic',
+                        fontFamily: 'system-ui, sans-serif'
+                    }}>
+                        VN
+                    </span>
+                </div>
                 <h2 style={{
                     margin: 0,
-                    background: 'linear-gradient(45deg, #1890ff, #722ed1)',
-                    WebkitBackgroundClip: 'text',
-                    backgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    fontWeight: '800',
-                    letterSpacing: '-0.5px',
-                    fontSize: isMobile ? '20px' : '26px'
+                    fontWeight: '900',
+                    letterSpacing: '-1px',
+                    fontSize: isMobile ? '22px' : '28px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    fontFamily: `'Inter', system-ui, -apple-system, sans-serif`
                 }}>
-                    VNTicket
+                    <span style={{ color: '#1f1f1f' }}>
+                        TICKET
+                    </span>
+                    <span 
+                        className="logo-dot"
+                        style={{
+                            width: '6px',
+                            height: '6px',
+                            background: '#1890ff',
+                            borderRadius: '50%',
+                            marginLeft: '4px',
+                            alignSelf: 'flex-end',
+                            marginBottom: isMobile ? '4px' : '6px'
+                        }}
+                    ></span>
                 </h2>
             </div>
 
@@ -132,6 +174,11 @@ const Navbar = () => {
                         <Menu.Item key="/" style={{ padding: '0 20px' }}>
                             <Link to="/">Trang Chủ</Link>
                         </Menu.Item>
+                        {user && (
+                            <Menu.Item key="/history" style={{ padding: '0 20px' }}>
+                                <Link to="/history">🎟️ Vé của tôi</Link>
+                            </Menu.Item>
+                        )}
                         {user?.role === 'ROLE_ADMIN' && (
                             <Menu.Item key="/admin" style={{ padding: '0 20px' }}>
                                 <Link to="/admin">🕹️ Quản lý Hệ thống</Link>
@@ -241,11 +288,11 @@ const Navbar = () => {
 
                     {user && (
                         <>
-                            <Button type="text" block style={{ textAlign: 'left', height: 'auto', padding: '10px 15px' }} onClick={() => { navigate('/profile'); setMobileMenuOpen(false); }}>
-                                👤 Hồ sơ
+                            <Button type="text" block style={{ textAlign: 'left', height: 'auto', padding: '10px 15px' }} onClick={() => { navigate('/history'); setMobileMenuOpen(false); }}>
+                                🎟️ Vé của tôi
                             </Button>
                             <Button type="text" block style={{ textAlign: 'left', height: 'auto', padding: '10px 15px' }} onClick={() => { navigate('/profile'); setMobileMenuOpen(false); }}>
-                                🎟️ Lịch sử vé
+                                👤 Hồ sơ cá nhân
                             </Button>
                         </>
                     )}

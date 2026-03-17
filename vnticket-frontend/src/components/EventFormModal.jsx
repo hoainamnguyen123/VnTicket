@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Form, Input, Select, DatePicker, Row, Col, Space, Button, Alert } from 'antd';
+import { Modal, Form, Input, Select, DatePicker, Row, Col, Space, Button, Alert, Switch } from 'antd';
 import { MinusCircleOutlined, PlusOutlined } from '@ant-design/icons';
 import axios from 'axios';
 
@@ -63,6 +63,8 @@ const EventFormModal = ({ visible, onCancel, onOk, form, title, editingEvent, is
                                 <Option value="Âm nhạc">Âm nhạc</Option>
                                 <Option value="Thể thao">Thể thao</Option>
                                 <Option value="Hội thảo">Hội thảo</Option>
+                                <Option value="Tham quan, Trải nghiệm">Tham quan, Trải nghiệm</Option>
+                                <Option value="Sân khấu, Nghệ thuật">Sân khấu, Nghệ thuật</Option>
                                 <Option value="Khác">Khác</Option>
                             </Select>
                         </Form.Item>
@@ -74,7 +76,7 @@ const EventFormModal = ({ visible, onCancel, onOk, form, title, editingEvent, is
                     </Col>
                 </Row>
 
-                <Form.Item name="imageUrl" label="Link Ảnh Chính (URL)" rules={[{ required: true, message: 'Vui lòng nhập link ảnh!' }]}>
+                <Form.Item name="imageUrl" label="Link Ảnh Chính 1280x720 (URL)" rules={[{ required: true, message: 'Vui lòng nhập link ảnh!' }]}>
                     <Input />
                 </Form.Item>
 
@@ -156,6 +158,21 @@ const EventFormModal = ({ visible, onCancel, onOk, form, title, editingEvent, is
                 <Form.Item name="description" label="Mô Tả Sự Kiện">
                     <TextArea rows={4} />
                 </Form.Item>
+
+                {!isUser && (
+                    <Row gutter={16}>
+                        <Col span={12}>
+                            <Form.Item name="isSlider" label="Hiển thị trên Slider chính" valuePropName="checked">
+                                <Switch checkedChildren="Bật" unCheckedChildren="Tắt" />
+                            </Form.Item>
+                        </Col>
+                        <Col span={12}>
+                            <Form.Item name="isFeatured" label="Đánh dấu Sự Kiện Nổi Bật" valuePropName="checked">
+                                <Switch checkedChildren="Bật" unCheckedChildren="Tắt" />
+                            </Form.Item>
+                        </Col>
+                    </Row>
+                )}
 
                 {!editingEvent && (
                     <>
