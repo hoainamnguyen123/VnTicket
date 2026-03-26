@@ -2,6 +2,7 @@ import React from 'react';
 import { Typography, Button, Tag } from 'antd';
 import { CalendarOutlined, EnvironmentOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 const { Title } = Typography;
 
@@ -18,6 +19,7 @@ const formatCustomDate = (dateString) => {
 
 const HeroSlide = ({ event }) => {
     const navigate = useNavigate();
+    const { t } = useTranslation();
 
     return (
         <div style={{ position: 'relative', width: '100%', maxWidth: '1280px', aspectRatio: '16/9', margin: '0 auto', borderRadius: '16px', overflow: 'hidden' }}>
@@ -105,7 +107,7 @@ const HeroSlide = ({ event }) => {
                         }}
                         onClick={() => navigate(`/event/${event.id}`)}
                     >
-                        Mua vé ngay
+                        {t('common.buyNow')}
                     </Button>
                 </div>
             </div>

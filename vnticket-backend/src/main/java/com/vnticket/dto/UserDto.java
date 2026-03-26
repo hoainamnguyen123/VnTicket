@@ -1,6 +1,6 @@
 package com.vnticket.dto;
 
-import com.vnticket.entity.Role;
+import com.vnticket.enums.Role;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class UserDto {
+public class UserDTO {
     private Long id;
     private String username;
     private String fullName;

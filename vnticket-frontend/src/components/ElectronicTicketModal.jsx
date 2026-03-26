@@ -1,23 +1,28 @@
 import React from 'react';
 import { Modal, Carousel, Typography, Row, Col, Tag, Divider, Empty } from 'antd';
 import { QRCodeCanvas } from 'qrcode.react';
+import { useTranslation } from 'react-i18next';
 import { formatCurrency, formatDate } from '../utils/formatters';
+import { ThemeContext } from '../context/ThemeContext';
+import { useContext } from 'react';
 
 const { Title, Text } = Typography;
 
 const ElectronicTicketModal = ({ visible, onClose, tickets }) => {
+    const { t } = useTranslation();
+    const { isDark } = useContext(ThemeContext);
 
-    const renderTicket = (ticket) => (
+    const renderTicket = (ticket, index, totalLength) => (
         <div key={ticket.id} style={{ padding: '10px' }}>
             <div style={{
-                background: '#fff',
+                background: isDark ? '#1f1f1f' : '#fff',
                 borderRadius: '16px',
                 overflow: 'hidden',
-                boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
+                boxShadow: isDark ? '0 10px 30px rgba(0,0,0,0.4)' : '0 10px 30px rgba(0,0,0,0.1)',
                 display: 'flex',
                 flexDirection: 'column',
                 position: 'relative',
-                border: '1px solid #f0f0f0'
+                border: isDark ? '1px solid #434343' : '1px solid #f0f0f0'
             }}>
                 {/* Event Image Banner */}
                 <div style={{ height: '180px', width: '100%', position: 'relative' }}>
@@ -26,6 +31,21 @@ const ElectronicTicketModal = ({ visible, onClose, tickets }) => {
                         alt="Event"
                         style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                     />
+                    {totalLength > 1 && (
+                        <div style={{
+                            position: 'absolute',
+                            top: 16,
+                            left: 16,
+                            background: 'rgba(0,0,0,0.6)',
+                            color: 'white',
+                            padding: '4px 12px',
+                            borderRadius: '20px',
+                            fontWeight: 'bold',
+                            boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+                        }}>
+                            {t('eTicket.ticketOf', { current: index + 1, total: totalLength })}
+                        </div>
+                    )}
                     <div style={{
                         position: 'absolute',
                         top: 16,
@@ -37,7 +57,7 @@ const ElectronicTicketModal = ({ visible, onClose, tickets }) => {
                         fontWeight: 'bold',
                         boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
                     }}>
-                        {ticket.status === 'VALID' ? 'HỢP LỆ' : (ticket.status === 'USED' ? 'ĐÃ SỬ DỤNG' : 'ĐÃ HỦY')}
+                        {ticket.status === 'VALID' ? t('eTicket.valid') : (ticket.status === 'USED' ? t('eTicket.used') : t('eTicket.invalidStatus'))}
                     </div>
                 </div>
 
@@ -48,11 +68,11 @@ const ElectronicTicketModal = ({ visible, onClose, tickets }) => {
                     </Title>
                     <Row gutter={[16, 16]}>
                         <Col span={24}>
-                            <Text type="secondary">Thời gian:</Text><br />
-                            <Text strong>{ticket.startTime ? formatDate(ticket.startTime) : 'Chưa cập nhật'}</Text>
+                            <Text type="secondary">{t('eTicket.time')}</Text><br />
+                            <Text strong>{ticket.startTime ? formatDate(ticket.startTime) : t('common.notUpdated')}</Text>
                         </Col>
                         <Col span={24}>
-                            <Text type="secondary">Địa điểm:</Text><br />
+                            <Text type="secondary">{t('eTicket.location')}</Text><br />
                             <Text strong>{ticket.eventLocation}</Text>
                         </Col>
                     </Row>
@@ -61,27 +81,27 @@ const ElectronicTicketModal = ({ visible, onClose, tickets }) => {
                 {/* Divider with cutout effect */}
                 <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                     <div style={{
-                        width: '20px', height: '20px', borderRadius: '50%', background: '#fff',
-                        position: 'absolute', left: '-10px', boxShadow: 'inset -3px 0 5px rgba(0,0,0,0.05)',
-                        borderRight: '1px solid #f0f0f0', zIndex: 1
+                        width: '20px', height: '20px', borderRadius: '50%', background: isDark ? '#141414' : '#f0f2f5',
+                        position: 'absolute', left: '-10px', boxShadow: isDark ? 'inset -3px 0 5px rgba(0,0,0,0.5)' : 'inset -3px 0 5px rgba(0,0,0,0.05)',
+                        borderRight: isDark ? '1px solid #434343' : '1px solid #f0f0f0', zIndex: 1
                     }}></div>
-                    <Divider dashed style={{ margin: 0, borderColor: '#d9d9d9', flex: 1 }} />
+                    <Divider dashed style={{ margin: 0, borderColor: isDark ? '#434343' : '#d9d9d9', flex: 1 }} />
                     <div style={{
-                        width: '20px', height: '20px', borderRadius: '50%', background: '#fff',
-                        position: 'absolute', right: '-10px', boxShadow: 'inset 3px 0 5px rgba(0,0,0,0.05)',
-                        borderLeft: '1px solid #f0f0f0', zIndex: 1
+                        width: '20px', height: '20px', borderRadius: '50%', background: isDark ? '#141414' : '#f0f2f5',
+                        position: 'absolute', right: '-10px', boxShadow: isDark ? 'inset 3px 0 5px rgba(0,0,0,0.5)' : 'inset 3px 0 5px rgba(0,0,0,0.05)',
+                        borderLeft: isDark ? '1px solid #434343' : '1px solid #f0f0f0', zIndex: 1
                     }}></div>
                 </div>
 
                 {/* Ticket Details & QR */}
-                <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', alignItems: 'center', background: '#fafafa' }}>
+                <div style={{ padding: '24px', display: 'flex', flexDirection: 'column', alignItems: 'center', background: isDark ? '#262626' : '#fafafa' }}>
                     <Row gutter={16} style={{ width: '100%', marginBottom: '24px', textAlign: 'center' }}>
                         <Col span={12}>
-                            <Text type="secondary">Khu vực</Text><br />
+                            <Text type="secondary">{t('eTicket.zone')}</Text><br />
                             <Title level={5} style={{ margin: 0 }}>{ticket.zoneName}</Title>
                         </Col>
                         <Col span={12}>
-                            <Text type="secondary">Giá vé</Text><br />
+                            <Text type="secondary">{t('eTicket.ticketPrice')}</Text><br />
                             <Title level={5} style={{ margin: 0, color: '#f5222d' }}>{formatCurrency(ticket.price)}</Title>
                         </Col>
                     </Row>
@@ -89,7 +109,7 @@ const ElectronicTicketModal = ({ visible, onClose, tickets }) => {
                     {/* The magical QR Code */}
                     <div style={{
                         background: 'white', padding: '16px', borderRadius: '12px',
-                        border: '1px solid #f0f0f0', display: 'inline-block', marginBottom: '16px'
+                        border: isDark ? '1px solid #434343' : '1px solid #f0f0f0', display: 'inline-block', marginBottom: '16px'
                     }}>
                         <QRCodeCanvas
                             value={ticket.ticketCode}
@@ -101,7 +121,7 @@ const ElectronicTicketModal = ({ visible, onClose, tickets }) => {
                         />
                     </div>
 
-                    <Text type="secondary" style={{ fontSize: '12px' }}>Mã vé điện tử</Text>
+                    <Text type="secondary" style={{ fontSize: '12px' }}>{t('eTicket.eTicketCode')}</Text>
                     <Text strong style={{ fontSize: '18px', letterSpacing: '2px', fontFamily: 'monospace' }}>
                         {ticket.ticketCode}
                     </Text>
@@ -112,20 +132,44 @@ const ElectronicTicketModal = ({ visible, onClose, tickets }) => {
 
     return (
         <Modal
-            title={<span style={{ fontSize: '18px', fontWeight: 'bold' }}>Vé Điện Tử Của Bạn</span>}
+            title={<span style={{ fontSize: '18px', fontWeight: 'bold' }}>{t('eTicket.title')}</span>}
             open={visible}
             onCancel={onClose}
             footer={null}
             width={480}
             centered
-            bodyStyle={{ padding: '20px 0', background: '#f0f2f5' }}
+            bodyStyle={{ padding: '20px 0', background: isDark ? '#141414' : '#f0f2f5' }}
         >
             {tickets && tickets.length > 0 ? (
-                <Carousel autoplay={false} dots={true} effect="fade">
-                    {tickets.map(ticket => renderTicket(ticket))}
-                </Carousel>
+                <>
+                    <style>{`
+                        .ant-carousel .slick-prev,
+                        .ant-carousel .slick-next,
+                        .ant-carousel .slick-prev:hover,
+                        .ant-carousel .slick-next:hover {
+                            color: #1890ff !important;
+                            font-size: 20px !important;
+                            width: 30px;
+                            height: 30px;
+                            z-index: 2;
+                        }
+                        .ant-carousel .slick-prev {
+                            left: 10px;
+                        }
+                        .ant-carousel .slick-next {
+                            right: 10px;
+                        }
+                        .ant-carousel .slick-prev::before,
+                        .ant-carousel .slick-next::before {
+                            color: #1890ff !important;
+                        }
+                    `}</style>
+                    <Carousel arrows autoplay={false} dots={true} effect="fade">
+                        {tickets.map((ticket, index) => renderTicket(ticket, index, tickets.length))}
+                    </Carousel>
+                </>
             ) : (
-                <div style={{ padding: '40px' }}><Empty description="Không tìm thấy vé hợp lệ" /></div>
+                <div style={{ padding: '40px' }}><Empty description={t('eTicket.noValidTickets')} /></div>
             )}
         </Modal>
     );

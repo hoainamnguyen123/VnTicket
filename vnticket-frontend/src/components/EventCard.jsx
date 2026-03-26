@@ -3,12 +3,14 @@ import { Card, Tag, Button, Typography } from 'antd';
 import { CalendarOutlined, EnvironmentOutlined } from '@ant-design/icons';
 import { formatDate } from '../utils/formatters';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 const { Title, Text } = Typography;
 const { Meta } = Card;
 
 const EventCard = ({ event }) => {
     const navigate = useNavigate();
+    const { t } = useTranslation();
 
     return (
         <Card
@@ -28,7 +30,7 @@ const EventCard = ({ event }) => {
             }
             actions={[
                 <Button type="primary" size="large" onClick={(e) => { e.stopPropagation(); navigate(`/event/${event.id}`); }} style={{ width: '90%', borderRadius: '6px' }}>
-                    Mua vé ngay
+                    {t('common.buyNow')}
                 </Button>
             ]}
         >

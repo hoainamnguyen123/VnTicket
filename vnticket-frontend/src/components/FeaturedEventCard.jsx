@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { Typography } from 'antd';
 import { CalendarOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { ThemeContext } from '../context/ThemeContext';
 
 const { Title, Text } = Typography;
 
@@ -9,9 +11,12 @@ const formatCurrency = (amount) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
 };
 
-const formatCustomDate = (dateString) => {
+const formatCustomDate = (dateString, lang) => {
     if (!dateString) return '';
     const d = new Date(dateString);
+    if (lang === 'en') {
+        return d.toLocaleDateString('en-US', { day: '2-digit', month: 'long', year: 'numeric' });
+    }
     const day = d.getDate().toString().padStart(2, '0');
     const month = (d.getMonth() + 1).toString().padStart(2, '0');
     const year = d.getFullYear();
@@ -20,6 +25,8 @@ const formatCustomDate = (dateString) => {
 
 const FeaturedEventCard = ({ event }) => {
     const navigate = useNavigate();
+    const { t, i18n } = useTranslation();
+    const { isDark } = useContext(ThemeContext);
 
     // Tính giá thấp nhất nếu có ticketTypes
     let minPrice = 0;
@@ -35,8 +42,12 @@ const FeaturedEventCard = ({ event }) => {
                 display: 'flex', 
                 flexDirection: 'column', 
                 gap: '12px',
+                boxShadow: isDark ? 'none' : '0 4px 12px rgba(0,0,0,0.06)',
                 width: '100%',
-                transition: 'transform 0.2s',
+                transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+                background: isDark ? 'transparent' : '#fff',
+                borderRadius: '8px',
+                overflow: 'hidden',
             }}
             onMouseOver={(e) => {
                 e.currentTarget.querySelector('img').style.transform = 'scale(1.05)';
@@ -57,7 +68,7 @@ const FeaturedEventCard = ({ event }) => {
             </div>
             
             <Title level={5} style={{ 
-                color: '#1f1f1f', 
+                color: isDark ? '#e8e8e8' : '#1f1f1f', 
                 margin: 0, 
                 fontSize: '15px', 
                 lineHeight: '1.4', 
@@ -72,12 +83,12 @@ const FeaturedEventCard = ({ event }) => {
             </Title>
             
             <Text style={{ color: '#2ecc71', fontSize: '14px', fontWeight: 'bold' }}>
-                Từ {formatCurrency(minPrice || (event.price || 0))}
+                {t('common.from')} {formatCurrency(minPrice || (event.price || 0))}
             </Text>
             
             <div style={{ display: 'flex', alignItems: 'center', color: '#a0a0a0', fontSize: '13px' }}>
                 <CalendarOutlined style={{ marginRight: '6px' }} />
-                <span>{formatCustomDate(event.startTime)}</span>
+                <span>{formatCustomDate(event.startTime, i18n.language)}</span>
             </div>
         </div>
     );

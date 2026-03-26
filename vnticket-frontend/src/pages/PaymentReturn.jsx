@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Result, Button, Card, Typography, Descriptions, Spin, message } from 'antd';
 import { CheckCircleOutlined, CloseCircleOutlined, SyncOutlined } from '@ant-design/icons';
 import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { formatCurrency } from '../utils/formatters';
 import axiosClient from '../api/axiosClient';
 
@@ -13,15 +14,12 @@ const PaymentReturn = () => {
     const [paymentResult, setPaymentResult] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const { t } = useTranslation();
 
     useEffect(() => {
         const verifyPayment = async () => {
             try {
-                // Lấy tất cả params từ URL để gửi lên backend verify
                 const params = Object.fromEntries(searchParams.entries());
-
-                // Gọi backend để verify chữ ký và cập nhật DB
-                // axiosClient interceptor đã return response.data (ApiResponse)
                 const response = await axiosClient.get('/payment/vnpay-return', { params });
                 console.log("Verify response:", response);
 
@@ -45,7 +43,7 @@ const PaymentReturn = () => {
                 });
             } catch (err) {
                 console.error("Payment verification failed", err);
-                setError(err.message || "Không thể xác thực giao dịch.");
+                setError(err.message || t('payment.verifyError'));
 
                 setPaymentResult({
                     success: false,
@@ -61,14 +59,14 @@ const PaymentReturn = () => {
             verifyPayment();
         } else {
             setLoading(false);
-            setError("Thông tin thanh toán không hợp lệ.");
+            setError(t('payment.invalidInfo'));
         }
-    }, [searchParams]);
+    }, [searchParams, t]);
 
     if (loading) {
         return (
             <div style={{ textAlign: 'center', padding: '100px' }}>
-                <Spin indicator={<SyncOutlined spin />} size="large" tip="Đang xác thực giao dịch với VNPay..." />
+                <Spin indicator={<SyncOutlined spin />} size="large" tip={t('payment.verifying')} />
             </div>
         );
     }
@@ -79,35 +77,35 @@ const PaymentReturn = () => {
                 {paymentResult?.success ? (
                     <Result
                         icon={<CheckCircleOutlined style={{ color: '#52c41a' }} />}
-                        title="Thanh toán thành công!"
-                        subTitle={`Đơn hàng #${paymentResult.bookingId} đã được xác nhận và cập nhật vào hệ thống.`}
+                        title={t('payment.success')}
+                        subTitle={t('payment.successSub', { id: paymentResult.bookingId })}
                         extra={[
                             <Button type="primary" key="history" onClick={() => navigate('/history')}>
-                                Xem vé của tôi
+                                {t('payment.viewMyTickets')}
                             </Button>,
                             <Button key="home" onClick={() => navigate('/')}>
-                                Về trang chủ
+                                {t('payment.goHome')}
                             </Button>,
                         ]}
                     >
                         <Descriptions column={1} bordered size="small" style={{ marginTop: '16px' }}>
-                            <Descriptions.Item label="Mã đơn hàng">#{paymentResult.bookingId}</Descriptions.Item>
-                            <Descriptions.Item label="Số tiền">{formatCurrency(paymentResult.amount)}</Descriptions.Item>
-                            <Descriptions.Item label="Ngân hàng">{paymentResult.bankCode}</Descriptions.Item>
-                            <Descriptions.Item label="Mã giao dịch VNPay">{paymentResult.transactionNo}</Descriptions.Item>
+                            <Descriptions.Item label={t('payment.orderId')}>#{paymentResult.bookingId}</Descriptions.Item>
+                            <Descriptions.Item label={t('payment.amount')}>{formatCurrency(paymentResult.amount)}</Descriptions.Item>
+                            <Descriptions.Item label={t('payment.bank')}>{paymentResult.bankCode}</Descriptions.Item>
+                            <Descriptions.Item label={t('payment.transactionNo')}>{paymentResult.transactionNo}</Descriptions.Item>
                         </Descriptions>
                     </Result>
                 ) : (
                     <Result
                         icon={<CloseCircleOutlined style={{ color: '#ff4d4f' }} />}
-                        title="Thanh toán không thành công"
-                        subTitle={error || `Giao dịch cho đơn hàng #${paymentResult?.bookingId} bị từ chối hoặc có lỗi xảy ra.`}
+                        title={t('payment.failed')}
+                        subTitle={error || t('payment.failedSub', { id: paymentResult?.bookingId })}
                         extra={[
                             <Button type="primary" key="history" onClick={() => navigate('/history')}>
-                                Thử lại từ lịch sử
+                                {t('payment.retryFromHistory')}
                             </Button>,
                             <Button key="home" onClick={() => navigate('/')}>
-                                Về trang chủ
+                                {t('payment.goHome')}
                             </Button>,
                         ]}
                     />

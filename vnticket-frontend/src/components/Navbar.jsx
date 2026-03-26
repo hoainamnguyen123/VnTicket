@@ -1,9 +1,13 @@
-import React, { useContext, useState } from 'react';
-import { Layout, Menu, Button, Dropdown, Form, message, Drawer, Grid } from 'antd';
+import React, { useContext, useState, useEffect } from 'react';
+import { Layout, Menu, Button, Dropdown, Form, message, Drawer, Grid, Badge } from 'antd';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
+import { ThemeContext } from '../context/ThemeContext';
 import { UserOutlined, LogoutOutlined, HistoryOutlined, PlusOutlined, MenuOutlined, TagsOutlined } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
 import EventFormModal from './EventFormModal';
+import LanguageSwitcher from './LanguageSwitcher';
+import DarkModeToggle from './DarkModeToggle';
 import axiosClient from '../api/axiosClient';
 
 const { Header } = Layout;
@@ -11,8 +15,10 @@ const { useBreakpoint } = Grid;
 
 const Navbar = () => {
     const { user, logout } = useContext(AuthContext);
+    const { isDark } = useContext(ThemeContext);
     const navigate = useNavigate();
     const location = useLocation();
+    const { t } = useTranslation();
 
     const handleLogout = () => {
         logout();
@@ -23,13 +29,13 @@ const Navbar = () => {
         {
             key: 'profile',
             icon: <UserOutlined />,
-            label: 'Hồ sơ cá nhân',
+            label: t('navbar.profile'),
             onClick: () => navigate('/profile'),
         },
         {
             key: 'my-tickets',
             icon: <TagsOutlined />,
-            label: 'Vé của tôi',
+            label: t('navbar.myTickets'),
             onClick: () => navigate('/history'),
         },
         {
@@ -38,7 +44,7 @@ const Navbar = () => {
         {
             key: 'logout',
             icon: <LogoutOutlined />,
-            label: 'Đăng xuất',
+            label: t('navbar.logout'),
             danger: true,
             onClick: handleLogout,
         },
@@ -47,8 +53,28 @@ const Navbar = () => {
     const [isEventModalVisible, setIsEventModalVisible] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [eventForm] = Form.useForm();
+    const [pendingCount, setPendingCount] = useState(0);
     const screens = useBreakpoint();
     const isMobile = !screens.md;
+
+    useEffect(() => {
+        if (user?.role === 'ROLE_ADMIN') {
+            const fetchPendingCount = async () => {
+                try {
+                    const res = await axiosClient.get(`/admin/events?page=0&size=1000`);
+                    const count = res.data.content ? res.data.content.filter(e => e.status === 'PENDING').length : 0;
+                    setPendingCount(count);
+                } catch (error) {
+                    console.error("Failed to fetch pending events count");
+                }
+            };
+            fetchPendingCount();
+
+            const handleStatusChange = () => fetchPendingCount();
+            window.addEventListener('event-status-updated', handleStatusChange);
+            return () => window.removeEventListener('event-status-updated', handleStatusChange);
+        }
+    }, [user]);
 
     const handleCreateEvent = async () => {
         try {
@@ -66,10 +92,8 @@ const Navbar = () => {
             delete eventData.ward;
             delete eventData.detailAddress;
 
-            console.log("Dữ liệu gửi lên API Navbar:", eventData);
-
             await axiosClient.post('/events/my', eventData);
-            message.success('Đã gửi yêu cầu tạo sự kiện thành công! Vui lòng chờ duyệt.');
+            message.success(t('navbar.createEventSuccess'));
             setIsEventModalVisible(false);
             eventForm.resetFields();
             if (location.pathname !== '/profile') {
@@ -78,7 +102,7 @@ const Navbar = () => {
                 window.location.reload();
             }
         } catch (error) {
-            if (!error.errorFields) message.error(error.response?.data?.message || 'Có lỗi xảy ra khi tạo sự kiện!');
+            if (!error.errorFields) message.error(error.response?.data?.message || t('navbar.createEventError'));
         }
     };
 
@@ -86,15 +110,16 @@ const Navbar = () => {
         <Header style={{
             display: 'flex',
             alignItems: 'center',
-            background: 'rgba(255, 255, 255, 0.95)',
+            background: isDark ? 'rgba(31, 31, 31, 0.95)' : 'rgba(255, 255, 255, 0.95)',
             backdropFilter: 'blur(10px)',
             padding: isMobile ? '0 16px' : '0 50px',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.06)',
+            boxShadow: isDark ? '0 4px 12px rgba(0,0,0,0.3)' : '0 4px 12px rgba(0,0,0,0.06)',
             position: 'sticky',
             top: 0,
             zIndex: 1000,
             height: '70px',
-            borderBottom: '1px solid #f0f0f0'
+            borderBottom: isDark ? '1px solid #303030' : '1px solid #f0f0f0',
+            transition: 'all 0.3s ease',
         }}>
             <div
                 className="logo"
@@ -140,7 +165,7 @@ const Navbar = () => {
                     alignItems: 'center',
                     fontFamily: `'Inter', system-ui, -apple-system, sans-serif`
                 }}>
-                    <span style={{ color: '#1f1f1f' }}>
+                    <span style={{ color: isDark ? '#e8e8e8' : '#1f1f1f' }}>
                         TICKET
                     </span>
                     <span 
@@ -172,21 +197,28 @@ const Navbar = () => {
                         }}
                     >
                         <Menu.Item key="/" style={{ padding: '0 20px' }}>
-                            <Link to="/">Trang Chủ</Link>
+                            <Link to="/">{t('navbar.home')}</Link>
                         </Menu.Item>
                         {user && (
                             <Menu.Item key="/history" style={{ padding: '0 20px' }}>
-                                <Link to="/history">🎟️ Vé của tôi</Link>
+                                <Link to="/history">🎟️ {t('navbar.myTickets')}</Link>
                             </Menu.Item>
                         )}
                         {user?.role === 'ROLE_ADMIN' && (
                             <Menu.Item key="/admin" style={{ padding: '0 20px' }}>
-                                <Link to="/admin">🕹️ Quản lý Hệ thống</Link>
+                                <Link to="/admin">
+                                    <Badge count={pendingCount} offset={[10, 0]} size="small">
+                                        🕹️ {t('navbar.systemManagement')}
+                                        <span style={{ paddingRight: 8 }}></span>
+                                    </Badge>
+                                </Link>
                             </Menu.Item>
                         )}
                     </Menu>
 
-                    <div className="auth-actions" style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                    <div className="auth-actions" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <DarkModeToggle />
+                        <LanguageSwitcher />
                         {user ? (
                             <>
                                 <Button
@@ -196,7 +228,7 @@ const Navbar = () => {
                                     onClick={() => setIsEventModalVisible(true)}
                                     style={{ padding: '0 24px', fontWeight: 500, boxShadow: '0 4px 10px rgba(24, 144, 255, 0.3)' }}
                                 >
-                                    Tạo sự kiện
+                                    {t('navbar.createEvent')}
                                 </Button>
                                 <Dropdown menu={{ items: userMenuItems }} placement="bottomRight" trigger={['click']}>
                                     <Button
@@ -208,8 +240,9 @@ const Navbar = () => {
                                             padding: '6px 16px',
                                             height: 'auto',
                                             borderRadius: '20px',
-                                            background: '#f5f5f5',
-                                            fontWeight: 500
+                                            background: isDark ? '#303030' : '#f5f5f5',
+                                            fontWeight: 500,
+                                            color: isDark ? '#e8e8e8' : undefined,
                                         }}
                                     >
                                         <div style={{
@@ -230,7 +263,7 @@ const Navbar = () => {
                                     onClick={() => navigate('/login')}
                                     style={{ fontWeight: 500, padding: '0 24px' }}
                                 >
-                                    Đăng nhập
+                                    {t('navbar.login')}
                                 </Button>
                                 <Button
                                     type="primary"
@@ -238,22 +271,26 @@ const Navbar = () => {
                                     onClick={() => navigate('/register')}
                                     style={{ fontWeight: 500, padding: '0 24px', boxShadow: '0 4px 10px rgba(24, 144, 255, 0.3)' }}
                                 >
-                                    Đăng ký
+                                    {t('navbar.register')}
                                 </Button>
                             </div>
                         )}
                     </div>
                 </>
             ) : (
-                <Button
-                    type="text"
-                    icon={<MenuOutlined style={{ fontSize: '20px' }} />}
-                    onClick={() => setMobileMenuOpen(true)}
-                />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <DarkModeToggle />
+                    <LanguageSwitcher />
+                    <Button
+                        type="text"
+                        icon={<MenuOutlined style={{ fontSize: '20px', color: isDark ? '#e8e8e8' : undefined }} />}
+                        onClick={() => setMobileMenuOpen(true)}
+                    />
+                </div>
             )}
 
             <Drawer
-                title="Menu"
+                title={t('navbar.menu')}
                 placement="right"
                 onClose={() => setMobileMenuOpen(false)}
                 open={mobileMenuOpen}
@@ -262,7 +299,7 @@ const Navbar = () => {
             >
                 <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px', flex: 1, overflowY: 'auto' }}>
                     {user && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', paddingBottom: '16px', borderBottom: '1px solid #f0f0f0' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', paddingBottom: '16px', borderBottom: `1px solid ${isDark ? '#303030' : '#f0f0f0'}` }}>
                             <div style={{
                                 width: '40px', height: '40px', borderRadius: '50%', background: '#1890ff',
                                 color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px'
@@ -271,47 +308,50 @@ const Navbar = () => {
                             </div>
                             <div>
                                 <div style={{ fontWeight: 'bold' }}>{user.username}</div>
-                                <div style={{ fontSize: '12px', color: '#888' }}>{user.role === 'ROLE_ADMIN' ? 'Quản trị viên' : 'Thành viên'}</div>
+                                <div style={{ fontSize: '12px', color: '#888' }}>{user.role === 'ROLE_ADMIN' ? t('navbar.admin') : t('navbar.member')}</div>
                             </div>
                         </div>
                     )}
 
                     <Button type="text" block style={{ textAlign: 'left', height: 'auto', padding: '10px 15px' }} onClick={() => { navigate('/'); setMobileMenuOpen(false); }}>
-                        Trang Chủ
+                        {t('navbar.home')}
                     </Button>
 
                     {user?.role === 'ROLE_ADMIN' && (
                         <Button type="text" block style={{ textAlign: 'left', height: 'auto', padding: '10px 15px' }} onClick={() => { navigate('/admin'); setMobileMenuOpen(false); }}>
-                            🕹️ Quản lý Hệ thống
+                            <Badge count={pendingCount} offset={[10, 0]} size="small">
+                                🕹️ {t('navbar.systemManagement')}
+                                <span style={{ paddingRight: 10 }}></span>
+                            </Badge>
                         </Button>
                     )}
 
                     {user && (
                         <>
                             <Button type="text" block style={{ textAlign: 'left', height: 'auto', padding: '10px 15px' }} onClick={() => { navigate('/history'); setMobileMenuOpen(false); }}>
-                                🎟️ Vé của tôi
+                                🎟️ {t('navbar.myTickets')}
                             </Button>
                             <Button type="text" block style={{ textAlign: 'left', height: 'auto', padding: '10px 15px' }} onClick={() => { navigate('/profile'); setMobileMenuOpen(false); }}>
-                                👤 Hồ sơ cá nhân
+                                👤 {t('navbar.profile')}
                             </Button>
                         </>
                     )}
                 </div>
 
-                <div style={{ padding: '20px', borderTop: '1px solid #f0f0f0', background: '#fff', marginTop: 'auto' }}>
+                <div style={{ padding: '20px', borderTop: `1px solid ${isDark ? '#303030' : '#f0f0f0'}`, marginTop: 'auto' }}>
                     {user ? (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                             <Button type="primary" block size="large" icon={<PlusOutlined />} onClick={() => { setMobileMenuOpen(false); setIsEventModalVisible(true); }}>
-                                Tạo sự kiện
+                                {t('navbar.createEvent')}
                             </Button>
                             <Button danger block size="large" icon={<LogoutOutlined />} onClick={() => { handleLogout(); setMobileMenuOpen(false); }}>
-                                Đăng xuất
+                                {t('navbar.logout')}
                             </Button>
                         </div>
                     ) : (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                            <Button block size="large" onClick={() => { navigate('/login'); setMobileMenuOpen(false); }}>Đăng nhập</Button>
-                            <Button type="primary" block size="large" onClick={() => { navigate('/register'); setMobileMenuOpen(false); }}>Đăng ký</Button>
+                            <Button block size="large" onClick={() => { navigate('/login'); setMobileMenuOpen(false); }}>{t('navbar.login')}</Button>
+                            <Button type="primary" block size="large" onClick={() => { navigate('/register'); setMobileMenuOpen(false); }}>{t('navbar.register')}</Button>
                         </div>
                     )}
                 </div>
@@ -322,7 +362,7 @@ const Navbar = () => {
                 onCancel={() => setIsEventModalVisible(false)}
                 onOk={handleCreateEvent}
                 form={eventForm}
-                title="Tạo Sự Kiện Mới"
+                title={t('navbar.createEventTitle')}
                 editingEvent={false}
                 isUser={true}
             />

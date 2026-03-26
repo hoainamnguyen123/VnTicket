@@ -1,6 +1,6 @@
 package com.vnticket.dto;
 
-import com.vnticket.entity.TicketStatus;
+import com.vnticket.enums.TicketStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -12,7 +12,7 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class TicketDto {
+public class TicketDTO {
     private Long id;
     private String ticketCode;
     private TicketStatus status;

@@ -6,6 +6,18 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background-color: #f0f2f5;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Dark mode body */
+html[data-theme="dark"] body {
+  background-color: #0a0a0a !important;
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+html[data-theme="dark"] {
+  background-color: #0a0a0a;
+  color-scheme: dark;
 }
 
 code {
@@ -18,6 +30,10 @@ code {
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.1) !important;
   transform: translateY(-5px);
   transition: all 0.3s ease;
+}
+
+html[data-theme="dark"] .ant-card-hoverable:hover {
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.4) !important;
 }
 
 .auth-actions .ant-btn {
@@ -61,9 +77,17 @@ code {
 }
 
 @keyframes logo-pulse {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.02); }
-  100% { transform: scale(1); }
+  0% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.02);
+  }
+
+  100% {
+    transform: scale(1);
+  }
 }
 
 .logo:active {
@@ -87,4 +111,370 @@ code {
   .app-footer {
     padding: 40px 20px 0 20px !important;
   }
+}
+
+/* ═══════════════════════════════════
+   DARK MODE OVERRIDES
+   ═══════════════════════════════════ */
+
+/* Ant Layout & Content */
+html[data-theme="dark"] .ant-layout {
+  background: #0a0a0a !important;
+}
+
+html[data-theme="dark"] .ant-layout-content {
+  background: #0a0a0a !important;
+}
+
+/* Menu */
+html[data-theme="dark"] .ant-menu-horizontal {
+  border-bottom: none !important;
+}
+
+html[data-theme="dark"] .ant-menu {
+  background: transparent !important;
+}
+
+html[data-theme="dark"] .ant-menu-item a,
+html[data-theme="dark"] .ant-menu-item .ant-menu-title-content {
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+html[data-theme="dark"] .ant-menu-item-selected a,
+html[data-theme="dark"] .ant-menu-item-selected .ant-menu-title-content {
+  color: #1890ff !important;
+}
+
+/* Table */
+html[data-theme="dark"] .ant-table {
+  background: #1f1f1f !important;
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+html[data-theme="dark"] .ant-table-thead > tr > th {
+  background: #262626 !important;
+  color: rgba(255, 255, 255, 0.85) !important;
+  border-bottom: 1px solid #303030 !important;
+}
+
+html[data-theme="dark"] .ant-table-tbody > tr > td {
+  border-bottom: 1px solid #303030 !important;
+}
+
+html[data-theme="dark"] .ant-table-tbody > tr:hover > td {
+  background: #262626 !important;
+}
+
+/* Card */
+html[data-theme="dark"] .ant-card {
+  background: #1f1f1f !important;
+  border-color: #303030 !important;
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+html[data-theme="dark"] .ant-card-head {
+  border-bottom-color: #303030 !important;
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+/* Modal */
+html[data-theme="dark"] .ant-modal-content {
+  background: #1f1f1f !important;
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+html[data-theme="dark"] .ant-modal-header {
+  background: #1f1f1f !important;
+  border-bottom-color: #303030 !important;
+}
+
+html[data-theme="dark"] .ant-modal-title {
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+/* Drawer */
+html[data-theme="dark"] .ant-drawer-content {
+  background: #1f1f1f !important;
+}
+
+html[data-theme="dark"] .ant-drawer-header {
+  border-bottom-color: #303030 !important;
+}
+
+/* Descriptions */
+html[data-theme="dark"] .ant-descriptions-bordered .ant-descriptions-item-label {
+  background: #262626 !important;
+}
+
+/* Typography */
+html[data-theme="dark"] .ant-typography {
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+html[data-theme="dark"] .ant-typography.ant-typography-secondary {
+  color: rgba(255, 255, 255, 0.45) !important;
+}
+
+html[data-theme="dark"] h1, html[data-theme="dark"] h2,
+html[data-theme="dark"] h3, html[data-theme="dark"] h4,
+html[data-theme="dark"] h5, html[data-theme="dark"] h6 {
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+html[data-theme="dark"] p, html[data-theme="dark"] span,
+html[data-theme="dark"] div, html[data-theme="dark"] label {
+  color: inherit;
+}
+
+/* Input & Select */
+html[data-theme="dark"] .ant-input,
+html[data-theme="dark"] .ant-input-affix-wrapper,
+html[data-theme="dark"] .ant-select-selector {
+  background: #262626 !important;
+  border-color: #434343 !important;
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+html[data-theme="dark"] .ant-input::placeholder {
+  color: rgba(255, 255, 255, 0.3) !important;
+}
+
+/* Pagination - comprehensive overrides */
+html[data-theme="dark"] .ant-pagination {
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+html[data-theme="dark"] .ant-pagination-item {
+  background: #1a1a1a !important;
+  border-color: #434343 !important;
+}
+
+html[data-theme="dark"] .ant-pagination-item a {
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+html[data-theme="dark"] .ant-pagination-item-active {
+  background: #1890ff !important;
+  border-color: #1890ff !important;
+}
+
+html[data-theme="dark"] .ant-pagination-item-active a {
+  color: #fff !important;
+}
+
+html[data-theme="dark"] .recharts-tooltip-item {
+  color: #fff !important;
+}
+
+/* Imperative modals (Modal.success, Modal.error) outside ConfigProvider */
+html[data-theme="dark"] .ant-modal-content {
+  background-color: #1f1f1f !important;
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+html[data-theme="dark"] .ant-modal-confirm-body .ant-modal-confirm-title {
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+html[data-theme="dark"] .ant-modal-confirm-body .ant-modal-confirm-content {
+  color: rgba(255, 255, 255, 0.65) !important;
+}
+
+html[data-theme="dark"] .ant-modal-close {
+  color: rgba(255, 255, 255, 0.45) !important;
+}
+
+html[data-theme="dark"] .ant-modal-close:hover {
+  color: rgba(255, 255, 255, 0.85) !important;
+  background-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Button variants in imperative modals */
+html[data-theme="dark"] .ant-modal-confirm-btns .ant-btn-default {
+  background: transparent !important;
+  border-color: #434343 !important;
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+html[data-theme="dark"] .ant-modal-confirm-btns .ant-btn-default:hover {
+  color: #4096ff !important;
+  border-color: #4096ff !important;
+}
+
+html[data-theme="dark"] .ant-pagination-prev .ant-pagination-item-link,
+html[data-theme="dark"] .ant-pagination-next .ant-pagination-item-link {
+  background: #1a1a1a !important;
+  border-color: #434343 !important;
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+html[data-theme="dark"] .ant-pagination-disabled .ant-pagination-item-link {
+  color: rgba(255, 255, 255, 0.25) !important;
+}
+
+html[data-theme="dark"] .ant-pagination-options {
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+html[data-theme="dark"] .ant-pagination-options .ant-select-selector {
+  background: #1a1a1a !important;
+  border-color: #434343 !important;
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+html[data-theme="dark"] .ant-pagination-total-text {
+  color: rgba(255, 255, 255, 0.65) !important;
+}
+
+/* Message alerts (imperatively called, outside ConfigProvider) */
+html[data-theme="dark"] .ant-message-notice-content {
+  background: #1f1f1f !important;
+  color: rgba(255, 255, 255, 0.85) !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5) !important;
+}
+
+html[data-theme="dark"] .ant-message-success .anticon {
+  color: #52c41a !important;
+}
+
+html[data-theme="dark"] .ant-message-error .anticon {
+  color: #ff4d4f !important;
+}
+
+html[data-theme="dark"] .ant-message-warning .anticon {
+  color: #faad14 !important;
+}
+
+html[data-theme="dark"] .ant-message-info .anticon {
+  color: #1890ff !important;
+}
+
+/* Table pagination wrapper */
+html[data-theme="dark"] .ant-table-pagination {
+  background: transparent !important;
+}
+
+html[data-theme="dark"] .ant-table-wrapper .ant-pagination {
+  background: transparent !important;
+}
+
+/* Fix for History Desktop Table inline background */
+html[data-theme="dark"] table.ant-table-content, 
+html[data-theme="dark"] .ant-table-container,
+html[data-theme="dark"] .ant-table {
+  background: #1f1f1f !important;
+}
+
+/* Custom CSS filter trick to invert the Google Sign in button white background but keep the G logo colors */
+html[data-theme="dark"] .google-btn-wrapper {
+  color-scheme: light !important; /* Force light scheme rendering inside */
+  border-radius: 4px;
+}
+html[data-theme="dark"] .google-btn-wrapper iframe {
+  filter: invert(1) hue-rotate(180deg) !important;
+}
+
+/* Tabs */
+html[data-theme="dark"] .ant-tabs-tab {
+  color: rgba(255, 255, 255, 0.65) !important;
+}
+
+html[data-theme="dark"] .ant-tabs-tab-active .ant-tabs-tab-btn {
+  color: #1890ff !important;
+}
+
+/* Empty */
+html[data-theme="dark"] .ant-empty-description {
+  color: rgba(255, 255, 255, 0.45) !important;
+}
+
+/* Skeleton */
+html[data-theme="dark"] .ant-skeleton-content .ant-skeleton-title,
+html[data-theme="dark"] .ant-skeleton-content .ant-skeleton-paragraph > li {
+  background: linear-gradient(90deg, #262626 25%, #303030 37%, #262626 63%) !important;
+}
+
+/* Tag */
+html[data-theme="dark"] .ant-tag {
+  border-color: #434343;
+}
+
+/* Divider */
+html[data-theme="dark"] .ant-divider {
+  border-color: #303030 !important;
+}
+
+/* Form labels */
+html[data-theme="dark"] .ant-form-item-label > label {
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+/* Button defaults */
+html[data-theme="dark"] .ant-btn-default {
+  background: #262626 !important;
+  border-color: #434343 !important;
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+html[data-theme="dark"] .ant-btn-default:hover {
+  border-color: #1890ff !important;
+  color: #1890ff !important;
+}
+
+html[data-theme="dark"] .ant-btn-text {
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+html[data-theme="dark"] .ant-btn-text:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Select dropdown */
+html[data-theme="dark"] .ant-select-dropdown {
+  background: #1f1f1f !important;
+}
+
+html[data-theme="dark"] .ant-select-item {
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+html[data-theme="dark"] .ant-select-item-option-active:not(.ant-select-item-option-disabled) {
+  background: #262626 !important;
+}
+
+/* Dropdown menu */
+html[data-theme="dark"] .ant-dropdown-menu {
+  background: #1f1f1f !important;
+}
+
+html[data-theme="dark"] .ant-dropdown-menu-item {
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+html[data-theme="dark"] .ant-dropdown-menu-item:hover {
+  background: #262626 !important;
+}
+
+/* Tooltip & Popover */
+html[data-theme="dark"] .ant-tooltip-inner {
+  background: #303030 !important;
+}
+
+/* Switch */
+html[data-theme="dark"] .ant-switch {
+  background: #434343;
+}
+
+/* Statistic */
+html[data-theme="dark"] .ant-statistic-title {
+  color: rgba(255, 255, 255, 0.45) !important;
+}
+
+html[data-theme="dark"] .ant-statistic-content {
+  color: rgba(255, 255, 255, 0.85) !important;
+}
+
+/* Smooth transition for dark mode - only bg/border, NOT all properties */
+.ant-layout, .ant-layout-content, .ant-card, .ant-table, .ant-modal-content,
+.ant-drawer-content, .ant-input, .ant-select-selector, .ant-btn {
+  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease !important;
 }

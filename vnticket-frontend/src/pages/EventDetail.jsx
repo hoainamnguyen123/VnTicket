@@ -2,6 +2,8 @@ import React, { useState, useEffect, useContext } from 'react';
 import { Row, Col, Typography, Card, Button, InputNumber, Divider, Table, Tag, message, Skeleton, Modal, Switch, Image } from 'antd';
 import { useParams, useNavigate } from 'react-router-dom';
 import { CalendarOutlined, EnvironmentOutlined, CheckCircleOutlined, ExclamationCircleOutlined, UserOutlined } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
+import { ThemeContext } from '../context/ThemeContext';
 import axiosClient from '../api/axiosClient';
 import { formatCurrency, formatDate } from '../utils/formatters';
 import { AuthContext } from '../context/AuthContext';
@@ -12,6 +14,8 @@ const EventDetail = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const { user } = useContext(AuthContext);
+    const { t } = useTranslation();
+    const { isDark } = useContext(ThemeContext);
 
     const [event, setEvent] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -26,7 +30,7 @@ const EventDetail = () => {
                 const response = await axiosClient.get(`/events/${id}`);
                 setEvent(response.data);
             } catch (error) {
-                message.error('Không thể tải chi tiết sự kiện!');
+                message.error(t('eventDetail.loadError'));
             } finally {
                 setLoading(false);
             }
@@ -36,13 +40,13 @@ const EventDetail = () => {
 
     const handleBookTicket = async () => {
         if (!user) {
-            message.warning('Vui lòng đăng nhập để đặt vé!');
+            message.warning(t('eventDetail.loginRequired'));
             navigate('/login');
             return;
         }
 
         if (!selectedTicket) {
-            message.warning('Vui lòng chọn loại vé!');
+            message.warning(t('eventDetail.selectTicket'));
             return;
         }
 
@@ -55,18 +59,18 @@ const EventDetail = () => {
             });
 
             Modal.success({
-                title: 'Đặt vé thành công!',
-                content: 'Bạn có thể xem lại thông tin vé trong phần Lịch sử đặt vé.',
+                title: t('eventDetail.bookingSuccess'),
+                content: t('eventDetail.bookingSuccessContent'),
                 onOk: () => navigate('/history')
             });
         } catch (error) {
-            message.error(error.message || 'Có lỗi xảy ra khi đặt vé!');
+            message.error(error.message || t('eventDetail.bookingError'));
 
             // If Optimistic Locking Exception
             if (error.status === 409) {
                 Modal.error({
-                    title: 'Vé đã thay đổi',
-                    content: 'Số lượng vé cho khu vực này vừa được cập nhật bởi người khác. Vui lòng tải lại trang.',
+                    title: t('eventDetail.ticketChanged'),
+                    content: t('eventDetail.ticketChangedContent'),
                     onOk: () => window.location.reload()
                 });
             }
@@ -76,15 +80,15 @@ const EventDetail = () => {
     };
 
     const columns = [
-        { title: 'Khu vực', dataIndex: 'zoneName', key: 'zoneName', render: text => <strong style={{ color: '#1890ff' }}>{text}</strong> },
-        { title: 'Giá vé', dataIndex: 'price', key: 'price', render: price => <strong>{formatCurrency(price)}</strong> },
+        { title: t('eventDetail.zone'), dataIndex: 'zoneName', key: 'zoneName', render: text => <strong style={{ color: '#1890ff' }}>{text}</strong> },
+        { title: t('eventDetail.ticketPrice'), dataIndex: 'price', key: 'price', render: price => <strong>{formatCurrency(price)}</strong> },
         {
-            title: 'Còn lại', dataIndex: 'remainingQuantity', key: 'remainingQuantity', render: qty => (
-                <Tag color={qty > 0 ? 'green' : 'red'}>{qty > 0 ? `${qty} vé` : 'Hết vé'}</Tag>
+            title: t('eventDetail.remaining'), dataIndex: 'remainingQuantity', key: 'remainingQuantity', render: qty => (
+                <Tag color={qty > 0 ? 'green' : 'red'}>{qty > 0 ? `${qty} ${t('common.tickets')}` : t('common.soldOut')}</Tag>
             )
         },
         {
-            title: 'Chọn',
+            title: t('eventDetail.select'),
             key: 'action',
             render: (_, record) => (
                 <Switch
@@ -97,7 +101,7 @@ const EventDetail = () => {
     ];
 
     if (loading) return <Skeleton active paragraph={{ rows: 10 }} />;
-    if (!event) return <div style={{ textAlign: 'center', marginTop: 50 }}>Không tìm thấy sự kiện!</div>;
+    if (!event) return <div style={{ textAlign: 'center', marginTop: 50 }}>{t('eventDetail.notFound')}</div>;
 
     return (
         <div>
@@ -111,15 +115,15 @@ const EventDetail = () => {
                                 style={{ width: '100%', display: 'block', objectFit: 'cover' }}
                             />
                             {event.additionalImages && event.additionalImages.length > 0 && (
-                                <div style={{ display: 'flex', gap: '8px', padding: '8px', overflowX: 'auto', background: '#f0f2f5' }}>
+                                <div style={{ display: 'flex', gap: '8px', padding: '8px', overflowX: 'auto', background: isDark ? '#141414' : '#f0f2f5' }}>
                                     {event.additionalImages.map((imgUrl, index) => (
                                         <Image
                                             key={index}
                                             src={imgUrl}
-                                            alt={`Ảnh phụ ${index + 1}`}
+                                            alt={`${t('eventDetail.additionalImage')} ${index + 1}`}
                                             width={80}
                                             height={60}
-                                            style={{ objectFit: 'cover', borderRadius: '4px', cursor: 'pointer', border: '1px solid #d9d9d9' }}
+                                            style={{ objectFit: 'cover', borderRadius: '4px', cursor: 'pointer', border: isDark ? '1px solid #434343' : '1px solid #d9d9d9' }}
                                         />
                                     ))}
                                 </div>
@@ -134,12 +138,12 @@ const EventDetail = () => {
                     <Title level={2} style={{ marginTop: 0 }}>{event.name}</Title>
 
                     <div style={{ margin: '20px 0', display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '16px' }}>
-                        <Text><CalendarOutlined style={{ color: '#1890ff', marginRight: 10 }} /> <strong>Thời gian:</strong> {formatDate(event.startTime)}</Text>
-                        <Text><UserOutlined style={{ color: '#1890ff', marginRight: 10 }} /> <strong>Ban tổ chức:</strong> {event.organizerName || 'Chưa cập nhật'}</Text>
-                        <Text><EnvironmentOutlined style={{ color: '#1890ff', marginRight: 10 }} /> <strong>Địa điểm:</strong> {event.location || 'Chưa cập nhật'}</Text>
+                        <Text><CalendarOutlined style={{ color: '#1890ff', marginRight: 10 }} /> <strong>{t('eventDetail.time')}</strong> {formatDate(event.startTime)}</Text>
+                        <Text><UserOutlined style={{ color: '#1890ff', marginRight: 10 }} /> <strong>{t('eventDetail.organizer')}</strong> {event.organizerName || t('common.notUpdated')}</Text>
+                        <Text><EnvironmentOutlined style={{ color: '#1890ff', marginRight: 10 }} /> <strong>{t('eventDetail.location')}</strong> {event.location || t('common.notUpdated')}</Text>
                     </div>
 
-                    <Card title="Chọn loại vé" bordered={false} style={{ background: '#f9f9f9', borderRadius: '12px' }}>
+                    <Card title={t('eventDetail.selectTicketType')} bordered={false} style={{ background: isDark ? '#262626' : '#f9f9f9', borderRadius: '12px' }}>
                         <Table
                             dataSource={event.ticketTypes}
                             columns={columns}
@@ -153,7 +157,7 @@ const EventDetail = () => {
 
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <div>
-                                <Text strong>Số lượng: </Text>
+                                <Text strong>{t('eventDetail.quantity')} </Text>
                                 <InputNumber
                                     min={1}
                                     max={selectedTicket ? selectedTicket.remainingQuantity : 10}
@@ -163,7 +167,7 @@ const EventDetail = () => {
                                 />
                             </div>
                             <div>
-                                <Text type="secondary" style={{ fontSize: '14px' }}>Tổng tiền: </Text>
+                                <Text type="secondary" style={{ fontSize: '14px' }}>{t('eventDetail.total')} </Text>
                                 <Title level={3} style={{ margin: 0, color: '#f5222d' }}>
                                     {selectedTicket ? formatCurrency(selectedTicket.price * quantity) : '0 ₫'}
                                 </Title>
@@ -179,13 +183,13 @@ const EventDetail = () => {
                             loading={bookingLoading}
                             disabled={!selectedTicket}
                         >
-                            ĐẶT VÉ NGAY
+                            {t('eventDetail.bookNow')}
                         </Button>
                     </Card>
                 </Col>
             </Row>
 
-            <Divider orientation="left"><Title level={3}>Giới thiệu sự kiện</Title></Divider>
+            <Divider orientation="left"><Title level={3}>{t('eventDetail.eventIntro')}</Title></Divider>
             <div style={{ fontSize: '16px', lineHeight: '1.8', whiteSpace: 'pre-line' }}>
                 <Paragraph>{event.description}</Paragraph>
             </div>

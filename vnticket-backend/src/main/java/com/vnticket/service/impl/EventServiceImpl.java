@@ -1,13 +1,14 @@
 package com.vnticket.service.impl;
 
-import com.vnticket.dto.EventDto;
-import com.vnticket.dto.TicketTypeDto;
+import com.vnticket.dto.EventDTO;
+import com.vnticket.dto.TicketTypeDTO;
 import com.vnticket.entity.Event;
 import com.vnticket.entity.TicketType;
 import com.vnticket.exception.ResourceNotFoundException;
 import com.vnticket.repository.EventRepository;
 import com.vnticket.repository.TicketTypeRepository;
 import com.vnticket.service.EventService;
+import com.vnticket.service.TicketInventoryRedisService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -24,24 +25,26 @@ public class EventServiceImpl implements EventService {
 
     private final EventRepository eventRepository;
     private final TicketTypeRepository ticketTypeRepository;
+    private final TicketInventoryRedisService inventoryRedisService;
 
-    public EventServiceImpl(EventRepository eventRepository, TicketTypeRepository ticketTypeRepository) {
+    public EventServiceImpl(EventRepository eventRepository, TicketTypeRepository ticketTypeRepository, TicketInventoryRedisService inventoryRedisService) {
         this.eventRepository = eventRepository;
         this.ticketTypeRepository = ticketTypeRepository;
+        this.inventoryRedisService = inventoryRedisService;
     }
 
     @Override
-    public Page<EventDto> getApprovedEvents(String type, String search, Pageable pageable) {
+    public Page<EventDTO> getApprovedEvents(String type, String search, Pageable pageable) {
         log.debug("Executing getApprovedEvents with type: {}, search: {}", type, search);
         Page<Event> events;
 
         if (search != null && !search.isEmpty()) {
-            events = eventRepository.searchEventsByStatus(search, com.vnticket.entity.EventStatus.APPROVED, pageable);
+            events = eventRepository.searchEventsByStatus(search, com.vnticket.enums.EventStatus.APPROVED, pageable);
         } else if (type != null && !type.isEmpty()) {
             events = eventRepository.findByTypeContainingIgnoreCaseAndStatus(type,
-                    com.vnticket.entity.EventStatus.APPROVED, pageable);
+                    com.vnticket.enums.EventStatus.APPROVED, pageable);
         } else {
-            events = eventRepository.findByStatus(com.vnticket.entity.EventStatus.APPROVED, pageable);
+            events = eventRepository.findByStatus(com.vnticket.enums.EventStatus.APPROVED, pageable);
         }
 
         log.debug("Found {} approved events", events.getTotalElements());
@@ -49,7 +52,7 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
-    public Page<EventDto> getAdminAllEvents(String type, String search, Pageable pageable) {
+    public Page<EventDTO> getAdminAllEvents(String type, String search, Pageable pageable) {
         log.debug("Executing getAdminAllEvents with type: {}, search: {}", type, search);
         Page<Event> events;
         if (search != null && !search.isEmpty()) {
@@ -63,7 +66,7 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
-    public Page<EventDto> getMyEvents(Long userId, Pageable pageable) {
+    public Page<EventDTO> getMyEvents(Long userId, Pageable pageable) {
         log.debug("Fetching events organized by user ID: {}", userId);
         List<Event> events = eventRepository.findByOrganizerId(userId);
 
@@ -71,13 +74,13 @@ public class EventServiceImpl implements EventService {
         // interface logic:
         int start = (int) pageable.getOffset();
         int end = Math.min((start + pageable.getPageSize()), events.size());
-        List<EventDto> pagedEvents = events.subList(start, end).stream().map(this::mapToDto)
+        List<EventDTO> pagedEvents = events.subList(start, end).stream().map(this::mapToDto)
                 .collect(Collectors.toList());
         return new org.springframework.data.domain.PageImpl<>(pagedEvents, pageable, events.size());
     }
 
     @Override
-    public EventDto getEventById(Long id) {
+    public EventDTO getEventById(Long id) {
         log.debug("Fetching event with ID: {}", id);
         Event event = eventRepository.findById(id)
                 .orElseThrow(() -> {
@@ -89,7 +92,7 @@ public class EventServiceImpl implements EventService {
 
     @Override
     @Transactional
-    public EventDto updateEvent(Long id, EventDto eventDto) {
+    public EventDTO updateEvent(Long id, EventDTO EventDTO) {
         log.info("Updating event ID: {}", id);
         Event event = eventRepository.findById(id)
                 .orElseThrow(() -> {
@@ -98,23 +101,23 @@ public class EventServiceImpl implements EventService {
                 });
 
         // Update fields
-        event.setName(eventDto.getName());
-        event.setImageUrl(eventDto.getImageUrl());
-        event.setAdditionalImages(eventDto.getAdditionalImages());
-        event.setDescription(eventDto.getDescription());
-        event.setStartTime(eventDto.getStartTime());
-        event.setLocation(eventDto.getLocation());
-        event.setType(eventDto.getType());
-        event.setOrganizerName(eventDto.getOrganizerName());
+        event.setName(EventDTO.getName());
+        event.setImageUrl(EventDTO.getImageUrl());
+        event.setAdditionalImages(EventDTO.getAdditionalImages());
+        event.setDescription(EventDTO.getDescription());
+        event.setStartTime(EventDTO.getStartTime());
+        event.setLocation(EventDTO.getLocation());
+        event.setType(EventDTO.getType());
+        event.setOrganizerName(EventDTO.getOrganizerName());
         // Only update status if provided (admin override context)
-        if (eventDto.getStatus() != null) {
-            event.setStatus(eventDto.getStatus());
+        if (EventDTO.getStatus() != null) {
+            event.setStatus(EventDTO.getStatus());
         }
-        if (eventDto.getIsSlider() != null) {
-            event.setIsSlider(eventDto.getIsSlider());
+        if (EventDTO.getIsSlider() != null) {
+            event.setIsSlider(EventDTO.getIsSlider());
         }
-        if (eventDto.getIsFeatured() != null) {
-            event.setIsFeatured(eventDto.getIsFeatured());
+        if (EventDTO.getIsFeatured() != null) {
+            event.setIsFeatured(EventDTO.getIsFeatured());
         }
 
         Event updatedEvent = eventRepository.save(event);
@@ -124,7 +127,7 @@ public class EventServiceImpl implements EventService {
 
     @Override
     @Transactional
-    public EventDto updateEventStatus(Long id, com.vnticket.entity.EventStatus status) {
+    public EventDTO updateEventStatus(Long id, com.vnticket.enums.EventStatus status) {
         log.info("Updating status for event ID: {} to {}", id, status);
         Event event = eventRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Event not found with id: " + id));
@@ -136,22 +139,22 @@ public class EventServiceImpl implements EventService {
 
     @Override
     @Transactional
-    public EventDto createAdminEvent(EventDto eventDto) {
-        log.info("Creating new admin event (auto-approved): {}", eventDto.getName());
-        Event event = mapToEntity(eventDto);
-        event.setStatus(com.vnticket.entity.EventStatus.APPROVED);
+    public EventDTO createAdminEvent(EventDTO EventDTO) {
+        log.info("Creating new admin event (auto-approved): {}", EventDTO.getName());
+        Event event = mapToEntity(EventDTO);
+        event.setStatus(com.vnticket.enums.EventStatus.APPROVED);
 
         Event savedEvent = eventRepository.save(event);
-        saveTicketTypes(eventDto, savedEvent);
+        saveTicketTypes(EventDTO, savedEvent);
         return mapToDto(savedEvent);
     }
 
     @Override
     @Transactional
-    public EventDto createMyEvent(Long userId, EventDto eventDto) {
+    public EventDTO createMyEvent(Long userId, EventDTO EventDTO) {
         log.info("Creating user event (pending approval) for user: {}", userId);
-        Event event = mapToEntity(eventDto);
-        event.setStatus(com.vnticket.entity.EventStatus.PENDING);
+        Event event = mapToEntity(EventDTO);
+        event.setStatus(com.vnticket.enums.EventStatus.PENDING);
 
         // Find organizer User
         com.vnticket.entity.User organizer = new com.vnticket.entity.User();
@@ -159,20 +162,26 @@ public class EventServiceImpl implements EventService {
         event.setOrganizer(organizer);
 
         Event savedEvent = eventRepository.save(event);
-        saveTicketTypes(eventDto, savedEvent);
+        saveTicketTypes(EventDTO, savedEvent);
         return mapToDto(savedEvent);
     }
 
-    private void saveTicketTypes(EventDto eventDto, Event savedEvent) {
-        if (eventDto.getTicketTypes() != null && !eventDto.getTicketTypes().isEmpty()) {
-            List<TicketType> ticketTypes = eventDto.getTicketTypes().stream()
+    private void saveTicketTypes(EventDTO EventDTO, Event savedEvent) {
+        if (EventDTO.getTicketTypes() != null && !EventDTO.getTicketTypes().isEmpty()) {
+            List<TicketType> ticketTypes = EventDTO.getTicketTypes().stream()
                     .map(dto -> {
                         TicketType tt = mapToTicketTypeEntity(dto);
                         tt.setEvent(savedEvent);
                         return tt;
                     }).collect(Collectors.toList());
-            ticketTypeRepository.saveAll(ticketTypes);
-            savedEvent.setTicketTypes(ticketTypes);
+            List<TicketType> savedTicketTypes = ticketTypeRepository.saveAll(ticketTypes);
+            savedEvent.setTicketTypes(savedTicketTypes);
+            
+            // Sync inventory to Redis for new ticket types
+            savedTicketTypes.forEach(tt -> {
+                inventoryRedisService.initStock(tt.getId(), tt.getRemainingQuantity());
+                log.info("Initialized Redis inventory for new ticket type {}: {}", tt.getId(), tt.getRemainingQuantity());
+            });
         }
     }
 
@@ -189,15 +198,15 @@ public class EventServiceImpl implements EventService {
     }
 
     // Mappers
-    private EventDto mapToDto(Event event) {
-        List<TicketTypeDto> ticketTypeDtos = new ArrayList<>();
+    private EventDTO mapToDto(Event event) {
+        List<TicketTypeDTO> TicketTypeDTOs = new ArrayList<>();
         if (event.getTicketTypes() != null) {
-            ticketTypeDtos = event.getTicketTypes().stream()
-                    .map(this::mapToTicketTypeDto)
+            TicketTypeDTOs = event.getTicketTypes().stream()
+                    .map(this::mapToTicketTypeDTO)
                     .collect(Collectors.toList());
         }
 
-        return EventDto.builder()
+        return EventDTO.builder()
                 .id(event.getId())
                 .name(event.getName())
                 .imageUrl(event.getImageUrl())
@@ -209,13 +218,13 @@ public class EventServiceImpl implements EventService {
                 .organizerName(event.getOrganizerName())
                 .status(event.getStatus())
                 .organizerId(event.getOrganizer() != null ? event.getOrganizer().getId() : null)
-                .ticketTypes(ticketTypeDtos)
+                .ticketTypes(TicketTypeDTOs)
                 .isSlider(event.getIsSlider())
                 .isFeatured(event.getIsFeatured())
                 .build();
     }
 
-    private Event mapToEntity(EventDto dto) {
+    private Event mapToEntity(EventDTO dto) {
         return Event.builder()
                 .name(dto.getName())
                 .imageUrl(dto.getImageUrl())
@@ -225,14 +234,14 @@ public class EventServiceImpl implements EventService {
                 .location(dto.getLocation())
                 .type(dto.getType())
                 .organizerName(dto.getOrganizerName())
-                .status(dto.getStatus() != null ? dto.getStatus() : com.vnticket.entity.EventStatus.APPROVED)
+                .status(dto.getStatus() != null ? dto.getStatus() : com.vnticket.enums.EventStatus.APPROVED)
                 .isSlider(dto.getIsSlider() != null ? dto.getIsSlider() : false)
                 .isFeatured(dto.getIsFeatured() != null ? dto.getIsFeatured() : false)
                 .build();
     }
 
-    private TicketTypeDto mapToTicketTypeDto(TicketType entity) {
-        return TicketTypeDto.builder()
+    private TicketTypeDTO mapToTicketTypeDTO(TicketType entity) {
+        return TicketTypeDTO.builder()
                 .id(entity.getId())
                 .eventId(entity.getEvent() != null ? entity.getEvent().getId() : null)
                 .zoneName(entity.getZoneName())
@@ -242,7 +251,7 @@ public class EventServiceImpl implements EventService {
                 .build();
     }
 
-    private TicketType mapToTicketTypeEntity(TicketTypeDto dto) {
+    private TicketType mapToTicketTypeEntity(TicketTypeDTO dto) {
         return TicketType.builder()
                 .zoneName(dto.getZoneName())
                 .price(dto.getPrice())

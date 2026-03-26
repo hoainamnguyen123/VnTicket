@@ -1,5 +1,6 @@
 package com.vnticket.security;
 
+import com.vnticket.filter.TraceIdFilter;
 import com.vnticket.security.jwt.AuthEntryPointJwt;
 import com.vnticket.security.jwt.AuthTokenFilter;
 import com.vnticket.security.services.UserDetailsServiceImpl;
@@ -27,10 +28,14 @@ import java.util.List;
 public class WebSecurityConfig {
     private final UserDetailsServiceImpl userDetailsService;
     private final AuthEntryPointJwt unauthorizedHandler;
+    private final TraceIdFilter traceIdFilter;
 
-    public WebSecurityConfig(UserDetailsServiceImpl userDetailsService, AuthEntryPointJwt unauthorizedHandler) {
+    public WebSecurityConfig(UserDetailsServiceImpl userDetailsService,
+                             AuthEntryPointJwt unauthorizedHandler,
+                             TraceIdFilter traceIdFilter) {
         this.userDetailsService = userDetailsService;
         this.unauthorizedHandler = unauthorizedHandler;
+        this.traceIdFilter = traceIdFilter;
     }
 
     @Bean
@@ -73,6 +78,7 @@ public class WebSecurityConfig {
 
         http.authenticationProvider(authenticationProvider());
         http.addFilterBefore(authenticationJwtTokenFilter(), UsernamePasswordAuthenticationFilter.class);
+        http.addFilterBefore(traceIdFilter, AuthTokenFilter.class);
 
         return http.build();
     }
@@ -83,6 +89,7 @@ public class WebSecurityConfig {
         configuration.setAllowedOrigins(List.of("http://localhost:5173")); // Vite default port
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "Accept"));
+        configuration.setExposedHeaders(List.of("X-Trace-Id"));
         configuration.setAllowCredentials(true);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);

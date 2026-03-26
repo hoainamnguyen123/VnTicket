@@ -3,7 +3,7 @@ package com.vnticket.service.impl;
 import com.vnticket.dto.request.LoginRequest;
 import com.vnticket.dto.request.SignupRequest;
 import com.vnticket.dto.response.JwtResponse;
-import com.vnticket.entity.Role;
+import com.vnticket.enums.Role;
 import com.vnticket.entity.User;
 import com.vnticket.exception.BadRequestException;
 import com.vnticket.repository.UserRepository;

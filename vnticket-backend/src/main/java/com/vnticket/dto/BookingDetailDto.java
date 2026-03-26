@@ -11,7 +11,7 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class BookingDetailDto {
+public class BookingDetailDTO {
     private Long id;
     private Long ticketTypeId;
     private String zoneName;

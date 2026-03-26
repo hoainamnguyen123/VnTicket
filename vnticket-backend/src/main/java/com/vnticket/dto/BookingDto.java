@@ -1,6 +1,6 @@
 package com.vnticket.dto;
 
-import com.vnticket.entity.BookingStatus;
+import com.vnticket.enums.BookingStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -14,14 +14,15 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class BookingDto {
+public class BookingDTO {
     private Long id;
     private Long userId;
     private String username;
     private Long eventId;
     private String eventName;
+    private LocalDateTime eventStartTime;
     private LocalDateTime bookingTime;
     private BookingStatus status;
     private BigDecimal totalAmount;
-    private List<BookingDetailDto> bookingDetails;
+    private List<BookingDetailDTO> bookingDetails;
 }

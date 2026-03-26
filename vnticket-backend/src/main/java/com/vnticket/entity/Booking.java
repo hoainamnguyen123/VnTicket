@@ -1,5 +1,6 @@
 package com.vnticket.entity;
 
+import com.vnticket.enums.BookingStatus;
 import jakarta.persistence.*;
 import lombok.*;
 

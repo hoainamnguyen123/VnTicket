@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link as RouterLink } from 'react-router-dom';
 import { Row, Col, Typography, Divider, Space } from 'antd';
+import { useTranslation } from 'react-i18next';
 import {
     FacebookOutlined,
     YoutubeOutlined,
@@ -43,6 +44,8 @@ const socialIconStyle = {
 };
 
 const AppFooter = () => {
+    const { t } = useTranslation();
+
     return (
         <footer
             className="app-footer"
@@ -60,14 +63,13 @@ const AppFooter = () => {
                         🎫 VNTicket
                     </Title>
                     <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: '14px', lineHeight: '1.8' }}>
-                        Nền tảng đặt vé sự kiện trực tuyến hàng đầu Việt Nam.
-                        Kết nối khán giả với những sự kiện âm nhạc, thể thao, văn hóa chất lượng nhất.
+                        {t('footer.description')}
                     </Text>
 
                     {/* Social Media */}
                     <div style={{ marginTop: 24 }}>
                         <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: '12px', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 12, display: 'block' }}>
-                            Theo dõi chúng tôi
+                            {t('footer.followUs')}
                         </Text>
                         <Space size={12}>
                             <a href="#" target="_blank" rel="noopener noreferrer" style={socialIconStyle}
@@ -102,74 +104,74 @@ const AppFooter = () => {
                 <Col xs={24} sm={12} md={6}>
                     <Title level={5} style={{ color: '#fff', marginBottom: 20, textTransform: 'uppercase', letterSpacing: '1px', fontSize: '13px' }}>
                         <CustomerServiceOutlined style={{ marginRight: 8 }} />
-                        Dành cho Khán giả
+                        {t('footer.forAudience')}
                     </Title>
                     <RouterLink to="/faq" style={footerLinkStyle}
                         onMouseOver={e => { e.currentTarget.style.color = '#fff'; e.currentTarget.style.paddingLeft = '5px'; }}
                         onMouseOut={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.75)'; e.currentTarget.style.paddingLeft = '0'; }}
-                    >Hướng dẫn mua vé</RouterLink>
+                    >{t('footer.ticketGuide')}</RouterLink>
                     <RouterLink to="/refund-policy" style={footerLinkStyle}
                         onMouseOver={e => { e.currentTarget.style.color = '#fff'; e.currentTarget.style.paddingLeft = '5px'; }}
                         onMouseOut={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.75)'; e.currentTarget.style.paddingLeft = '0'; }}
-                    >Chính sách hoàn vé</RouterLink>
+                    >{t('footer.refundPolicy')}</RouterLink>
                     <RouterLink to="/faq" style={footerLinkStyle}
                         onMouseOver={e => { e.currentTarget.style.color = '#fff'; e.currentTarget.style.paddingLeft = '5px'; }}
                         onMouseOut={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.75)'; e.currentTarget.style.paddingLeft = '0'; }}
-                    >Câu hỏi thường gặp (FAQ)</RouterLink>
+                    >{t('footer.faq')}</RouterLink>
                     <RouterLink to="/faq" style={footerLinkStyle}
                         onMouseOver={e => { e.currentTarget.style.color = '#fff'; e.currentTarget.style.paddingLeft = '5px'; }}
                         onMouseOut={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.75)'; e.currentTarget.style.paddingLeft = '0'; }}
-                    >Phương thức thanh toán</RouterLink>
+                    >{t('footer.paymentMethods')}</RouterLink>
                     <RouterLink to="/faq" style={footerLinkStyle}
                         onMouseOver={e => { e.currentTarget.style.color = '#fff'; e.currentTarget.style.paddingLeft = '5px'; }}
                         onMouseOut={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.75)'; e.currentTarget.style.paddingLeft = '0'; }}
-                    >Kiểm tra vé điện tử</RouterLink>
+                    >{t('footer.checkTicket')}</RouterLink>
                 </Col>
 
                 {/* Column 3: For Organizers */}
                 <Col xs={24} sm={12} md={6}>
                     <Title level={5} style={{ color: '#fff', marginBottom: 20, textTransform: 'uppercase', letterSpacing: '1px', fontSize: '13px' }}>
                         <TeamOutlined style={{ marginRight: 8 }} />
-                        Dành cho Ban Tổ Chức
+                        {t('footer.forOrganizers')}
                     </Title>
                     <RouterLink to="/operating-rules" style={footerLinkStyle}
                         onMouseOver={e => { e.currentTarget.style.color = '#fff'; e.currentTarget.style.paddingLeft = '5px'; }}
                         onMouseOut={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.75)'; e.currentTarget.style.paddingLeft = '0'; }}
-                    >Đăng ký tổ chức sự kiện</RouterLink>
+                    >{t('footer.registerEvent')}</RouterLink>
                     <RouterLink to="/terms-of-service" style={footerLinkStyle}
                         onMouseOver={e => { e.currentTarget.style.color = '#fff'; e.currentTarget.style.paddingLeft = '5px'; }}
                         onMouseOut={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.75)'; e.currentTarget.style.paddingLeft = '0'; }}
-                    >Chính sách hoa hồng (2%)</RouterLink>
+                    >{t('footer.commissionPolicy')}</RouterLink>
                     <RouterLink to="/operating-rules" style={footerLinkStyle}
                         onMouseOver={e => { e.currentTarget.style.color = '#fff'; e.currentTarget.style.paddingLeft = '5px'; }}
                         onMouseOut={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.75)'; e.currentTarget.style.paddingLeft = '0'; }}
-                    >Quy trình duyệt sự kiện</RouterLink>
+                    >{t('footer.approvalProcess')}</RouterLink>
                     <RouterLink to="/operating-rules" style={footerLinkStyle}
                         onMouseOver={e => { e.currentTarget.style.color = '#fff'; e.currentTarget.style.paddingLeft = '5px'; }}
                         onMouseOut={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.75)'; e.currentTarget.style.paddingLeft = '0'; }}
-                    >Báo cáo doanh thu</RouterLink>
+                    >{t('footer.revenueReport')}</RouterLink>
                     <RouterLink to="/faq" style={footerLinkStyle}
                         onMouseOver={e => { e.currentTarget.style.color = '#fff'; e.currentTarget.style.paddingLeft = '5px'; }}
                         onMouseOut={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.75)'; e.currentTarget.style.paddingLeft = '0'; }}
-                    >Hỗ trợ kỹ thuật</RouterLink>
+                    >{t('footer.techSupport')}</RouterLink>
                 </Col>
 
                 {/* Column 4: Contact & Policies */}
                 <Col xs={24} sm={12} md={6}>
                     <Title level={5} style={{ color: '#fff', marginBottom: 20, textTransform: 'uppercase', letterSpacing: '1px', fontSize: '13px' }}>
                         <SafetyCertificateOutlined style={{ marginRight: 8 }} />
-                        Liên hệ & Chính sách
+                        {t('footer.contactAndPolicies')}
                     </Title>
                     <div style={{ marginBottom: 12, display: 'flex', alignItems: 'flex-start', gap: 8 }}>
                         <EnvironmentOutlined style={{ color: '#4fc3f7', marginTop: 4, flexShrink: 0 }} />
                         <Text style={{ color: 'rgba(255,255,255,0.75)', fontSize: '14px' }}>
-                            Tầng 5, Tòa nhà VNTicket Tower, Tây Sơn, Phường Kim Liên, Hà Nội
+                            {t('footer.address')}
                         </Text>
                     </div>
                     <div style={{ marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
                         <PhoneOutlined style={{ color: '#4fc3f7', flexShrink: 0 }} />
                         <Text style={{ color: 'rgba(255,255,255,0.75)', fontSize: '14px' }}>
-                            Hotline: 1900 xxxx xx
+                            {t('footer.hotline')}
                         </Text>
                     </div>
                     <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -184,15 +186,15 @@ const AppFooter = () => {
                     <RouterLink to="/privacy-policy" style={{ ...footerLinkStyle, fontSize: '13px' }}
                         onMouseOver={e => { e.currentTarget.style.color = '#fff'; e.currentTarget.style.paddingLeft = '5px'; }}
                         onMouseOut={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.75)'; e.currentTarget.style.paddingLeft = '0'; }}
-                    ><FileProtectOutlined style={{ marginRight: 6 }} />Chính sách bảo mật</RouterLink>
+                    ><FileProtectOutlined style={{ marginRight: 6 }} />{t('footer.privacyPolicy')}</RouterLink>
                     <RouterLink to="/terms-of-service" style={{ ...footerLinkStyle, fontSize: '13px' }}
                         onMouseOver={e => { e.currentTarget.style.color = '#fff'; e.currentTarget.style.paddingLeft = '5px'; }}
                         onMouseOut={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.75)'; e.currentTarget.style.paddingLeft = '0'; }}
-                    ><SafetyCertificateOutlined style={{ marginRight: 6 }} />Điều khoản sử dụng</RouterLink>
+                    ><SafetyCertificateOutlined style={{ marginRight: 6 }} />{t('footer.termsOfService')}</RouterLink>
                     <RouterLink to="/operating-rules" style={{ ...footerLinkStyle, fontSize: '13px' }}
                         onMouseOver={e => { e.currentTarget.style.color = '#fff'; e.currentTarget.style.paddingLeft = '5px'; }}
                         onMouseOut={e => { e.currentTarget.style.color = 'rgba(255,255,255,0.75)'; e.currentTarget.style.paddingLeft = '0'; }}
-                    ><GlobalOutlined style={{ marginRight: 6 }} />Quy chế hoạt động</RouterLink>
+                    ><GlobalOutlined style={{ marginRight: 6 }} />{t('footer.operatingRules')}</RouterLink>
                 </Col>
             </Row>
 
@@ -211,10 +213,10 @@ const AppFooter = () => {
                 }}
             >
                 <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: '13px' }}>
-                    © {new Date().getFullYear()} VNTicket. Tất cả quyền được bảo lưu.
+                    {t('footer.copyright', { year: new Date().getFullYear() })}
                 </Text>
                 <Text style={{ color: 'rgba(255,255,255,0.5)', fontSize: '13px' }}>
-                    Giấy phép ĐKKD số: XXXXXXXXXX — Cấp ngày: XX/XX/XXXX bởi Sở KH&ĐT TP.HCM
+                    {t('footer.license')}
                 </Text>
             </div>
         </footer>

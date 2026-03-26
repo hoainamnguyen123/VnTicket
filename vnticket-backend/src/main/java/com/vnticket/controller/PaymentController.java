@@ -2,7 +2,7 @@ package com.vnticket.controller;
 
 import com.vnticket.dto.response.ApiResponse;
 import com.vnticket.entity.Booking;
-import com.vnticket.entity.BookingStatus;
+import com.vnticket.enums.BookingStatus;
 import com.vnticket.exception.BadRequestException;
 import com.vnticket.exception.ResourceNotFoundException;
 import com.vnticket.repository.BookingRepository;

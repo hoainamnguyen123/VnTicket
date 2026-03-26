@@ -11,7 +11,7 @@ import java.math.BigDecimal;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class BookingStatsDto {
+public class BookingStatsDTO {
     private long totalBookings;
     private long paidBookings;
     private long pendingBookings;

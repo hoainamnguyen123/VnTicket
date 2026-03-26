@@ -15,8 +15,8 @@ public class BookingCleanupTask {
         this.bookingService = bookingService;
     }
 
-    // Run every minute (60000 ms)
-    @Scheduled(fixedRate = 60000)
+    // Safety net: run every 5 minutes (main handler is ReservationCleanupTask)
+    @Scheduled(fixedRate = 300000)
     public void cleanupExpiredBookings() {
         log.debug("Running Scheduled Task: cleanupExpiredBookings");
         try {

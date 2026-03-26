@@ -1,4 +1,4 @@
-package com.vnticket.entity;
+package com.vnticket.enums;
 
 public enum TicketStatus {
     VALID,

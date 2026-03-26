@@ -2,8 +2,10 @@ import React, { useContext, useState, useEffect, useRef } from 'react';
 import { Form, Input, Button, Card, Typography, message, Divider } from 'antd';
 import { UserOutlined, LockOutlined, GoogleOutlined } from '@ant-design/icons';
 import { useNavigate, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import axiosClient from '../api/axiosClient';
 import { AuthContext } from '../context/AuthContext';
+import { ThemeContext } from '../context/ThemeContext';
 
 const { Title } = Typography;
 
@@ -12,8 +14,10 @@ const GOOGLE_CLIENT_ID = '626920740184-b50brg5oc6psqva23adt7f9a7632fhp4.apps.goo
 const Login = () => {
     const [loading, setLoading] = useState(false);
     const { login } = useContext(AuthContext);
+    const { isDark } = useContext(ThemeContext);
     const navigate = useNavigate();
     const googleBtnRef = useRef(null);
+    const { t, i18n } = useTranslation();
 
     useEffect(() => {
         // Wait for Google Identity Services script to load
@@ -24,11 +28,11 @@ const Login = () => {
                     callback: handleGoogleCallback,
                 });
                 window.google.accounts.id.renderButton(googleBtnRef.current, {
-                    theme: 'outline',
+                    theme: isDark ? 'filled_black' : 'outline',
                     size: 'large',
                     width: '352',
                     text: 'signin_with',
-                    locale: 'vi_VN',
+                    locale: i18n.language === 'vi' ? 'vi_VN' : 'en_US',
                 });
             }
         };
@@ -45,7 +49,7 @@ const Login = () => {
             }, 100);
             return () => clearInterval(interval);
         }
-    }, []);
+    }, [i18n.language, isDark]);
 
     const handleGoogleCallback = async (response) => {
         setLoading(true);
@@ -55,10 +59,10 @@ const Login = () => {
             });
             const { token, ...userData } = res.data;
             login(userData, token);
-            message.success('Đăng nhập bằng Google thành công!');
+            message.success(t('login.googleSuccess'));
             navigate('/');
         } catch (error) {
-            message.error(error.message || 'Đăng nhập bằng Google thất bại!');
+            message.error(error.message || t('login.googleFailed'));
         } finally {
             setLoading(false);
         }
@@ -70,10 +74,10 @@ const Login = () => {
             const response = await axiosClient.post('/auth/login', values);
             const { token, ...userData } = response.data;
             login(userData, token);
-            message.success('Đăng nhập thành công!');
+            message.success(t('login.success'));
             navigate('/');
         } catch (error) {
-            message.error(error.message || 'Đăng nhập thất bại. Kiểm tra lại thông tin.');
+            message.error(error.message || t('login.failed'));
         } finally {
             setLoading(false);
         }
@@ -83,43 +87,43 @@ const Login = () => {
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
             <Card style={{ width: 400, boxShadow: '0 4px 12px rgba(0,0,0,0.1)', borderRadius: '12px' }}>
                 <div style={{ textAlign: 'center', marginBottom: 24 }}>
-                    <Title level={2} style={{ color: '#1890ff', margin: 0 }}>Đăng nhập</Title>
-                    <div style={{ color: '#8c8c8c' }}>Chào mừng trở lại VNTicket!</div>
+                    <Title level={2} style={{ color: '#1890ff', margin: 0 }}>{t('login.title')}</Title>
+                    <div style={{ color: '#8c8c8c' }}>{t('login.welcome')}</div>
                 </div>
 
                 <Form name="login" onFinish={onFinish} layout="vertical" size="large">
                     <Form.Item
                         name="username"
-                        rules={[{ required: true, message: 'Vui lòng nhập tên đăng nhập!' }]}
+                        rules={[{ required: true, message: t('login.usernameRequired') }]}
                     >
-                        <Input prefix={<UserOutlined />} placeholder="Tên đăng nhập" />
+                        <Input prefix={<UserOutlined />} placeholder={t('login.usernamePlaceholder')} />
                     </Form.Item>
 
                     <Form.Item
                         name="password"
-                        rules={[{ required: true, message: 'Vui lòng nhập mật khẩu!' }]}
+                        rules={[{ required: true, message: t('login.passwordRequired') }]}
                     >
-                        <Input.Password prefix={<LockOutlined />} placeholder="Mật khẩu" />
+                        <Input.Password prefix={<LockOutlined />} placeholder={t('login.passwordPlaceholder')} />
                     </Form.Item>
 
                     <Form.Item>
                         <Button type="primary" htmlType="submit" loading={loading} block style={{ borderRadius: '6px' }}>
-                            ĐĂNG NHẬP
+                            {t('login.submitButton')}
                         </Button>
                     </Form.Item>
                 </Form>
 
                 <Divider plain style={{ margin: '12px 0', color: '#8c8c8c', fontSize: '13px' }}>
-                    hoặc
+                    {t('login.or')}
                 </Divider>
 
-                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
+                <div className="google-btn-wrapper" style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
                     <div ref={googleBtnRef}></div>
                 </div>
 
                 <Divider style={{ margin: '12px 0' }} />
                 <div style={{ textAlign: 'center' }}>
-                    Chưa có tài khoản? <Link to="/register">Đăng ký ngay</Link>
+                    {t('login.noAccount')} <Link to="/register">{t('login.registerNow')}</Link>
                 </div>
             </Card>
         </div>

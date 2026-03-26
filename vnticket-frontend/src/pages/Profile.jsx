@@ -1,6 +1,7 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { Tabs, Typography, Card, Descriptions, Button, Form, Input, message, Spin } from 'antd';
 import { EditOutlined, SaveOutlined, CloseOutlined } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
 import History from './History';
 import MyEvents from './MyEvents';
 import { AuthContext } from '../context/AuthContext';
@@ -10,11 +11,12 @@ import axiosClient from '../api/axiosClient';
 const { Title } = Typography;
 
 const Profile = () => {
-    const { user, setUser, loading: authLoading } = useContext(AuthContext); // In case we need to update the basic context user data
+    const { user, setUser, loading: authLoading } = useContext(AuthContext);
     const [profileData, setProfileData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [editing, setEditing] = useState(false);
     const [form] = Form.useForm();
+    const { t } = useTranslation();
 
     useEffect(() => {
         if (user) {
@@ -29,7 +31,7 @@ const Profile = () => {
             setProfileData(res.data);
             form.setFieldsValue(res.data);
         } catch (error) {
-            message.error('Không thể tải thông tin hồ sơ.');
+            message.error(t('profile.loadError'));
         } finally {
             setLoading(false);
         }
@@ -39,20 +41,18 @@ const Profile = () => {
         try {
             const res = await axiosClient.put('/users/me', values);
             setProfileData(res.data);
-            message.success('Cập nhật thông tin thành công!');
+            message.success(t('profile.updateSuccess'));
             setEditing(false);
 
-            // Optionally update context user
             if (setUser && res.data.username) {
                 setUser({ ...user, ...res.data });
-                // Also update localStorage so it persists correctly
                 const lsUser = JSON.parse(localStorage.getItem('user'));
                 if (lsUser) {
                     localStorage.setItem('user', JSON.stringify({ ...lsUser, ...res.data }));
                 }
             }
         } catch (error) {
-            message.error(error.response?.data?.message || 'Có lỗi xảy ra khi cập nhật.');
+            message.error(error.response?.data?.message || t('profile.updateError'));
         }
     };
 
@@ -67,7 +67,7 @@ const Profile = () => {
     const items = [
         {
             key: '1',
-            label: 'Thông tin tài khoản',
+            label: t('profile.accountInfo'),
             children: (
                 <Card bordered={false} loading={loading}>
                     {editing ? (
@@ -77,41 +77,41 @@ const Profile = () => {
                             onFinish={handleUpdateProfile}
                             style={{ maxWidth: 600 }}
                         >
-                            <Form.Item label="Tên người dùng">
+                            <Form.Item label={t('profile.usernameLabel')}>
                                 <Input disabled value={profileData?.username} />
                             </Form.Item>
                             <Form.Item
                                 name="fullName"
-                                label="Họ và tên"
+                                label={t('profile.fullNameLabel')}
                             >
-                                <Input placeholder="Nhập họ và tên" />
+                                <Input placeholder={t('profile.fullNamePlaceholder')} />
                             </Form.Item>
                             <Form.Item
                                 name="email"
-                                label="Email"
+                                label={t('profile.emailLabel')}
                                 rules={[
-                                    { required: true, message: 'Vui lòng nhập email!' },
-                                    { type: 'email', message: 'Email không hợp lệ!' }
+                                    { required: true, message: t('profile.emailRequired') },
+                                    { type: 'email', message: t('profile.emailInvalid') }
                                 ]}
                             >
-                                <Input placeholder="Nhập email" />
+                                <Input placeholder={t('profile.emailPlaceholder')} />
                             </Form.Item>
                             <Form.Item
                                 name="phone"
-                                label="Số điện thoại"
+                                label={t('profile.phoneLabel')}
                                 rules={[
-                                    { pattern: /^[0-9]+$/, message: 'Số điện thoại chỉ bao gồm chữ số!' }
+                                    { pattern: /^[0-9]+$/, message: t('profile.phoneInvalid') }
                                 ]}
                             >
-                                <Input placeholder="Nhập số điện thoại" />
+                                <Input placeholder={t('profile.phonePlaceholder')} />
                             </Form.Item>
 
                             <Form.Item>
                                 <Button type="primary" htmlType="submit" icon={<SaveOutlined />} style={{ marginRight: 8 }}>
-                                    Lưu thay đổi
+                                    {t('profile.saveChanges')}
                                 </Button>
                                 <Button onClick={() => { setEditing(false); form.resetFields(); }} icon={<CloseOutlined />}>
-                                    Hủy
+                                    {t('common.cancel')}
                                 </Button>
                             </Form.Item>
                         </Form>
@@ -119,16 +119,16 @@ const Profile = () => {
                         <div>
                             <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'flex-end' }}>
                                 <Button type="primary" icon={<EditOutlined />} onClick={() => setEditing(true)}>
-                                    Chỉnh sửa hồ sơ
+                                    {t('profile.editProfile')}
                                 </Button>
                             </div>
-                            <Descriptions title="Tài khoản cá nhân" bordered column={1}>
-                                <Descriptions.Item label="Tên đăng nhập">{profileData?.username}</Descriptions.Item>
-                                <Descriptions.Item label="Họ và tên">{profileData?.fullName || <i>Chưa cập nhật</i>}</Descriptions.Item>
-                                <Descriptions.Item label="Email">{profileData?.email}</Descriptions.Item>
-                                <Descriptions.Item label="Số điện thoại">{profileData?.phone || <i>Chưa cập nhật</i>}</Descriptions.Item>
-                                <Descriptions.Item label="Phân quyền">
-                                    {profileData?.role === 'ROLE_ADMIN' ? 'Quản trị viên' : 'Hội viên'}
+                            <Descriptions title={t('profile.personalAccount')} bordered column={1}>
+                                <Descriptions.Item label={t('profile.loginLabel')}>{profileData?.username}</Descriptions.Item>
+                                <Descriptions.Item label={t('profile.fullNameLabel')}>{profileData?.fullName || <i>{t('common.notUpdated')}</i>}</Descriptions.Item>
+                                <Descriptions.Item label={t('profile.emailLabel')}>{profileData?.email}</Descriptions.Item>
+                                <Descriptions.Item label={t('profile.phoneLabel')}>{profileData?.phone || <i>{t('common.notUpdated')}</i>}</Descriptions.Item>
+                                <Descriptions.Item label={t('profile.roleLabel')}>
+                                    {profileData?.role === 'ROLE_ADMIN' ? t('profile.roleAdmin') : t('profile.roleMember')}
                                 </Descriptions.Item>
                             </Descriptions>
                         </div>
@@ -138,23 +138,22 @@ const Profile = () => {
         },
         {
             key: '2',
-            label: 'Lịch sử đặt vé',
+            label: t('profile.bookingHistory'),
             children: <History />,
         },
         {
             key: '3',
-            label: 'Sự kiện của tôi',
+            label: t('profile.myEvents'),
             children: <MyEvents />,
         },
     ];
 
     return (
         <div>
-            <Title level={2} style={{ marginBottom: '24px' }}>Hồ sơ cá nhân</Title>
+            <Title level={2} style={{ marginBottom: '24px' }}>{t('profile.title')}</Title>
             <Tabs defaultActiveKey="1" items={items} />
         </div>
     );
 };
 
 export default Profile;
-

@@ -1,6 +1,6 @@
 package com.vnticket.controller;
 
-import com.vnticket.dto.UserDto;
+import com.vnticket.dto.UserDTO;
 import com.vnticket.dto.request.UserProfileUpdateRequest;
 import com.vnticket.dto.response.ApiResponse;
 import com.vnticket.entity.User;
@@ -32,9 +32,9 @@ public class UserController {
 
     @GetMapping("/me")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<UserDto>> getCurrentUserProfile() {
+    public ResponseEntity<ApiResponse<UserDTO>> getCurrentUserProfile() {
         User user = getCurrentUser();
-        UserDto dto = UserDto.builder()
+        UserDTO dto = UserDTO.builder()
                 .id(user.getId())
                 .username(user.getUsername())
                 .fullName(user.getFullName())
@@ -47,7 +47,7 @@ public class UserController {
 
     @PutMapping("/me")
     @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<UserDto>> updateProfile(@Valid @RequestBody UserProfileUpdateRequest request) {
+    public ResponseEntity<ApiResponse<UserDTO>> updateProfile(@Valid @RequestBody UserProfileUpdateRequest request) {
         User user = getCurrentUser();
 
         if (!user.getEmail().equals(request.getEmail()) && userRepository.existsByEmail(request.getEmail())) {
@@ -60,7 +60,7 @@ public class UserController {
 
         userRepository.save(user);
 
-        UserDto dto = UserDto.builder()
+        UserDTO dto = UserDTO.builder()
                 .id(user.getId())
                 .username(user.getUsername())
                 .fullName(user.getFullName())

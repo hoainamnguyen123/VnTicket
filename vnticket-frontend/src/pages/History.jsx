@@ -1,9 +1,11 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { Table, Typography, Tag, Button, Modal, message, Skeleton, Card } from 'antd';
+import { Table, Typography, Tag, Button, Modal, message, Skeleton, Card, Tabs } from 'antd';
 import { ExclamationCircleOutlined, SyncOutlined, WalletOutlined, CreditCardOutlined, EyeOutlined, CloseCircleOutlined } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
 import axiosClient from '../api/axiosClient';
 import { formatCurrency, formatDate } from '../utils/formatters';
 import { AuthContext } from '../context/AuthContext';
+import { ThemeContext } from '../context/ThemeContext';
 import { useNavigate } from 'react-router-dom';
 import ElectronicTicketModal from '../components/ElectronicTicketModal';
 
@@ -69,7 +71,7 @@ const CountdownTimer = ({ bookingTime, onExpire }) => {
 };
 
 /* ── Payment Method Card ── */
-const PaymentMethodCard = ({ name, imgSrc, borderColor, bgColor, disabled, comingSoon, onClick, selected }) => (
+const PaymentMethodCard = ({ name, imgSrc, borderColor, bgColor, disabled, comingSoon, onClick, selected, comingSoonText }) => (
     <div
         onClick={disabled ? undefined : onClick}
         style={{
@@ -95,7 +97,7 @@ const PaymentMethodCard = ({ name, imgSrc, borderColor, bgColor, disabled, comin
     >
         {comingSoon && (
             <Tag color="default" style={{ position: 'absolute', top: '8px', right: '8px', fontSize: '10px', margin: 0 }}>
-                Sắp ra mắt
+                {comingSoonText}
             </Tag>
         )}
         <img
@@ -108,9 +110,9 @@ const PaymentMethodCard = ({ name, imgSrc, borderColor, bgColor, disabled, comin
 );
 
 /* ── Booking Card cho Mobile ── */
-const BookingCard = ({ booking, onPay, onViewTickets, onCancel, onExpire }) => {
+const BookingCard = ({ booking, onPay, onViewTickets, onCancel, onExpire, t }) => {
     const statusColor = booking.status === 'PAID' ? 'green' : (booking.status === 'PENDING' ? 'gold' : 'red');
-    const statusText = booking.status === 'PAID' ? 'Đã Thanh Toán' : (booking.status === 'PENDING' ? 'Chờ Thanh Toán' : 'Đã Hủy');
+    const statusText = booking.status === 'PAID' ? t('history.paid') : (booking.status === 'PENDING' ? t('history.pending') : t('history.cancelled'));
 
     return (
         <Card
@@ -168,7 +170,7 @@ const BookingCard = ({ booking, onPay, onViewTickets, onCancel, onExpire }) => {
                         icon={<EyeOutlined />}
                         onClick={() => onViewTickets(booking.id)}
                     >
-                        Xem Vé
+                        {t('history.viewTickets')}
                     </Button>
                 )}
                 {booking.status === 'PENDING' && (
@@ -180,7 +182,7 @@ const BookingCard = ({ booking, onPay, onViewTickets, onCancel, onExpire }) => {
                             style={{ background: 'linear-gradient(135deg, #1890ff, #722ed1)', borderColor: 'transparent' }}
                             onClick={() => onPay(booking.id)}
                         >
-                            Thanh Toán
+                            {t('history.pay')}
                         </Button>
                         <Button
                             danger
@@ -188,7 +190,7 @@ const BookingCard = ({ booking, onPay, onViewTickets, onCancel, onExpire }) => {
                             icon={<CloseCircleOutlined />}
                             onClick={() => onCancel(booking.id)}
                         >
-                            Hủy Vé
+                            {t('history.cancelTicket')}
                         </Button>
                     </>
                 )}
@@ -208,8 +210,10 @@ const History = () => {
     const [selectedMethod, setSelectedMethod] = useState(null);
     const [paymentLoading, setPaymentLoading] = useState(false);
     const { user, loading: authLoading } = useContext(AuthContext);
+    const { isDark } = useContext(ThemeContext);
     const navigate = useNavigate();
     const isMobile = useIsMobile();
+    const { t } = useTranslation();
 
     const fetchBookings = React.useCallback(async (silent = false) => {
         if (!silent) setLoading(true);
@@ -218,11 +222,11 @@ const History = () => {
             setBookings(response.data);
         } catch (error) {
             console.error('Fetch bookings error:', error);
-            if (!silent) message.error('Không thể tải lịch sử đặt vé!');
+            if (!silent) message.error(t('history.loadError'));
         } finally {
             if (!silent) setLoading(false);
         }
-    }, []);
+    }, [t]);
 
     useEffect(() => {
         if (authLoading) return;
@@ -235,19 +239,19 @@ const History = () => {
 
     const handleCancel = (bookingId) => {
         confirm({
-            title: 'Xác nhận hủy vé',
+            title: t('history.confirmCancel'),
             icon: <ExclamationCircleOutlined />,
-            content: 'Bạn có chắc chắn muốn hủy đơn vé này không? Thao tác không thể hoàn tác.',
-            okText: 'Xác nhận',
+            content: t('history.confirmCancelContent'),
+            okText: t('common.confirm'),
             okType: 'danger',
-            cancelText: 'Hủy',
+            cancelText: t('common.cancel'),
             onOk: async () => {
                 try {
                     await axiosClient.put(`/bookings/${bookingId}/cancel`);
-                    message.success('Hủy vé thành công!');
+                    message.success(t('history.cancelSuccess'));
                     fetchBookings();
                 } catch (error) {
-                    message.error(error.message || 'Hủy vé thất bại!');
+                    message.error(error.message || t('history.cancelFailed'));
                 }
             },
         });
@@ -259,7 +263,7 @@ const History = () => {
             setTickets(response.data);
             setIsModalVisible(true);
         } catch (error) {
-            message.error('Không thể tải vé điện tử!');
+            message.error(t('history.loadTicketsError'));
         }
     };
 
@@ -277,7 +281,7 @@ const History = () => {
                 const paymentUrl = response.data;
                 window.location.href = paymentUrl;
             } catch (error) {
-                message.error(error.message || 'Không thể tạo liên kết thanh toán!');
+                message.error(error.message || t('history.paymentLinkError'));
             } finally {
                 setPaymentLoading(false);
             }
@@ -287,54 +291,54 @@ const History = () => {
     /* ── Columns cho Table (Desktop) ── */
     const columns = [
         {
-            title: 'Mã đơn',
+            title: t('history.orderId'),
             dataIndex: 'id',
             key: 'id',
             width: 80,
             render: id => <strong>#{id}</strong>
         },
         {
-            title: 'Sự kiện',
+            title: t('history.event'),
             dataIndex: 'eventName',
             key: 'eventName',
             render: text => <strong style={{ color: '#1890ff' }}>{text}</strong>
         },
         {
-            title: 'Ngày đặt',
+            title: t('history.bookingDate'),
             dataIndex: 'bookingTime',
             key: 'bookingTime',
             width: 160,
             render: time => formatDate(time)
         },
         {
-            title: 'Chi tiết vé',
+            title: t('history.ticketDetails'),
             dataIndex: 'bookingDetails',
             key: 'details',
             render: details => (
                 <div>
                     {details.map((d, index) => (
                         <div key={index}>
-                            <Tag color="blue">{d.zoneName}</Tag> x {d.quantity} vé
+                            <Tag color="blue">{d.zoneName}</Tag> x {d.quantity} {t('common.tickets')}
                         </div>
                     ))}
                 </div>
             )
         },
         {
-            title: 'Tổng tiền',
+            title: t('history.totalAmount'),
             dataIndex: 'totalAmount',
             key: 'totalAmount',
             width: 130,
             render: amount => <Text type="danger" strong>{formatCurrency(amount)}</Text>
         },
         {
-            title: 'Trạng thái',
+            title: t('history.status'),
             dataIndex: 'status',
             key: 'status',
             width: 150,
             render: (status, record) => {
                 let color = status === 'PAID' ? 'green' : (status === 'PENDING' ? 'gold' : 'red');
-                let text = status === 'PAID' ? 'Đã Thanh Toán' : (status === 'PENDING' ? 'Chờ Thanh Toán' : 'Đã Hủy');
+                let text = status === 'PAID' ? t('history.paid') : (status === 'PENDING' ? t('history.pending') : t('history.cancelled'));
                 return (
                     <div>
                         <Tag color={color}>{text}</Tag>
@@ -346,14 +350,14 @@ const History = () => {
             }
         },
         {
-            title: 'Hành động',
+            title: t('history.actions'),
             key: 'action',
             width: 220,
             render: (_, record) => (
                 <div style={{ display: 'flex', gap: '8px' }}>
                     {record.status === 'PAID' && (
                         <Button type="primary" ghost onClick={() => handleViewTickets(record.id)}>
-                            Xem Vé
+                            {t('history.viewTickets')}
                         </Button>
                     )}
                     {record.status === 'PENDING' && (
@@ -363,7 +367,7 @@ const History = () => {
                             style={{ background: 'linear-gradient(135deg, #1890ff, #722ed1)', borderColor: 'transparent' }}
                             onClick={() => openPaymentModal(record.id)}
                         >
-                            Thanh Toán
+                            {t('history.pay')}
                         </Button>
                     )}
                     <Button
@@ -372,7 +376,7 @@ const History = () => {
                         disabled={record.status !== 'PENDING'}
                         onClick={() => handleCancel(record.id)}
                     >
-                        Hủy Vé
+                        {t('history.cancelTicket')}
                     </Button>
                 </div>
             ),
@@ -381,24 +385,24 @@ const History = () => {
 
     if (loading) return <Skeleton active paragraph={{ rows: 10 }} />;
 
-    return (
-        <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                <Title level={isMobile ? 4 : 2} style={{ margin: 0 }}>Vé của tôi</Title>
-                <Button icon={<SyncOutlined />} onClick={fetchBookings} size={isMobile ? 'small' : 'middle'}>
-                    Làm mới
-                </Button>
-            </div>
+    const pendingBookings = bookings.filter(b => b.status === 'PENDING');
+    const cancelledBookings = bookings.filter(b => b.status === 'CANCELLED');
+    const paidBookings = bookings.filter(b => b.status === 'PAID');
+    
+    // Sort logic
+    const upcomingPaidBookings = paidBookings.filter(b => !b.eventStartTime || new Date(b.eventStartTime) >= new Date());
+    const pastPaidBookings = paidBookings.filter(b => b.eventStartTime && new Date(b.eventStartTime) < new Date());
 
-            {/* Desktop: Table | Mobile: Cards */}
-            {isMobile ? (
-                <div>
-                    {bookings.length === 0 ? (
+    const renderBookingsList = (bookingList) => {
+        if (isMobile) {
+            return (
+                <div style={{ paddingTop: 12 }}>
+                    {bookingList.length === 0 ? (
                         <Card style={{ textAlign: 'center', padding: '40px' }}>
-                            <Text type="secondary">Bạn chưa có đơn đặt vé nào.</Text>
+                            <Text type="secondary">{t('history.noBookings')}</Text>
                         </Card>
                     ) : (
-                        bookings.map(booking => (
+                        bookingList.map(booking => (
                             <BookingCard
                                 key={booking.id}
                                 booking={booking}
@@ -406,20 +410,72 @@ const History = () => {
                                 onViewTickets={handleViewTickets}
                                 onCancel={handleCancel}
                                 onExpire={() => fetchBookings()}
+                                t={t}
                             />
                         ))
                     )}
                 </div>
-            ) : (
-                <Table
-                    columns={columns}
-                    dataSource={bookings}
-                    rowKey="id"
-                    pagination={{ pageSize: 10 }}
-                    style={{ background: '#fff' }}
-                    scroll={{ x: 900 }}
-                />
-            )}
+            );
+        }
+
+        return (
+            <Table
+                style={{ paddingTop: 12 }}
+                columns={columns}
+                dataSource={bookingList}
+                rowKey="id"
+                pagination={{ pageSize: 10 }}
+                scroll={{ x: 900 }}
+                locale={{ emptyText: t('history.noBookings') }}
+            />
+        );
+    };
+
+    const paidItems = [
+        {
+            label: `${t('history.upcomingEvents', 'Sự kiện chưa diễn ra')} (${upcomingPaidBookings.length})`,
+            key: 'UPCOMING',
+            children: renderBookingsList(upcomingPaidBookings)
+        },
+        {
+            label: `${t('history.pastEvents', 'Sự kiện đã diễn ra')} (${pastPaidBookings.length})`,
+            key: 'PAST',
+            children: renderBookingsList(pastPaidBookings)
+        }
+    ];
+
+    const tabItems = [
+        {
+            label: `${t('history.pending', 'Chờ thanh toán')} (${pendingBookings.length})`,
+            key: 'PENDING',
+            children: renderBookingsList(pendingBookings)
+        },
+        {
+            label: `${t('history.paid', 'Đã thanh toán')} (${paidBookings.length})`,
+            key: 'PAID',
+            children: (
+                <div style={{ backgroundColor: isDark ? '#141414' : '#fafafa', padding: '16px', borderRadius: '8px', border: `1px solid ${isDark ? '#303030' : '#f0f0f0'}` }}>
+                    <Tabs type="card" items={paidItems} defaultActiveKey="UPCOMING" />
+                </div>
+            )
+        },
+        {
+            label: `${t('history.cancelled', 'Đã hủy')} (${cancelledBookings.length})`,
+            key: 'CANCELLED',
+            children: renderBookingsList(cancelledBookings)
+        }
+    ];
+
+    return (
+        <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                <Title level={isMobile ? 4 : 2} style={{ margin: 0 }}>{t('history.title')}</Title>
+                <Button icon={<SyncOutlined />} onClick={fetchBookings} size={isMobile ? 'small' : 'middle'}>
+                    {t('history.refresh')}
+                </Button>
+            </div>
+
+            <Tabs defaultActiveKey="PENDING" items={tabItems} size="large" />
 
             <ElectronicTicketModal
                 visible={isModalVisible}
@@ -432,14 +488,14 @@ const History = () => {
                 title={
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                         <CreditCardOutlined style={{ fontSize: '20px', color: '#1890ff' }} />
-                        <span style={{ fontSize: '16px', fontWeight: 600 }}>Chọn phương thức thanh toán</span>
+                        <span style={{ fontSize: '16px', fontWeight: 600 }}>{t('history.selectPaymentMethod')}</span>
                     </div>
                 }
                 open={paymentModalVisible}
                 onCancel={() => { setPaymentModalVisible(false); setSelectedMethod(null); }}
                 footer={[
                     <Button key="cancel" onClick={() => { setPaymentModalVisible(false); setSelectedMethod(null); }}>
-                        Hủy
+                        {t('common.cancel')}
                     </Button>,
                     <Button
                         key="confirm"
@@ -452,7 +508,7 @@ const History = () => {
                             borderColor: selectedMethod ? 'transparent' : undefined,
                         }}
                     >
-                        Xác nhận thanh toán
+                        {t('history.confirmPayment')}
                     </Button>
                 ]}
                 width={isMobile ? '95%' : 520}
@@ -460,7 +516,7 @@ const History = () => {
             >
                 <div style={{ padding: '12px 0' }}>
                     <Text type="secondary" style={{ display: 'block', marginBottom: '16px' }}>
-                        Vui lòng chọn một phương thức thanh toán bên dưới:
+                        {t('history.selectPaymentHint')}
                     </Text>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
                         <PaymentMethodCard
@@ -478,6 +534,7 @@ const History = () => {
                             borderColor="#ae2070"
                             disabled
                             comingSoon
+                            comingSoonText={t('history.comingSoon')}
                         />
                         <PaymentMethodCard
                             name="ZaloPay"
@@ -486,6 +543,7 @@ const History = () => {
                             borderColor="#008fe5"
                             disabled
                             comingSoon
+                            comingSoonText={t('history.comingSoon')}
                         />
                     </div>
                 </div>

@@ -1,26 +1,26 @@
 package com.vnticket.service;
 
-import com.vnticket.dto.BookingDto;
+import com.vnticket.dto.BookingDTO;
 import com.vnticket.dto.request.BookingRequest;
-import com.vnticket.dto.response.BookingStatsDto;
-import com.vnticket.dto.TicketDto;
+import com.vnticket.dto.response.BookingStatsDTO;
+import com.vnticket.dto.TicketDTO;
 
 import java.util.List;
 
 public interface BookingService {
-    BookingStatsDto getStatistics();
+    BookingStatsDTO getStatistics();
 
-    BookingStatsDto getEventStatistics(Long eventId);
+    BookingStatsDTO getEventStatistics(Long eventId);
 
-    BookingDto bookTicket(Long userId, BookingRequest request);
+    BookingDTO bookTicket(Long userId, BookingRequest request);
 
-    List<BookingDto> getMyBookings(Long userId);
+    List<BookingDTO> getMyBookings(Long userId);
 
-    BookingDto cancelBooking(Long bookingId, Long userId);
+    BookingDTO cancelBooking(Long bookingId, Long userId);
 
-    BookingDto mockPayBooking(Long bookingId, Long userId);
+    BookingDTO mockPayBooking(Long bookingId, Long userId);
 
-    List<TicketDto> getTicketsByBooking(Long bookingId, Long userId);
+    List<TicketDTO> getTicketsByBooking(Long bookingId, Long userId);
 
     void cancelExpiredBookings();
 

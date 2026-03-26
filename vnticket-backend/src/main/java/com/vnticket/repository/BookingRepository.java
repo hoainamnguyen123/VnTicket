@@ -1,7 +1,7 @@
 package com.vnticket.repository;
 
 import com.vnticket.entity.Booking;
-import com.vnticket.entity.BookingStatus;
+import com.vnticket.enums.BookingStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

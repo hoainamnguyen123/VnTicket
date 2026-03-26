@@ -1,11 +1,13 @@
 package com.vnticket.service.impl;
 
-import com.vnticket.dto.BookingDetailDto;
-import com.vnticket.dto.BookingDto;
+import com.vnticket.dto.BookingDetailDTO;
+import com.vnticket.dto.BookingDTO;
 import com.vnticket.dto.request.BookingRequest;
-import com.vnticket.dto.response.BookingStatsDto;
-import com.vnticket.dto.TicketDto;
+import com.vnticket.dto.response.BookingStatsDTO;
+import com.vnticket.dto.TicketDTO;
 import com.vnticket.entity.*;
+import com.vnticket.enums.BookingStatus;
+import com.vnticket.enums.TicketStatus;
 import com.vnticket.exception.BadRequestException;
 import com.vnticket.exception.ResourceNotFoundException;
 import com.vnticket.repository.BookingDetailRepository;
@@ -14,14 +16,20 @@ import com.vnticket.repository.EventRepository;
 import com.vnticket.repository.TicketTypeRepository;
 import com.vnticket.repository.UserRepository;
 import com.vnticket.service.BookingService;
+import com.vnticket.service.TicketInventoryRedisService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Slf4j
 @Service
@@ -32,18 +40,29 @@ public class BookingServiceImpl implements BookingService {
     private final EventRepository eventRepository;
     private final TicketTypeRepository ticketTypeRepository;
     private final UserRepository userRepository;
+    private final TicketInventoryRedisService inventoryRedisService;
 
-    public BookingServiceImpl(BookingRepository bookingRepository, BookingDetailRepository bookingDetailRepository,
-            EventRepository eventRepository, TicketTypeRepository ticketTypeRepository, UserRepository userRepository) {
+    @Value("${app.reservation.ttlMinutes:15}")
+    private int reservationTtlMinutes;
+
+    public BookingServiceImpl(BookingRepository bookingRepository,
+                              BookingDetailRepository bookingDetailRepository,
+                              EventRepository eventRepository,
+                              TicketTypeRepository ticketTypeRepository,
+                              UserRepository userRepository,
+                              TicketInventoryRedisService inventoryRedisService) {
         this.bookingRepository = bookingRepository;
         this.bookingDetailRepository = bookingDetailRepository;
         this.eventRepository = eventRepository;
         this.ticketTypeRepository = ticketTypeRepository;
         this.userRepository = userRepository;
+        this.inventoryRedisService = inventoryRedisService;
     }
 
+    // ──────────────────── Statistics (unchanged) ────────────────────
+
     @Override
-    public BookingStatsDto getStatistics() {
+    public BookingStatsDTO getStatistics() {
         log.info("Fetching booking statistics for admin dashboard");
 
         long totalBookings = bookingRepository.count();
@@ -57,7 +76,7 @@ public class BookingServiceImpl implements BookingService {
 
         BigDecimal totalRevenue = bookingRepository.sumTotalAmountByStatus(BookingStatus.PAID);
 
-        return BookingStatsDto.builder()
+        return BookingStatsDTO.builder()
                 .totalBookings(totalBookings)
                 .paidBookings(paidBookings)
                 .pendingBookings(pendingBookings)
@@ -69,7 +88,7 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public BookingStatsDto getEventStatistics(Long eventId) {
+    public BookingStatsDTO getEventStatistics(Long eventId) {
         log.info("Fetching booking statistics for Event ID: {}", eventId);
 
         if (!eventRepository.existsById(eventId)) {
@@ -84,11 +103,12 @@ public class BookingServiceImpl implements BookingService {
 
         long totalTicketsBooked = bookingRepository.sumTicketsByEventIdAndStatuses(eventId,
                 List.of(BookingStatus.PENDING, BookingStatus.PAID));
-        long totalTicketsPaid = bookingRepository.sumTicketsByEventIdAndStatuses(eventId, List.of(BookingStatus.PAID));
+        long totalTicketsPaid = bookingRepository.sumTicketsByEventIdAndStatuses(eventId,
+                List.of(BookingStatus.PAID));
 
         BigDecimal totalRevenue = bookingRepository.sumTotalAmountByEventIdAndStatus(eventId, BookingStatus.PAID);
 
-        return BookingStatsDto.builder()
+        return BookingStatsDTO.builder()
                 .totalBookings(totalBookings)
                 .paidBookings(paidBookings)
                 .pendingBookings(pendingBookings)
@@ -99,10 +119,21 @@ public class BookingServiceImpl implements BookingService {
                 .build();
     }
 
+    // ──────────────────── My Bookings ────────────────────
+
+    @Override
+    public List<BookingDTO> getMyBookings(Long userId) {
+        log.debug("Fetching all bookings for User ID: {}", userId);
+        List<Booking> bookings = bookingRepository.findByUserIdOrderByBookingTimeDesc(userId);
+        return bookings.stream().map(this::mapToDto).collect(Collectors.toList());
+    }
+
+    // ──────────────────── Book Ticket (Redis-powered) ────────────────────
+
     @Override
     @Transactional
-    public BookingDto bookTicket(Long userId, BookingRequest request) {
-        log.info("Starting ticket booking process for User ID: {}, Event ID: {}, TicketType ID: {}, Quantity: {}",
+    public BookingDTO bookTicket(Long userId, BookingRequest request) {
+        log.info("Starting ticket booking: userId={}, eventId={}, ticketTypeId={}, quantity={}",
                 userId, request.getEventId(), request.getTicketTypeId(), request.getQuantity());
 
         User user = userRepository.findById(userId)
@@ -124,163 +155,267 @@ public class BookingServiceImpl implements BookingService {
                 });
 
         if (!ticketType.getEvent().getId().equals(event.getId())) {
-            log.warn("Booking failed: TicketType ID {} does not belong to Event ID {}", ticketType.getId(),
-                    event.getId());
             throw new BadRequestException("Ticket type does not belong to this event");
         }
 
-        // 1. Check quantity
-        if (ticketType.getRemainingQuantity() < request.getQuantity()) {
-            log.warn("Booking failed: Not enough tickets available. Requested: {}, Remaining: {}",
-                    request.getQuantity(), ticketType.getRemainingQuantity());
+        // ═══ Step 1: Atomic decrement stock trên Redis ═══
+        boolean decremented = inventoryRedisService.decrementStock(
+                ticketType.getId(), request.getQuantity());
+        if (!decremented) {
+            log.warn("Booking failed: Not enough tickets (Redis). TicketType={}", ticketType.getId());
             throw new BadRequestException("Not enough tickets available");
         }
 
-        // 2. Decrement remaining quantity
-        log.debug("Decrementing ticket quantity for TicketType ID: {} by {}", ticketType.getId(),
-                request.getQuantity());
-        ticketType.setRemainingQuantity(ticketType.getRemainingQuantity() - request.getQuantity());
-        ticketTypeRepository.save(ticketType); // Optimistic locking (@Version) will trigger here if race condition
+        try {
+            // ═══ Step 2: Tạo Booking trong DB ═══
+            BigDecimal totalAmount = ticketType.getPrice()
+                    .multiply(BigDecimal.valueOf(request.getQuantity()));
 
-        // 3. Create Booking
-        BigDecimal totalAmount = ticketType.getPrice().multiply(BigDecimal.valueOf(request.getQuantity()));
-        log.debug("Calculated total amount for booking: {}", totalAmount);
+            Booking booking = Booking.builder()
+                    .user(user)
+                    .event(event)
+                    .bookingTime(LocalDateTime.now())
+                    .status(BookingStatus.PENDING)
+                    .totalAmount(totalAmount)
+                    .build();
+            Booking savedBooking = bookingRepository.save(booking);
 
-        Booking booking = Booking.builder()
-                .user(user)
-                .event(event)
-                .bookingTime(LocalDateTime.now())
-                .status(BookingStatus.PENDING) // pending payment
-                .totalAmount(totalAmount)
-                .build();
-        Booking savedBooking = bookingRepository.save(booking);
+            // ═══ Step 3: Tạo BookingDetail ═══
+            BookingDetail detail = BookingDetail.builder()
+                    .booking(savedBooking)
+                    .ticketType(ticketType)
+                    .quantity(request.getQuantity())
+                    .price(ticketType.getPrice())
+                    .build();
 
-        // 4. Create BookingDetail
-        BookingDetail detail = BookingDetail.builder()
-                .booking(savedBooking)
-                .ticketType(ticketType)
-                .quantity(request.getQuantity())
-                .price(ticketType.getPrice()) // save price at booking time
-                .build();
+            // ═══ Step 4: Generate Electronic Tickets ═══
+            List<Ticket> tickets = new ArrayList<>();
+            for (int i = 0; i < request.getQuantity(); i++) {
+                String code = "VNT-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+                tickets.add(Ticket.builder()
+                        .ticketCode(code)
+                        .bookingDetail(detail)
+                        .status(TicketStatus.VALID)
+                        .build());
+            }
+            detail.setTickets(tickets);
+            bookingDetailRepository.save(detail);
 
-        // 5. Generate Electronic Tickets
-        java.util.List<Ticket> tickets = new java.util.ArrayList<>();
-        for (int i = 0; i < request.getQuantity(); i++) {
-            String code = "VNT-" + java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase();
-            tickets.add(Ticket.builder()
-                    .ticketCode(code)
-                    .bookingDetail(detail)
-                    .status(TicketStatus.VALID)
-                    .build());
+            // ═══ Step 5: Tạo reservation trong Redis ZSET ═══
+            long expireTimeMs = System.currentTimeMillis()
+                    + (long) reservationTtlMinutes * 60 * 1000;
+            inventoryRedisService.addReservation(
+                    savedBooking.getId(), ticketType.getId(),
+                    request.getQuantity(), expireTimeMs);
+
+            savedBooking.setBookingDetails(List.of(detail));
+            log.info("Booking created successfully: bookingId={}, userId={}", savedBooking.getId(), userId);
+            return mapToDto(savedBooking);
+
+        } catch (Exception e) {
+            // ❗ Rollback Redis stock nếu DB fail
+            log.error("DB save failed after Redis decrement. Rolling back stock. Error: {}", e.getMessage());
+            inventoryRedisService.incrementStock(ticketType.getId(), request.getQuantity());
+            throw e;
         }
-        detail.setTickets(tickets);
-
-        bookingDetailRepository.save(detail);
-
-        savedBooking.setBookingDetails(List.of(detail));
-        log.info("Successfully completed ticket booking. Booking ID: {} for User ID: {}", savedBooking.getId(), userId);
-        return mapToDto(savedBooking);
     }
 
-    @Override
-    public List<BookingDto> getMyBookings(Long userId) {
-        log.debug("Fetching all bookings for User ID: {}", userId);
-        List<Booking> bookings = bookingRepository.findByUserIdOrderByBookingTimeDesc(userId);
-        log.debug("Found {} bookings for User ID: {}", bookings.size(), userId);
-        return bookings.stream().map(this::mapToDto).collect(Collectors.toList());
-    }
+    // ──────────────────── Cancel Booking ────────────────────
 
     @Override
     @Transactional
-    public BookingDto cancelBooking(Long bookingId, Long userId) {
-        log.info("Starting cancellation process for Booking ID: {}, Requested by User ID: {}", bookingId, userId);
+    public BookingDTO cancelBooking(Long bookingId, Long userId) {
+        log.info("Cancelling booking: bookingId={}, userId={}", bookingId, userId);
+
         Booking booking = bookingRepository.findById(bookingId)
-                .orElseThrow(() -> {
-                    log.error("Cancellation failed: Booking not found with ID: {}", bookingId);
-                    return new ResourceNotFoundException("Booking not found");
-                });
+                .orElseThrow(() -> new ResourceNotFoundException("Booking not found"));
 
         if (!booking.getUser().getId().equals(userId)) {
-            log.warn("Cancellation failed: User ID {} attempted to cancel Booking ID {} owned by User ID {}",
-                    userId, bookingId, booking.getUser().getId());
             throw new BadRequestException("You can only cancel your own bookings");
         }
-
         if (booking.getStatus() == BookingStatus.PAID) {
-            log.warn("Cancellation failed: Booking ID {} is already PAID and cannot be cancelled", bookingId);
             throw new BadRequestException("Cannot cancel paid bookings");
         }
-
         if (booking.getStatus() == BookingStatus.CANCELLED) {
-            log.warn("Cancellation failed: Booking ID {} is already CANCELLED", bookingId);
             throw new BadRequestException("Booking is already cancelled");
         }
 
-        log.debug("Updating booking status to CANCELLED for Booking ID: {}", bookingId);
         booking.setStatus(BookingStatus.CANCELLED);
 
-        // Restore ticket quantities
         for (BookingDetail detail : booking.getBookingDetails()) {
             TicketType ticketType = detail.getTicketType();
-            log.debug("Restoring {} tickets for TicketType ID: {}", detail.getQuantity(), ticketType.getId());
-            ticketType.setRemainingQuantity(ticketType.getRemainingQuantity() + detail.getQuantity());
+            int quantity = detail.getQuantity();
+
+            // Hoàn vé: Redis + DB
+            inventoryRedisService.incrementStock(ticketType.getId(), quantity);
+            inventoryRedisService.removeReservation(bookingId, ticketType.getId(), quantity);
+
+            ticketType.setRemainingQuantity(ticketType.getRemainingQuantity() + quantity);
             ticketTypeRepository.save(ticketType);
 
-            // Cancel associated electronic tickets
+            // Cancel electronic tickets
             if (detail.getTickets() != null) {
                 detail.getTickets().forEach(t -> t.setStatus(TicketStatus.CANCELLED));
             }
         }
 
         Booking savedBooking = bookingRepository.save(booking);
-        log.info("Successfully cancelled Booking ID: {} for User ID: {}", bookingId, userId);
+        log.info("Booking {} cancelled successfully by user {}", bookingId, userId);
         return mapToDto(savedBooking);
     }
 
+    // ──────────────────── Mock Payment ────────────────────
+
     @Override
     @Transactional
-    public BookingDto mockPayBooking(Long bookingId, Long userId) {
-        log.info("Mocking payment for Booking ID: {}, Requested by User ID: {}", bookingId, userId);
+    public BookingDTO mockPayBooking(Long bookingId, Long userId) {
+        log.info("Mock payment: bookingId={}, userId={}", bookingId, userId);
+
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new ResourceNotFoundException("Booking not found"));
 
         if (!booking.getUser().getId().equals(userId)) {
             throw new BadRequestException("You can only pay for your own bookings");
         }
-
         if (booking.getStatus() != BookingStatus.PENDING) {
             throw new BadRequestException("Booking is not in PENDING state");
         }
 
-        // Check active expiration
-        if (java.time.Duration.between(booking.getBookingTime(), java.time.LocalDateTime.now()).toMinutes() >= 15) {
-            log.warn("Mock payment rejected: Booking ID {} has expired", bookingId);
+        // Check expiration
+        if (Duration.between(booking.getBookingTime(), LocalDateTime.now()).toMinutes() >= reservationTtlMinutes) {
+            log.warn("Mock payment rejected: Booking {} expired", bookingId);
+            handleExpiredPaymentAttempt(booking);
+            throw new BadRequestException("Thời gian thanh toán đã hết hạn. Đơn hàng đã tự động bị hủy.");
+        }
 
-            // Auto-cancel if expired during payment attempt
+        // ═══ Thanh toán thành công ═══
+        confirmPayment(booking);
+
+        Booking savedBooking = bookingRepository.save(booking);
+        log.info("Mock payment successful: bookingId={}", bookingId);
+        return mapToDto(savedBooking);
+    }
+
+    // ──────────────────── VNPay Payment ────────────────────
+
+    @Override
+    @Transactional
+    public void processVnPayPayment(Long bookingId) {
+        log.info("Processing VNPay payment: bookingId={}", bookingId);
+
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new ResourceNotFoundException("Booking not found"));
+
+        if (booking.getStatus() != BookingStatus.PENDING) {
+            log.warn("Booking {} is not PENDING, skipping VNPay processing", bookingId);
+            return;
+        }
+
+        confirmPayment(booking);
+        bookingRepository.save(booking);
+        log.info("VNPay payment confirmed: bookingId={}", bookingId);
+    }
+
+    // ──────────────────── Expired Bookings (Safety Net) ────────────────────
+
+    @Override
+    @Transactional
+    public void cancelExpiredBookings() {
+        LocalDateTime expiryTime = LocalDateTime.now().minusMinutes(reservationTtlMinutes);
+        List<Booking> expiredBookings = bookingRepository.findByStatusAndBookingTimeBefore(
+                BookingStatus.PENDING, expiryTime);
+
+        if (expiredBookings.isEmpty()) {
+            return;
+        }
+
+        log.info("[Safety Net] Found {} expired PENDING bookings", expiredBookings.size());
+        for (Booking booking : expiredBookings) {
             booking.setStatus(BookingStatus.CANCELLED);
+
             for (BookingDetail detail : booking.getBookingDetails()) {
                 TicketType ticketType = detail.getTicketType();
-                ticketType.setRemainingQuantity(ticketType.getRemainingQuantity() + detail.getQuantity());
+                int quantity = detail.getQuantity();
+
+                // Hoàn vé: Redis + DB
+                inventoryRedisService.incrementStock(ticketType.getId(), quantity);
+                ticketType.setRemainingQuantity(ticketType.getRemainingQuantity() + quantity);
                 ticketTypeRepository.save(ticketType);
+
                 if (detail.getTickets() != null) {
                     detail.getTickets().forEach(t -> t.setStatus(TicketStatus.CANCELLED));
                 }
             }
-            bookingRepository.save(booking);
-            throw new BadRequestException("Thời gian thanh toán đã hết hạn (15 phút). Đơn hàng đã tự động bị hủy.");
         }
-
-        log.debug("Updating booking status to PAID for Booking ID: {}", bookingId);
-        booking.setStatus(BookingStatus.PAID);
-
-        Booking savedBooking = bookingRepository.save(booking);
-        log.info("Successfully paid Booking ID: {} for User ID: {}", bookingId, userId);
-        return mapToDto(savedBooking);
+        bookingRepository.saveAll(expiredBookings);
     }
 
-    private BookingDto mapToDto(Booking booking) {
-        List<BookingDetailDto> detailDtos = booking.getBookingDetails().stream()
-                .map(detail -> BookingDetailDto.builder()
+    // ──────────────────── Get Tickets ────────────────────
+
+    @Override
+    public List<TicketDTO> getTicketsByBooking(Long bookingId, Long userId) {
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new ResourceNotFoundException("Booking not found"));
+
+        if (!booking.getUser().getId().equals(userId)) {
+            throw new BadRequestException("You cannot view these tickets");
+        }
+
+        return booking.getBookingDetails().stream()
+                .flatMap(detail -> detail.getTickets() != null
+                        ? detail.getTickets().stream()
+                        : Stream.empty())
+                .map(this::mapTicketToDto)
+                .collect(Collectors.toList());
+    }
+
+    // ──────────────────── Private Helpers ────────────────────
+
+    /**
+     * Xử lý thanh toán thành công: xóa reservation, sync DB.
+     */
+    private void confirmPayment(Booking booking) {
+        booking.setStatus(BookingStatus.PAID);
+
+        for (BookingDetail detail : booking.getBookingDetails()) {
+            TicketType ticketType = detail.getTicketType();
+            int quantity = detail.getQuantity();
+
+            // Xóa reservation (vé đã bán chính thức)
+            inventoryRedisService.removeReservation(booking.getId(), ticketType.getId(), quantity);
+
+            // Sync DB: trừ remainingQuantity chính thức
+            ticketType.setRemainingQuantity(ticketType.getRemainingQuantity() - quantity);
+            ticketTypeRepository.save(ticketType);
+        }
+    }
+
+    /**
+     * Xử lý khi thanh toán quá hạn: cancel + hoàn vé Redis + sync DB.
+     */
+    private void handleExpiredPaymentAttempt(Booking booking) {
+        booking.setStatus(BookingStatus.CANCELLED);
+
+        for (BookingDetail detail : booking.getBookingDetails()) {
+            TicketType ticketType = detail.getTicketType();
+            int quantity = detail.getQuantity();
+
+            inventoryRedisService.incrementStock(ticketType.getId(), quantity);
+            inventoryRedisService.removeReservation(booking.getId(), ticketType.getId(), quantity);
+
+            ticketType.setRemainingQuantity(ticketType.getRemainingQuantity() + quantity);
+            ticketTypeRepository.save(ticketType);
+
+            if (detail.getTickets() != null) {
+                detail.getTickets().forEach(t -> t.setStatus(TicketStatus.CANCELLED));
+            }
+        }
+        bookingRepository.save(booking);
+    }
+
+    private BookingDTO mapToDto(Booking booking) {
+        List<BookingDetailDTO> detailDtos = booking.getBookingDetails().stream()
+                .map(detail -> BookingDetailDTO.builder()
                         .id(detail.getId())
                         .ticketTypeId(detail.getTicketType().getId())
                         .zoneName(detail.getTicketType().getZoneName())
@@ -289,12 +424,13 @@ public class BookingServiceImpl implements BookingService {
                         .build())
                 .collect(Collectors.toList());
 
-        return BookingDto.builder()
+        return BookingDTO.builder()
                 .id(booking.getId())
                 .userId(booking.getUser().getId())
                 .username(booking.getUser().getUsername())
                 .eventId(booking.getEvent().getId())
                 .eventName(booking.getEvent().getName())
+                .eventStartTime(booking.getEvent().getStartTime())
                 .bookingTime(booking.getBookingTime())
                 .status(booking.getStatus())
                 .totalAmount(booking.getTotalAmount())
@@ -302,80 +438,18 @@ public class BookingServiceImpl implements BookingService {
                 .build();
     }
 
-    @Override
-    public List<TicketDto> getTicketsByBooking(Long bookingId, Long userId) {
-        Booking booking = bookingRepository.findById(bookingId)
-                .orElseThrow(() -> new ResourceNotFoundException("Booking not found"));
-
-        if (!booking.getUser().getId().equals(userId)) {
-            throw new BadRequestException("You cannot view these tickets");
-        }
-
-        List<Ticket> tickets = booking.getBookingDetails().stream()
-                .flatMap(detail -> {
-                    if (detail.getTickets() == null)
-                        return java.util.stream.Stream.empty();
-                    return detail.getTickets().stream();
-                })
-                .collect(Collectors.toList());
-
-        return tickets.stream().map(t -> TicketDto.builder()
-                .id(t.getId())
-                .ticketCode(t.getTicketCode())
-                .status(t.getStatus())
-                .eventName(t.getBookingDetail().getTicketType().getEvent().getName())
-                .eventImageUrl(t.getBookingDetail().getTicketType().getEvent().getImageUrl())
-                .eventLocation(t.getBookingDetail().getTicketType().getEvent().getLocation())
-                .startTime(t.getBookingDetail().getTicketType().getEvent().getStartTime() != null
-                        ? t.getBookingDetail().getTicketType().getEvent().getStartTime().toString()
-                        : null)
-                .zoneName(t.getBookingDetail().getTicketType().getZoneName())
-                .price(t.getBookingDetail().getPrice())
-                .build()).collect(Collectors.toList());
-    }
-
-    @Override
-    @Transactional
-    public void cancelExpiredBookings() {
-        LocalDateTime expiryTime = LocalDateTime.now().minusMinutes(15);
-        List<Booking> expiredBookings = bookingRepository.findByStatusAndBookingTimeBefore(BookingStatus.PENDING,
-                expiryTime);
-
-        if (!expiredBookings.isEmpty()) {
-            log.info("Found {} expired PENDING bookings to auto-cancel.", expiredBookings.size());
-            for (Booking booking : expiredBookings) {
-                log.debug("Auto-cancelling expired Booking ID: {}", booking.getId());
-                booking.setStatus(BookingStatus.CANCELLED);
-
-                // Restore ticket quantities and cancel electronic tickets
-                for (BookingDetail detail : booking.getBookingDetails()) {
-                    TicketType ticketType = detail.getTicketType();
-                    ticketType.setRemainingQuantity(ticketType.getRemainingQuantity() + detail.getQuantity());
-                    ticketTypeRepository.save(ticketType);
-
-                    if (detail.getTickets() != null) {
-                        detail.getTickets().forEach(t -> t.setStatus(TicketStatus.CANCELLED));
-                    }
-                }
-            }
-            bookingRepository.saveAll(expiredBookings);
-        }
-    }
-
-    @Override
-    @Transactional
-    public void processVnPayPayment(Long bookingId) {
-        log.info("Processing VNPay payment confirmation for Booking ID: {}", bookingId);
-        Booking booking = bookingRepository.findById(bookingId)
-                .orElseThrow(() -> new ResourceNotFoundException("Booking not found"));
-
-        if (booking.getStatus() != BookingStatus.PENDING) {
-            log.warn("Booking ID {} is not PENDING, skipping VNPay payment processing", bookingId);
-            return;
-        }
-
-        booking.setStatus(BookingStatus.PAID);
-        bookingRepository.save(booking);
-        log.info("VNPay payment confirmed. Booking ID: {} status updated to PAID", bookingId);
+    private TicketDTO mapTicketToDto(Ticket ticket) {
+        Event event = ticket.getBookingDetail().getTicketType().getEvent();
+        return TicketDTO.builder()
+                .id(ticket.getId())
+                .ticketCode(ticket.getTicketCode())
+                .status(ticket.getStatus())
+                .eventName(event.getName())
+                .eventImageUrl(event.getImageUrl())
+                .eventLocation(event.getLocation())
+                .startTime(event.getStartTime() != null ? event.getStartTime().toString() : null)
+                .zoneName(ticket.getBookingDetail().getTicketType().getZoneName())
+                .price(ticket.getBookingDetail().getPrice())
+                .build();
     }
 }

@@ -1,6 +1,6 @@
 package com.vnticket.dto;
 
-import com.vnticket.entity.EventStatus;
+import com.vnticket.enums.EventStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -13,7 +13,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class EventDto {
+public class EventDTO {
     private Long id;
     private String name;
     private String imageUrl;
@@ -23,7 +23,7 @@ public class EventDto {
     private String location;
     private String type;
     private String organizerName;
-    private List<TicketTypeDto> ticketTypes;
+    private List<TicketTypeDTO> ticketTypes;
     private EventStatus status;
     private Boolean isSlider;
     private Boolean isFeatured;

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Row, Col, Typography, Input, message, Skeleton, Empty, Select, Pagination } from 'antd';
+import { useTranslation } from 'react-i18next';
 import axiosClient from '../api/axiosClient';
 import FeaturedEventCard from '../components/FeaturedEventCard';
 import { CalendarOutlined } from '@ant-design/icons';
@@ -13,6 +14,7 @@ const AllEvents = () => {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [eventType, setEventType] = useState('');
+    const { t } = useTranslation();
     
     // Phân trang
     const [currentPage, setCurrentPage] = useState(1);
@@ -40,7 +42,7 @@ const AllEvents = () => {
             setEvents(response.data.content);
             setTotalElements(response.data.totalElements);
         } catch (error) {
-            message.error('Không thể tải danh sách sự kiện!');
+            message.error(t('allEvents.loadError'));
         } finally {
             setLoading(false);
         }
@@ -58,25 +60,25 @@ const AllEvents = () => {
         <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '20px', marginBottom: '30px' }}>
                 <Title level={2} style={{ margin: 0 }}>
-                    <CalendarOutlined style={{ color: '#1890ff', marginRight: '8px' }} /> Tất cả sự kiện
+                    <CalendarOutlined style={{ color: '#1890ff', marginRight: '8px' }} /> {t('allEvents.title')}
                 </Title>
 
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '15px', flex: '1 1 auto', justifyContent: 'flex-end' }}>
                     <Select
-                        placeholder="Thể loại"
+                        placeholder={t('allEvents.categoryPlaceholder')}
                         style={{ width: '100%', maxWidth: '200px', flex: '1 1 150px' }}
                         allowClear
                         onChange={setEventType}
                         size={"large"}
                     >
-                        <Option value="Âm Nhạc">Âm nhạc / Concert</Option>
-                        <Option value="Thể Thao">Bóng đá</Option>
-                        <Option value="Hội Thảo">Hội Thảo</Option>
-                        <Option value="Khác">Khác</Option>
+                        <Option value="Âm Nhạc">{t('allEvents.musicConcert')}</Option>
+                        <Option value="Thể Thao">{t('allEvents.football')}</Option>
+                        <Option value="Hội Thảo">{t('allEvents.conference')}</Option>
+                        <Option value="Khác">{t('allEvents.other')}</Option>
                     </Select>
 
                     <Search
-                        placeholder="Tìm kiếm sự kiện..."
+                        placeholder={t('allEvents.searchPlaceholder')}
                         allowClear
                         onSearch={setSearchTerm}
                         style={{ width: '100%', maxWidth: '300px', flex: '1 1 200px' }}
@@ -110,12 +112,12 @@ const AllEvents = () => {
                             total={totalElements} 
                             onChange={handlePageChange}
                             showSizeChanger
-                            showTotal={(total) => `Tổng số ${total} sự kiện`}
+                            showTotal={(total) => t('allEvents.total', { total })}
                         />
                     </div>
                 </>
             ) : (
-                <Empty description="Không tìm thấy sự kiện nào" style={{ margin: '50px 0' }} />
+                <Empty description={t('allEvents.noEvents')} style={{ margin: '50px 0' }} />
             )}
         </div>
     );

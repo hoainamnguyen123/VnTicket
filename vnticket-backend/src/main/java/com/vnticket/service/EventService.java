@@ -1,28 +1,28 @@
 package com.vnticket.service;
 
-import com.vnticket.dto.EventDto;
+import com.vnticket.dto.EventDTO;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import com.vnticket.entity.Event;
-import com.vnticket.entity.EventStatus;
+import com.vnticket.enums.EventStatus;
 
 public interface EventService {
-    Page<EventDto> getApprovedEvents(String type, String search, Pageable pageable);
+    Page<EventDTO> getApprovedEvents(String type, String search, Pageable pageable);
 
-    Page<EventDto> getAdminAllEvents(String type, String search, Pageable pageable);
+    Page<EventDTO> getAdminAllEvents(String type, String search, Pageable pageable);
 
-    Page<EventDto> getMyEvents(Long userId, Pageable pageable);
+    Page<EventDTO> getMyEvents(Long userId, Pageable pageable);
 
-    EventDto getEventById(Long id);
+    EventDTO getEventById(Long id);
 
-    EventDto createAdminEvent(EventDto eventDto);
+    EventDTO createAdminEvent(EventDTO EventDTO);
 
-    EventDto createMyEvent(Long userId, EventDto eventDto);
+    EventDTO createMyEvent(Long userId, EventDTO EventDTO);
 
-    EventDto updateEvent(Long id, EventDto eventDto);
+    EventDTO updateEvent(Long id, EventDTO EventDTO);
 
-    EventDto updateEventStatus(Long id, EventStatus status);
+    EventDTO updateEventStatus(Long id, EventStatus status);
 
     void deleteEvent(Long id);
 }

@@ -1,6 +1,6 @@
 package com.vnticket.controller;
 
-import com.vnticket.dto.EventDto;
+import com.vnticket.dto.EventDTO;
 import com.vnticket.dto.response.ApiResponse;
 import com.vnticket.service.EventService;
 import lombok.extern.slf4j.Slf4j;
@@ -24,7 +24,7 @@ public class EventController {
 
     // Public API
     @GetMapping("/events")
-    public ResponseEntity<ApiResponse<Page<EventDto>>> getAllEvents(
+    public ResponseEntity<ApiResponse<Page<EventDTO>>> getAllEvents(
             @RequestParam(required = false) String type,
             @RequestParam(required = false) String search,
             @RequestParam(defaultValue = "0") int page,
@@ -33,14 +33,14 @@ public class EventController {
 
         log.info("Fetching events with type: {}, search: {}, page: {}, size: {}", type, search, page, size);
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, sortBy));
-        Page<EventDto> events = eventService.getApprovedEvents(type, search, pageable);
+        Page<EventDTO> events = eventService.getApprovedEvents(type, search, pageable);
         return ResponseEntity.ok(ApiResponse.success("Fetched events", events));
     }
 
     @GetMapping("/events/{id}")
-    public ResponseEntity<ApiResponse<EventDto>> getEventById(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<EventDTO>> getEventById(@PathVariable Long id) {
         log.info("Fetching event details for id: {}", id);
-        EventDto event = eventService.getEventById(id);
+        EventDTO event = eventService.getEventById(id);
         return ResponseEntity.ok(ApiResponse.success("Fetched event", event));
     }
 
@@ -55,30 +55,30 @@ public class EventController {
     // User API (My Events)
     @PostMapping("/events/my")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ApiResponse<EventDto>> createMyEvent(@RequestBody EventDto eventDto) {
+    public ResponseEntity<ApiResponse<EventDTO>> createMyEvent(@RequestBody EventDTO EventDTO) {
         Long userId = getCurrentUserId();
-        log.info("User {} creating new event: {}", userId, eventDto.getName());
-        EventDto createdEvent = eventService.createMyEvent(userId, eventDto);
+        log.info("User {} creating new event: {}", userId, EventDTO.getName());
+        EventDTO createdEvent = eventService.createMyEvent(userId, EventDTO);
         return ResponseEntity.ok(ApiResponse.success("Event created successfully", createdEvent));
     }
 
     @GetMapping("/events/my")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<ApiResponse<Page<EventDto>>> getMyEvents(
+    public ResponseEntity<ApiResponse<Page<EventDTO>>> getMyEvents(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "startTime") String sortBy) {
         Long userId = getCurrentUserId();
         log.info("Fetching events for user {}", userId);
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, sortBy));
-        Page<EventDto> events = eventService.getMyEvents(userId, pageable);
+        Page<EventDTO> events = eventService.getMyEvents(userId, pageable);
         return ResponseEntity.ok(ApiResponse.success("Fetched user events", events));
     }
 
     // Admin API
     @GetMapping("/admin/events")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<Page<EventDto>>> getAdminAllEvents(
+    public ResponseEntity<ApiResponse<Page<EventDTO>>> getAdminAllEvents(
             @RequestParam(required = false) String type,
             @RequestParam(required = false) String search,
             @RequestParam(defaultValue = "0") int page,
@@ -87,34 +87,34 @@ public class EventController {
 
         log.info("Admin fetching all events with type: {}, search: {}, page: {}, size: {}", type, search, page, size);
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, sortBy));
-        Page<EventDto> events = eventService.getAdminAllEvents(type, search, pageable);
+        Page<EventDTO> events = eventService.getAdminAllEvents(type, search, pageable);
         return ResponseEntity.ok(ApiResponse.success("Fetched events", events));
     }
 
     @PostMapping("/admin/events")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<EventDto>> createEvent(@RequestBody EventDto eventDto) {
-        log.info("Admin creating new event: {}", eventDto.getName());
-        EventDto createdEvent = eventService.createAdminEvent(eventDto);
+    public ResponseEntity<ApiResponse<EventDTO>> createEvent(@RequestBody EventDTO EventDTO) {
+        log.info("Admin creating new event: {}", EventDTO.getName());
+        EventDTO createdEvent = eventService.createAdminEvent(EventDTO);
         log.info("Event created successfully with id: {}", createdEvent.getId());
         return ResponseEntity.ok(ApiResponse.success("Event created successfully", createdEvent));
     }
 
     @PutMapping("/admin/events/{id}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<EventDto>> updateEvent(@PathVariable Long id, @RequestBody EventDto eventDto) {
+    public ResponseEntity<ApiResponse<EventDTO>> updateEvent(@PathVariable Long id, @RequestBody EventDTO EventDTO) {
         log.info("Admin updating event with id: {}", id);
-        EventDto updatedEvent = eventService.updateEvent(id, eventDto);
+        EventDTO updatedEvent = eventService.updateEvent(id, EventDTO);
         log.info("Event updated successfully with id: {}", id);
         return ResponseEntity.ok(ApiResponse.success("Event updated successfully", updatedEvent));
     }
 
     @PutMapping("/admin/events/{id}/status")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<EventDto>> updateEventStatus(@PathVariable Long id,
-            @RequestParam com.vnticket.entity.EventStatus status) {
+    public ResponseEntity<ApiResponse<EventDTO>> updateEventStatus(@PathVariable Long id,
+            @RequestParam com.vnticket.enums.EventStatus status) {
         log.info("Admin updating event status id: {} to {}", id, status);
-        EventDto updatedEvent = eventService.updateEventStatus(id, status);
+        EventDTO updatedEvent = eventService.updateEventStatus(id, status);
         return ResponseEntity.ok(ApiResponse.success("Event status updated", updatedEvent));
     }
 

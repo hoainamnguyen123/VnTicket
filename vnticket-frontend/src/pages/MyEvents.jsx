@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { Table, Button, Modal, Form, Input, InputNumber, DatePicker, message, Space, Upload, Tag, Statistic, Row, Col, Card } from 'antd';
 import { PlusOutlined, UploadOutlined } from '@ant-design/icons';
+import { useTranslation } from 'react-i18next';
 import axiosClient from '../api/axiosClient';
 import EventFormModal from '../components/EventFormModal';
 import { AuthContext } from '../context/AuthContext';
@@ -15,6 +16,7 @@ const MyEvents = () => {
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [form] = Form.useForm();
     const { user } = useContext(AuthContext);
+    const { t } = useTranslation();
 
     useEffect(() => {
         fetchMyEvents();
@@ -26,7 +28,7 @@ const MyEvents = () => {
             const response = await axiosClient.get('/events/my');
             setEvents(response.data.content);
         } catch (error) {
-            message.error('Lỗi tải danh sách sự kiện của bạn!');
+            message.error(t('myEvents.loadError'));
         } finally {
             setLoading(false);
         }
@@ -51,12 +53,12 @@ const MyEvents = () => {
             console.log("Dữ liệu gửi lên API MyEvents:", eventData);
 
             await axiosClient.post('/events/my', eventData);
-            message.success('Đã gửi yêu cầu tạo sự kiện thành công! Vui lòng chờ Admin duyệt.');
+            message.success(t('myEvents.createSuccess'));
             setIsModalVisible(false);
             form.resetFields();
             fetchMyEvents();
         } catch (error) {
-            if (!error.errorFields) message.error(error.response?.data?.message || 'Có lỗi xảy ra khi tạo sự kiện!');
+            if (!error.errorFields) message.error(error.response?.data?.message || t('myEvents.createError'));
         }
     };
 
@@ -71,39 +73,39 @@ const MyEvents = () => {
             setSelectedEventName(record.name);
             setIsStatsModalVisible(true);
         } catch (error) {
-            message.error('Không thể tải thống kê cho sự kiện này');
+            message.error(t('myEvents.statsError'));
         }
     };
 
     const columns = [
         {
-            title: 'Tên Sự Kiện',
+            title: t('myEvents.eventName'),
             dataIndex: 'name',
             key: 'name',
         },
         {
-            title: 'Địa Điểm',
+            title: t('myEvents.location'),
             dataIndex: 'location',
             key: 'location',
         },
         {
-            title: 'Thời Gian',
+            title: t('myEvents.time'),
             dataIndex: 'startTime',
             key: 'startTime',
             render: (time) => formatDate(time),
         },
         {
-            title: 'Trạng Thái',
+            title: t('myEvents.status'),
             dataIndex: 'status',
             key: 'status',
             render: (status) => {
                 let color = status === 'APPROVED' ? 'green' : status === 'PENDING' ? 'gold' : 'red';
-                let text = status === 'APPROVED' ? 'Đã duyệt' : status === 'PENDING' ? 'Chờ duyệt' : 'Từ chối';
+                let text = status === 'APPROVED' ? t('myEvents.approved') : status === 'PENDING' ? t('myEvents.pendingStatus') : t('myEvents.rejected');
                 return <Tag color={color}>{text}</Tag>;
             }
         },
         {
-            title: 'Hành Động',
+            title: t('myEvents.actions'),
             key: 'action',
             render: (_, record) => (
                 <Space>
@@ -112,7 +114,7 @@ const MyEvents = () => {
                             type="dashed"
                             onClick={() => handleViewEventStats(record)}
                         >
-                            Xem Thống Kê Doanh Thu
+                            {t('myEvents.viewStats')}
                         </Button>
                     )}
                 </Space>
@@ -124,7 +126,7 @@ const MyEvents = () => {
         <div>
             <div style={{ marginBottom: 16 }}>
                 <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsModalVisible(true)}>
-                    Tạo Sự Kiện Mới
+                    {t('myEvents.createEvent')}
                 </Button>
             </div>
 
@@ -136,7 +138,7 @@ const MyEvents = () => {
             />
 
             <EventFormModal
-                title="Tạo Sự Kiện Mới (Chờ Duyệt)"
+                title={t('myEvents.createEventPending')}
                 visible={isModalVisible}
                 onCancel={() => setIsModalVisible(false)}
                 onOk={handleCreateEvent}
@@ -146,12 +148,12 @@ const MyEvents = () => {
             />
 
             <Modal
-                title={`Thống kê Doanh Thu Sự Kiện: ${selectedEventName}`}
+                title={t('myEvents.statsTitle', { name: selectedEventName })}
                 open={isStatsModalVisible}
                 onCancel={() => setIsStatsModalVisible(false)}
                 footer={[
                     <Button key="close" type="primary" onClick={() => setIsStatsModalVisible(false)}>
-                        Đóng
+                        {t('common.close')}
                     </Button>
                 ]}
                 width={800}
@@ -161,7 +163,7 @@ const MyEvents = () => {
                         <Col span={12}>
                             <Card>
                                 <Statistic
-                                    title="Số Vé Đã Đặt (Pending + Paid)"
+                                    title={t('myEvents.totalBooked')}
                                     value={eventStats.totalTicketsBooked}
                                 />
                             </Card>
@@ -169,7 +171,7 @@ const MyEvents = () => {
                         <Col span={12}>
                             <Card>
                                 <Statistic
-                                    title="Số Vé Đã Thanh Toán"
+                                    title={t('myEvents.totalPaid')}
                                     value={eventStats.totalTicketsPaid}
                                     valueStyle={{ color: '#3f8600' }}
                                 />
@@ -178,7 +180,7 @@ const MyEvents = () => {
                         <Col span={12}>
                             <Card>
                                 <Statistic
-                                    title="Tổng Doanh Thu Bán Vé"
+                                    title={t('myEvents.totalRevenue')}
                                     value={eventStats.totalRevenue}
                                     suffix="VNĐ"
                                     valueStyle={{ color: '#cf1322' }}
@@ -188,7 +190,7 @@ const MyEvents = () => {
                         <Col span={12}>
                             <Card>
                                 <Statistic
-                                    title="Thực Nhận (Sau khi trừ 2% phí hệ thống)"
+                                    title={t('myEvents.netRevenue')}
                                     value={eventStats.totalRevenue - (eventStats.totalRevenue * 0.02)}
                                     suffix="VNĐ"
                                     valueStyle={{ color: '#1890ff', fontWeight: 'bold' }}
@@ -197,7 +199,7 @@ const MyEvents = () => {
                         </Col>
                     </Row>
                 ) : (
-                    <p>Đang tải dữ liệu chờ xíu nhe...</p>
+                    <p>{t('myEvents.loadingData')}</p>
                 )}
             </Modal>
         </div>
