@@ -96,6 +96,7 @@ public class AuthController {
         return refreshTokenService.findUserIdByToken(requestRefreshToken)
                 .flatMap(userId -> userRepository.findById(userId))
                 .map(user -> {
+                    log.info("🔄 Refreshing new access token successfully for user: {}", user.getUsername());
                     String accessToken = jwtUtils.generateTokenFromUsername(user.getUsername());
                     JwtResponse response = JwtResponse.builder()
                             .token(accessToken)

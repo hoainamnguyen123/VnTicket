@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Table, Button, Modal, Form, Input, Select, DatePicker, message, Space, Popconfirm, Row, Col, Card, Statistic, Tag, Typography, Image, Divider, Tabs, Badge } from 'antd';
-import { EditOutlined, DeleteOutlined, PlusOutlined, MinusCircleOutlined, DollarOutlined, TagsOutlined, CheckCircleOutlined, BarChartOutlined, UserOutlined, EnvironmentOutlined, ClockCircleOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
+import { EditOutlined, DeleteOutlined, PlusOutlined, MinusCircleOutlined, DollarOutlined, TagsOutlined, CheckCircleOutlined, BarChartOutlined, UserOutlined, EnvironmentOutlined, ClockCircleOutlined, ExclamationCircleOutlined, MailOutlined, PhoneOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import axiosClient from '../api/axiosClient';
 import EventFormModal from '../components/EventFormModal';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
@@ -12,6 +13,7 @@ const { TextArea } = Input;
 
 const Admin = () => {
     const { t } = useTranslation();
+    const navigate = useNavigate();
     const [events, setEvents] = useState([]);
     const [pendingEvents, setPendingEvents] = useState([]);
     const [approvedEvents, setApprovedEvents] = useState([]);
@@ -50,15 +52,15 @@ const Admin = () => {
             // Fetch a large number of events to handle client-side filtering effectively
             const res = await axiosClient.get(`/admin/events?page=0&size=1000`);
             const allEvents = res.data.content || [];
-            
+
             // Sort by ID descending (newest first)
             allEvents.sort((a, b) => b.id - a.id);
-            
+
             setEvents(allEvents);
             setPendingEvents(allEvents.filter(e => e.status === 'PENDING'));
             setApprovedEvents(allEvents.filter(e => e.status === 'APPROVED'));
             setRejectedEvents(allEvents.filter(e => e.status === 'REJECTED'));
-            
+
             // Calculate Chart Data
             let revenueData = allEvents.map(event => {
                 let revenue = 0;
@@ -70,9 +72,9 @@ const Admin = () => {
                 }
                 return { name: event.name.length > 20 ? event.name.substring(0, 20) + '...' : event.name, revenue };
             });
-            let sortedRevenue = [...revenueData].sort((a,b) => b.revenue - a.revenue).slice(0, 5);
+            let sortedRevenue = [...revenueData].sort((a, b) => b.revenue - a.revenue).slice(0, 5);
             setEventRevenueData(sortedRevenue);
-            
+
             let typeMap = {};
             allEvents.forEach(e => {
                 if (!e.type) return;
@@ -80,10 +82,10 @@ const Admin = () => {
             });
             let pieData = Object.keys(typeMap).map(key => ({ name: key, value: typeMap[key] }));
             setEventTypeData(pieData);
-            
+
             // Dispatch event to sync Navbar badge
             window.dispatchEvent(new CustomEvent('event-status-updated'));
-            
+
         } catch (error) {
             message.error(t('admin.loadEventsError'));
         } finally {
@@ -107,9 +109,7 @@ const Admin = () => {
     };
 
     const handleAdd = () => {
-        setEditingEvent(null);
-        form.resetFields();
-        setIsModalVisible(true);
+        navigate('/create-event');
     };
 
     const handleEdit = (record) => {
@@ -241,106 +241,106 @@ const Admin = () => {
                 <Tabs.TabPane tab={<span><BarChartOutlined /> {t('admin.dashboard')}</span>} key="DASHBOARD">
                     {stats && (
                         <div style={{ marginBottom: 32, padding: '16px 0' }}>
-                    <Row gutter={[16, 16]}>
-                        <Col xs={24} sm={12} md={6}>
-                            <Card className="dashboard-card" bodyStyle={{ padding: '24px' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <div>
-                                        <Typography.Text type="secondary" style={{ fontSize: '16px' }}>{t('admin.totalBookings')}</Typography.Text>
-                                        <Typography.Title level={2} style={{ margin: 0 }}>{stats.totalBookings}</Typography.Title>
-                                    </div>
-                                    <div className="stat-icon-wrapper" style={{ background: '#e6f4ff', color: '#1890ff' }}>
-                                        <TagsOutlined />
-                                    </div>
-                                </div>
-                            </Card>
-                        </Col>
-                        <Col xs={24} sm={12} md={6}>
-                            <Card className="dashboard-card" bodyStyle={{ padding: '24px' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <div>
-                                        <Typography.Text type="secondary" style={{ fontSize: '16px' }}>{t('admin.bookedTickets')}</Typography.Text>
-                                        <Typography.Title level={2} style={{ margin: 0 }}>{stats.totalTicketsBooked}</Typography.Title>
-                                    </div>
-                                    <div className="stat-icon-wrapper" style={{ background: '#fff0f6', color: '#eb2f96' }}>
-                                        <UserOutlined />
-                                    </div>
-                                </div>
-                            </Card>
-                        </Col>
-                        <Col xs={24} sm={12} md={6}>
-                            <Card className="dashboard-card" bodyStyle={{ padding: '24px' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <div>
-                                        <Typography.Text type="secondary" style={{ fontSize: '16px' }}>{t('admin.paidTickets')}</Typography.Text>
-                                        <Typography.Title level={2} style={{ margin: 0, color: '#52c41a' }}>{stats.totalTicketsPaid}</Typography.Title>
-                                    </div>
-                                    <div className="stat-icon-wrapper" style={{ background: '#f6ffed', color: '#52c41a' }}>
-                                        <CheckCircleOutlined />
-                                    </div>
-                                </div>
-                            </Card>
-                        </Col>
-                        <Col xs={24} sm={12} md={6}>
-                            <Card className="dashboard-card" bodyStyle={{ padding: '24px' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <div>
-                                        <Typography.Text type="secondary" style={{ fontSize: '16px' }}>{t('admin.totalRevenue')}</Typography.Text>
-                                        <Typography.Title level={3} style={{ margin: 0, color: '#f5222d' }}>{stats.totalRevenue?.toLocaleString()} ₫</Typography.Title>
-                                    </div>
-                                    <div className="stat-icon-wrapper" style={{ background: '#fff1f0', color: '#f5222d' }}>
-                                        <DollarOutlined />
-                                    </div>
-                                </div>
-                            </Card>
-                        </Col>
-                    </Row>
-                    
-                    <Row gutter={[16, 16]} style={{ marginTop: 24 }}>
-                        <Col xs={24} lg={16}>
-                            <Card title={t('admin.topRevenueEvents')} className="dashboard-card" bodyStyle={{ height: 350, padding: '20px 0' }} headStyle={{ borderBottom: '1px solid #f0f0f0' }}>
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <BarChart data={eventRevenueData} layout="vertical" margin={{ top: 20, right: 30, left: 120, bottom: 20 }}>
-                                        <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-                                        <XAxis type="number" tickFormatter={(val) => `${val / 1000000}M`} />
-                                        <YAxis type="category" dataKey="name" tick={{ fontSize: 13 }} width={110} />
-                                        <RechartsTooltip formatter={(value) => `${value.toLocaleString()} VNĐ`} cursor={{ fill: 'transparent' }} />
-                                        <Bar dataKey="revenue" fill="#1890ff" radius={[0, 4, 4, 0]} barSize={30}>
-                                            {eventRevenueData.map((entry, index) => (
-                                                <Cell key={`cell-${index}`} fill={['#1890ff', '#52c41a', '#faad14', '#eb2f96', '#722ed1'][index % 5]} />
-                                            ))}
-                                        </Bar>
-                                    </BarChart>
-                                </ResponsiveContainer>
-                            </Card>
-                        </Col>
-                        <Col xs={24} lg={8}>
-                            <Card title={t('admin.eventTypeDistrib')} className="dashboard-card" bodyStyle={{ height: 350, padding: 0 }} headStyle={{ borderBottom: '1px solid #f0f0f0' }}>
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <PieChart>
-                                        <Pie data={eventTypeData} cx="50%" cy="50%" innerRadius={70} outerRadius={110} paddingAngle={5} dataKey="value" label>
-                                            {eventTypeData.map((entry, index) => (
-                                                <Cell key={`cell-${index}`} fill={['#f5222d', '#fa8c16', '#a0d911', '#1890ff', '#722ed1'][index % 5]} />
-                                            ))}
-                                        </Pie>
-                                        <RechartsTooltip />
-                                        <Legend verticalAlign="bottom" height={36} />
-                                    </PieChart>
-                                </ResponsiveContainer>
-                            </Card>
-                        </Col>
-                    </Row>
-                </div>
-            )}
+                            <Row gutter={[16, 16]}>
+                                <Col xs={24} sm={12} md={6}>
+                                    <Card className="dashboard-card" bodyStyle={{ padding: '24px' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <div>
+                                                <Typography.Text type="secondary" style={{ fontSize: '16px' }}>{t('admin.totalBookings')}</Typography.Text>
+                                                <Typography.Title level={2} style={{ margin: 0 }}>{stats.totalBookings}</Typography.Title>
+                                            </div>
+                                            <div className="stat-icon-wrapper" style={{ background: '#e6f4ff', color: '#1890ff' }}>
+                                                <TagsOutlined />
+                                            </div>
+                                        </div>
+                                    </Card>
+                                </Col>
+                                <Col xs={24} sm={12} md={6}>
+                                    <Card className="dashboard-card" bodyStyle={{ padding: '24px' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <div>
+                                                <Typography.Text type="secondary" style={{ fontSize: '16px' }}>{t('admin.bookedTickets')}</Typography.Text>
+                                                <Typography.Title level={2} style={{ margin: 0 }}>{stats.totalTicketsBooked}</Typography.Title>
+                                            </div>
+                                            <div className="stat-icon-wrapper" style={{ background: '#fff0f6', color: '#eb2f96' }}>
+                                                <UserOutlined />
+                                            </div>
+                                        </div>
+                                    </Card>
+                                </Col>
+                                <Col xs={24} sm={12} md={6}>
+                                    <Card className="dashboard-card" bodyStyle={{ padding: '24px' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <div>
+                                                <Typography.Text type="secondary" style={{ fontSize: '16px' }}>{t('admin.paidTickets')}</Typography.Text>
+                                                <Typography.Title level={2} style={{ margin: 0, color: '#52c41a' }}>{stats.totalTicketsPaid}</Typography.Title>
+                                            </div>
+                                            <div className="stat-icon-wrapper" style={{ background: '#f6ffed', color: '#52c41a' }}>
+                                                <CheckCircleOutlined />
+                                            </div>
+                                        </div>
+                                    </Card>
+                                </Col>
+                                <Col xs={24} sm={12} md={6}>
+                                    <Card className="dashboard-card" bodyStyle={{ padding: '24px' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                            <div>
+                                                <Typography.Text type="secondary" style={{ fontSize: '16px' }}>{t('admin.totalRevenue')}</Typography.Text>
+                                                <Typography.Title level={3} style={{ margin: 0, color: '#f5222d' }}>{stats.totalRevenue?.toLocaleString()} ₫</Typography.Title>
+                                            </div>
+                                            <div className="stat-icon-wrapper" style={{ background: '#fff1f0', color: '#f5222d' }}>
+                                                <DollarOutlined />
+                                            </div>
+                                        </div>
+                                    </Card>
+                                </Col>
+                            </Row>
+
+                            <Row gutter={[16, 16]} style={{ marginTop: 24 }}>
+                                <Col xs={24} lg={16}>
+                                    <Card title={t('admin.topRevenueEvents')} className="dashboard-card" bodyStyle={{ height: 350, padding: '20px 0' }} headStyle={{ borderBottom: '1px solid #f0f0f0' }}>
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <BarChart data={eventRevenueData} layout="vertical" margin={{ top: 20, right: 30, left: 120, bottom: 20 }}>
+                                                <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                                                <XAxis type="number" tickFormatter={(val) => `${val / 1000000}M`} />
+                                                <YAxis type="category" dataKey="name" tick={{ fontSize: 13 }} width={110} />
+                                                <RechartsTooltip formatter={(value) => `${value.toLocaleString()} VNĐ`} cursor={{ fill: 'transparent' }} />
+                                                <Bar dataKey="revenue" fill="#1890ff" radius={[0, 4, 4, 0]} barSize={30}>
+                                                    {eventRevenueData.map((entry, index) => (
+                                                        <Cell key={`cell-${index}`} fill={['#1890ff', '#52c41a', '#faad14', '#eb2f96', '#722ed1'][index % 5]} />
+                                                    ))}
+                                                </Bar>
+                                            </BarChart>
+                                        </ResponsiveContainer>
+                                    </Card>
+                                </Col>
+                                <Col xs={24} lg={8}>
+                                    <Card title={t('admin.eventTypeDistrib')} className="dashboard-card" bodyStyle={{ height: 350, padding: 0 }} headStyle={{ borderBottom: '1px solid #f0f0f0' }}>
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <PieChart>
+                                                <Pie data={eventTypeData} cx="50%" cy="50%" innerRadius={70} outerRadius={110} paddingAngle={5} dataKey="value" label>
+                                                    {eventTypeData.map((entry, index) => (
+                                                        <Cell key={`cell-${index}`} fill={['#f5222d', '#fa8c16', '#a0d911', '#1890ff', '#722ed1'][index % 5]} />
+                                                    ))}
+                                                </Pie>
+                                                <RechartsTooltip />
+                                                <Legend verticalAlign="bottom" height={36} />
+                                            </PieChart>
+                                        </ResponsiveContainer>
+                                    </Card>
+                                </Col>
+                            </Row>
+                        </div>
+                    )}
                 </Tabs.TabPane>
 
-                <Tabs.TabPane 
+                <Tabs.TabPane
                     tab={
                         <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <TagsOutlined /> {t('admin.eventManagement')}
                             <Badge count={pendingEvents.length} showZero={false} />
                         </span>
-                    } 
+                    }
                     key="EVENTS"
                 >
                     <div style={{ padding: '16px 0' }}>
@@ -351,63 +351,63 @@ const Admin = () => {
                             </Button>
                         </div>
 
-            <Tabs 
-                activeKey={activeTab} 
-                onChange={setActiveTab}
-                type="card"
-                items={[
-                    {
-                        label: <span><CheckCircleOutlined /> {t('admin.approved')} ({approvedEvents.length})</span>,
-                        key: 'APPROVED',
-                        children: (
-                            <Table
-                                columns={columns}
-                                dataSource={approvedEvents}
-                                rowKey="id"
-                                loading={loading}
-                                pagination={{ pageSize: 10 }}
-                                scroll={{ x: 'max-content' }}
-                                onRow={(record) => ({ onClick: () => handleViewEventDetail(record), style: { cursor: 'pointer' } })}
-                            />
-                        )
-                    },
-                    {
-                        label: (
-                            <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <ExclamationCircleOutlined /> {t('admin.pending')}
-                                <Badge count={pendingEvents.length} showZero={false} />
-                            </span>
-                        ),
-                        key: 'PENDING',
-                        children: (
-                            <Table
-                                columns={columns}
-                                dataSource={pendingEvents}
-                                rowKey="id"
-                                loading={loading}
-                                pagination={{ pageSize: 10 }}
-                                scroll={{ x: 'max-content' }}
-                                onRow={(record) => ({ onClick: () => handleViewEventDetail(record), style: { cursor: 'pointer' } })}
-                            />
-                        )
-                    },
-                    {
-                        label: <span><MinusCircleOutlined /> {t('admin.rejected')} ({rejectedEvents.length})</span>,
-                        key: 'REJECTED',
-                        children: (
-                            <Table
-                                columns={columns}
-                                dataSource={rejectedEvents}
-                                rowKey="id"
-                                loading={loading}
-                                pagination={{ pageSize: 10 }}
-                                scroll={{ x: 'max-content' }}
-                                onRow={(record) => ({ onClick: () => handleViewEventDetail(record), style: { cursor: 'pointer' } })}
-                            />
-                        )
-                    }
-                ]}
-            />
+                        <Tabs
+                            activeKey={activeTab}
+                            onChange={setActiveTab}
+                            type="card"
+                            items={[
+                                {
+                                    label: <span><CheckCircleOutlined /> {t('admin.approved')} ({approvedEvents.length})</span>,
+                                    key: 'APPROVED',
+                                    children: (
+                                        <Table
+                                            columns={columns}
+                                            dataSource={approvedEvents}
+                                            rowKey="id"
+                                            loading={loading}
+                                            pagination={{ pageSize: 10 }}
+                                            scroll={{ x: 'max-content' }}
+                                            onRow={(record) => ({ onClick: () => handleViewEventDetail(record), style: { cursor: 'pointer' } })}
+                                        />
+                                    )
+                                },
+                                {
+                                    label: (
+                                        <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <ExclamationCircleOutlined /> {t('admin.pending')}
+                                            <Badge count={pendingEvents.length} showZero={false} />
+                                        </span>
+                                    ),
+                                    key: 'PENDING',
+                                    children: (
+                                        <Table
+                                            columns={columns}
+                                            dataSource={pendingEvents}
+                                            rowKey="id"
+                                            loading={loading}
+                                            pagination={{ pageSize: 10 }}
+                                            scroll={{ x: 'max-content' }}
+                                            onRow={(record) => ({ onClick: () => handleViewEventDetail(record), style: { cursor: 'pointer' } })}
+                                        />
+                                    )
+                                },
+                                {
+                                    label: <span><MinusCircleOutlined /> {t('admin.rejected')} ({rejectedEvents.length})</span>,
+                                    key: 'REJECTED',
+                                    children: (
+                                        <Table
+                                            columns={columns}
+                                            dataSource={rejectedEvents}
+                                            rowKey="id"
+                                            loading={loading}
+                                            pagination={{ pageSize: 10 }}
+                                            scroll={{ x: 'max-content' }}
+                                            onRow={(record) => ({ onClick: () => handleViewEventDetail(record), style: { cursor: 'pointer' } })}
+                                        />
+                                    )
+                                }
+                            ]}
+                        />
                     </div>
                 </Tabs.TabPane>
             </Tabs>
@@ -485,48 +485,47 @@ const Admin = () => {
                 onCancel={() => setIsEventDetailVisible(false)}
                 width={1000}
                 style={{ top: 20 }}
-                footer={viewingEvent ? [
-                    <Button
-                        key="stats"
-                        icon={<BarChartOutlined />}
-                        onClick={() => { handleViewEventStats(viewingEvent); setIsEventDetailVisible(false); }}
-                    >
-                        {t('admin.viewStats')}
-                    </Button>,
-                    <Button 
-                        key="edit" 
-                        type="primary" 
-                        icon={<EditOutlined />} 
-                        onClick={() => handleEdit(viewingEvent)}
-                    >
-                        {t('admin.edit')}
-                    </Button>,
-                    <Popconfirm
-                        key="delete"
-                        title={t('admin.deleteConfirm')}
-                        onConfirm={() => handleDelete(viewingEvent.id)}
-                        okText={t('admin.yes')}
-                        cancelText={t('admin.no')}
-                    >
-                        <Button type="primary" danger icon={<DeleteOutlined />}>{t('admin.delete')}</Button>
-                    </Popconfirm>,
-                    viewingEvent.status === 'PENDING' && (
+                footer={viewingEvent ? (
+                    viewingEvent.status === 'PENDING' ? [
                         <Button key="reject" type="primary" danger onClick={() => {
                             handleUpdateStatus(viewingEvent.id, 'REJECTED');
                             setIsEventDetailVisible(false);
                         }}>
                             {t('admin.reject')}
-                        </Button>
-                    ),
-                    viewingEvent.status === 'PENDING' && (
+                        </Button>,
                         <Button key="approve" type="primary" style={{ backgroundColor: '#52c41a', borderColor: '#52c41a' }} onClick={() => {
                             handleUpdateStatus(viewingEvent.id, 'APPROVED');
                             setIsEventDetailVisible(false);
                         }}>
                             {t('admin.approve')}
                         </Button>
-                    )
-                ].filter(Boolean) : null}
+                    ] : [
+                        <Button
+                            key="stats"
+                            icon={<BarChartOutlined />}
+                            onClick={() => { handleViewEventStats(viewingEvent); setIsEventDetailVisible(false); }}
+                        >
+                            {t('admin.viewStats')}
+                        </Button>,
+                        <Button
+                            key="edit"
+                            type="primary"
+                            icon={<EditOutlined />}
+                            onClick={() => handleEdit(viewingEvent)}
+                        >
+                            {t('admin.edit')}
+                        </Button>,
+                        <Popconfirm
+                            key="delete"
+                            title={t('admin.deleteConfirm')}
+                            onConfirm={() => handleDelete(viewingEvent.id)}
+                            okText={t('admin.yes')}
+                            cancelText={t('admin.no')}
+                        >
+                            <Button type="primary" danger icon={<DeleteOutlined />}>{t('admin.delete')}</Button>
+                        </Popconfirm>
+                    ]
+                ) : null}
             >
                 {viewingEvent && (
                     <div style={{ padding: '20px 0' }}>
@@ -564,6 +563,14 @@ const Admin = () => {
                                     <Typography.Paragraph>
                                         <UserOutlined style={{ marginRight: 8, color: '#1890ff' }} />
                                         <strong>{t('admin.organizer')}</strong> {viewingEvent.organizerName || t('admin.notUpdated')}
+                                    </Typography.Paragraph>
+                                    <Typography.Paragraph>
+                                        <MailOutlined style={{ marginRight: 8, color: '#1890ff' }} />
+                                        <strong>{t('admin.organizerEmail')}</strong> {viewingEvent.organizerEmail || t('admin.notUpdated')}
+                                    </Typography.Paragraph>
+                                    <Typography.Paragraph>
+                                        <PhoneOutlined style={{ marginRight: 8, color: '#1890ff' }} />
+                                        <strong>{t('admin.organizerPhone')}</strong> {viewingEvent.organizerPhone || t('admin.notUpdated')}
                                     </Typography.Paragraph>
                                     <Typography.Paragraph>
                                         <TagsOutlined style={{ marginRight: 8, color: '#1890ff' }} />

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Modal, Form, Input, Select, DatePicker, Row, Col, Space, Button, Alert, Switch } from 'antd';
 import { MinusCircleOutlined, PlusOutlined } from '@ant-design/icons';
 import axios from 'axios';
+import ImageUploadInput from './ImageUploadInput';
 
 const { Option } = Select;
 const { TextArea } = Input;
@@ -76,8 +77,8 @@ const EventFormModal = ({ visible, onCancel, onOk, form, title, editingEvent, is
                     </Col>
                 </Row>
 
-                <Form.Item name="imageUrl" label="Link Ảnh Chính 1280x720 (URL)" rules={[{ required: true, message: 'Vui lòng nhập link ảnh!' }]}>
-                    <Input />
+                <Form.Item name="imageUrl" label="Ảnh Chính (1280x720)" rules={[{ required: true, message: 'Vui lòng tải ảnh lên!' }]}>
+                    <ImageUploadInput />
                 </Form.Item>
 
                 <Form.List name="additionalImages">
@@ -87,7 +88,7 @@ const EventFormModal = ({ visible, onCancel, onOk, form, title, editingEvent, is
                                 <Form.Item
                                     required={false}
                                     key={field.key}
-                                    label={index === 0 ? "Ảnh Phụ Thêm (URL)" : ""}
+                                    label={index === 0 ? "Ảnh Phụ Thêm" : ""}
                                 >
                                     <Space style={{ display: 'flex' }} align="baseline">
                                         <Form.Item
@@ -98,7 +99,7 @@ const EventFormModal = ({ visible, onCancel, onOk, form, title, editingEvent, is
                                             ]}
                                             noStyle
                                         >
-                                            <Input placeholder="URL ảnh phụ" style={{ width: '100%' }} />
+                                            <ImageUploadInput />
                                         </Form.Item>
                                         <MinusCircleOutlined onClick={() => remove(field.name)} style={{ color: 'red' }} />
                                     </Space>

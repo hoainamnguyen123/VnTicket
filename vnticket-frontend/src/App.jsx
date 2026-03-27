@@ -12,6 +12,7 @@ import EventDetail from './pages/EventDetail';
 import History from './pages/History';
 import AllEvents from './pages/AllEvents';
 import Admin from './pages/Admin';
+import CreateEvent from './pages/CreateEvent';
 import Profile from './pages/Profile';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
@@ -65,6 +66,7 @@ function App() {
               <Route path="/" element={<Home />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
+              <Route path="/create-event" element={<CreateEvent />} />
               <Route path="/event/:id" element={<EventDetail />} />
               <Route path="/events" element={<AllEvents />} />
               <Route path="/history" element={<History />} />

@@ -225,7 +225,7 @@ const Navbar = () => {
                                     type="primary"
                                     shape="round"
                                     icon={<PlusOutlined />}
-                                    onClick={() => setIsEventModalVisible(true)}
+                                    onClick={() => navigate('/create-event')}
                                     style={{ padding: '0 24px', fontWeight: 500, boxShadow: '0 4px 10px rgba(24, 144, 255, 0.3)' }}
                                 >
                                     {t('navbar.createEvent')}
@@ -341,7 +341,7 @@ const Navbar = () => {
                 <div style={{ padding: '20px', borderTop: `1px solid ${isDark ? '#303030' : '#f0f0f0'}`, marginTop: 'auto' }}>
                     {user ? (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                            <Button type="primary" block size="large" icon={<PlusOutlined />} onClick={() => { setMobileMenuOpen(false); setIsEventModalVisible(true); }}>
+                            <Button type="primary" block size="large" icon={<PlusOutlined />} onClick={() => { setMobileMenuOpen(false); navigate('/create-event'); }}>
                                 {t('navbar.createEvent')}
                             </Button>
                             <Button danger block size="large" icon={<LogoutOutlined />} onClick={() => { handleLogout(); setMobileMenuOpen(false); }}>

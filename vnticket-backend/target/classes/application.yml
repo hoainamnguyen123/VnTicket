@@ -24,11 +24,15 @@ spring:
     properties:
       hibernate:
         format_sql: true
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
 
 app:
   jwt:
     secret: VNTicketSuperSecretKeyForJwtGenerationMustBeLongEnoughToBeSecureVNTicketSuperSecretKeyForJwtGenerationMustBeLongEnoughToBeSecure
-    expirationMs: 600000 # 10 minutes
+    expirationMs: 30000 # 10 minutes
     jwtRefreshExpirationMs: 2592000000 # 30 days
   google:
     clientId: 626920740184-b50brg5oc6psqva23adt7f9a7632fhp4.apps.googleusercontent.com
@@ -39,3 +43,8 @@ app:
     returnUrl: http://localhost:5173/payment-return
   reservation:
     ttlMinutes: 15
+
+cloudinary:
+  cloud-name: "dilx7nhbv"
+  api-key: "342651966745924"
+  api-secret: "cC3wjZ9ZtdQKTqL1eVrnxVJiphI"

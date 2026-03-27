@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { Row, Col, Typography, Card, Button, InputNumber, Divider, Table, Tag, message, Skeleton, Modal, Switch, Image } from 'antd';
+import { Row, Col, Typography, Card, Button, InputNumber, Divider, Table, Tag, message, Skeleton, Modal, Switch, Image, Alert } from 'antd';
 import { useParams, useNavigate } from 'react-router-dom';
 import { CalendarOutlined, EnvironmentOutlined, CheckCircleOutlined, ExclamationCircleOutlined, UserOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
@@ -22,6 +22,8 @@ const EventDetail = () => {
     const [selectedTicket, setSelectedTicket] = useState(null);
     const [quantity, setQuantity] = useState(1);
     const [bookingLoading, setBookingLoading] = useState(false);
+    const [isConfirmVisible, setIsConfirmVisible] = useState(false);
+    const [isSuccessVisible, setIsSuccessVisible] = useState(false);
 
     useEffect(() => {
         window.scrollTo(0, 0);
@@ -38,7 +40,7 @@ const EventDetail = () => {
         fetchEventDetail();
     }, [id]);
 
-    const handleBookTicket = async () => {
+    const showConfirmModal = () => {
         if (!user) {
             message.warning(t('eventDetail.loginRequired'));
             navigate('/login');
@@ -49,6 +51,10 @@ const EventDetail = () => {
             message.warning(t('eventDetail.selectTicket'));
             return;
         }
+        setIsConfirmVisible(true);
+    };
+
+    const handleConfirmBooking = async () => {
 
         setBookingLoading(true);
         try {
@@ -58,11 +64,8 @@ const EventDetail = () => {
                 quantity: quantity
             });
 
-            Modal.success({
-                title: t('eventDetail.bookingSuccess'),
-                content: t('eventDetail.bookingSuccessContent'),
-                onOk: () => navigate('/history')
-            });
+            setIsConfirmVisible(false);
+            setIsSuccessVisible(true);
         } catch (error) {
             message.error(error.message || t('eventDetail.bookingError'));
 
@@ -179,7 +182,7 @@ const EventDetail = () => {
                             size="large"
                             block
                             style={{ marginTop: '20px', height: '50px', fontSize: '16px', borderRadius: '8px' }}
-                            onClick={handleBookTicket}
+                            onClick={showConfirmModal}
                             loading={bookingLoading}
                             disabled={!selectedTicket}
                         >
@@ -194,6 +197,43 @@ const EventDetail = () => {
                 <Paragraph>{event.description}</Paragraph>
             </div>
 
+            <Modal
+                title={<><ExclamationCircleOutlined style={{ color: '#faad14', marginRight: 8 }} /> Xác Nhận Thông Tin Đặt Vé</>}
+                open={isConfirmVisible}
+                onOk={handleConfirmBooking}
+                onCancel={() => setIsConfirmVisible(false)}
+                okText="Xác nhận & Tiếp tục"
+                cancelText="Hủy"
+                confirmLoading={bookingLoading}
+                centered
+            >
+                <div style={{ padding: '10px 0' }}>
+                    <Text>
+                        Bạn đang đặt <strong>{quantity} vé {selectedTicket?.zoneName}</strong> với tổng số tiền <strong>{selectedTicket ? formatCurrency(selectedTicket.price * quantity) : '0 ₫'}</strong>.
+                    </Text>
+                    <br /><br />
+                    <Alert
+                        message="Lưu ý quan trọng"
+                        description="Sau khi xác nhận đặt vé, bạn sẽ có đúng 15 phút để hoàn tất thanh toán. Quá thời gian này, hệ thống sẽ tự động hủy đơn hàng để nhường vé cho người khác."
+                        type="warning"
+                        showIcon
+                    />
+                </div>
+            </Modal>
+
+            <Modal
+                title={<><CheckCircleOutlined style={{ color: '#52c41a', marginRight: 8 }} /> {t('eventDetail.bookingSuccess') || 'Đặt Vé Thành Công'}</>}
+                open={isSuccessVisible}
+                onOk={() => { setIsSuccessVisible(false); navigate('/history'); }}
+                onCancel={() => { setIsSuccessVisible(false); navigate('/history'); }}
+                okText="Xem Lịch Sử Giao Dịch"
+                cancelButtonProps={{ style: { display: 'none' } }}
+                centered
+            >
+                <div style={{ padding: '10px 0' }}>
+                    <Text>{t('eventDetail.bookingSuccessContent') || 'Đơn đặt vé của bạn đã được ghi nhận. Vui lòng tiến hành thanh toán trong mục Lịch sử đặt vé.'}</Text>
+                </div>
+            </Modal>
         </div>
     );
 };

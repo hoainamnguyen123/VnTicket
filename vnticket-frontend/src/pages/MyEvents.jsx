@@ -3,6 +3,7 @@ import { Table, Button, Modal, Form, Input, InputNumber, DatePicker, message, Sp
 import { PlusOutlined, UploadOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import axiosClient from '../api/axiosClient';
+import { useNavigate } from 'react-router-dom';
 import EventFormModal from '../components/EventFormModal';
 import { AuthContext } from '../context/AuthContext';
 import { formatDate } from '../utils/formatters';
@@ -17,6 +18,7 @@ const MyEvents = () => {
     const [form] = Form.useForm();
     const { user } = useContext(AuthContext);
     const { t } = useTranslation();
+    const navigate = useNavigate();
 
     useEffect(() => {
         fetchMyEvents();
@@ -125,7 +127,7 @@ const MyEvents = () => {
     return (
         <div>
             <div style={{ marginBottom: 16 }}>
-                <Button type="primary" icon={<PlusOutlined />} onClick={() => setIsModalVisible(true)}>
+                <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate('/create-event')}>
                     {t('myEvents.createEvent')}
                 </Button>
             </div>

@@ -28,4 +28,6 @@ public class EventDTO {
     private Boolean isSlider;
     private Boolean isFeatured;
     private Long organizerId;
+    private String organizerEmail;
+    private String organizerPhone;
 }

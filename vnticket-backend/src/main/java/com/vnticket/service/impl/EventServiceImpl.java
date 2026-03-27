@@ -27,7 +27,8 @@ public class EventServiceImpl implements EventService {
     private final TicketTypeRepository ticketTypeRepository;
     private final TicketInventoryRedisService inventoryRedisService;
 
-    public EventServiceImpl(EventRepository eventRepository, TicketTypeRepository ticketTypeRepository, TicketInventoryRedisService inventoryRedisService) {
+    public EventServiceImpl(EventRepository eventRepository, TicketTypeRepository ticketTypeRepository,
+            TicketInventoryRedisService inventoryRedisService) {
         this.eventRepository = eventRepository;
         this.ticketTypeRepository = ticketTypeRepository;
         this.inventoryRedisService = inventoryRedisService;
@@ -176,11 +177,12 @@ public class EventServiceImpl implements EventService {
                     }).collect(Collectors.toList());
             List<TicketType> savedTicketTypes = ticketTypeRepository.saveAll(ticketTypes);
             savedEvent.setTicketTypes(savedTicketTypes);
-            
+
             // Sync inventory to Redis for new ticket types
             savedTicketTypes.forEach(tt -> {
                 inventoryRedisService.initStock(tt.getId(), tt.getRemainingQuantity());
-                log.info("Initialized Redis inventory for new ticket type {}: {}", tt.getId(), tt.getRemainingQuantity());
+                log.info("Initialized Redis inventory for new ticket type {}: {}", tt.getId(),
+                        tt.getRemainingQuantity());
             });
         }
     }
@@ -218,6 +220,8 @@ public class EventServiceImpl implements EventService {
                 .organizerName(event.getOrganizerName())
                 .status(event.getStatus())
                 .organizerId(event.getOrganizer() != null ? event.getOrganizer().getId() : null)
+                .organizerEmail(event.getOrganizer() != null ? event.getOrganizer().getEmail() : null)
+                .organizerPhone(event.getOrganizer() != null ? event.getOrganizer().getPhone() : null)
                 .ticketTypes(TicketTypeDTOs)
                 .isSlider(event.getIsSlider())
                 .isFeatured(event.getIsFeatured())
