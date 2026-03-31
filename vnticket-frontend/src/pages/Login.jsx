@@ -106,6 +106,12 @@ const Login = () => {
                         <Input.Password prefix={<LockOutlined />} placeholder={t('login.passwordPlaceholder')} />
                     </Form.Item>
 
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px', marginTop: '-12px' }}>
+                        <Link to="/forgot-password" style={{ fontSize: '14px' }}>
+                            {t('login.forgotPassword', 'Quên mật khẩu?')}
+                        </Link>
+                    </div>
+
                     <Form.Item>
                         <Button type="primary" htmlType="submit" loading={loading} block style={{ borderRadius: '6px' }}>
                             {t('login.submitButton')}

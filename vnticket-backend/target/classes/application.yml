@@ -28,12 +28,23 @@ spring:
     multipart:
       max-file-size: 10MB
       max-request-size: 10MB
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: "namtlhb68@gmail.com"
+    password: "brbwfekbyausmzcf"
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
 
 app:
   jwt:
     secret: VNTicketSuperSecretKeyForJwtGenerationMustBeLongEnoughToBeSecureVNTicketSuperSecretKeyForJwtGenerationMustBeLongEnoughToBeSecure
-    expirationMs: 30000 # 10 minutes
-    jwtRefreshExpirationMs: 2592000000 # 30 days
+    expirationMs: 300000 # 5 minutes
+    jwtRefreshExpirationMs: 86400000 # 1 day
   google:
     clientId: 626920740184-b50brg5oc6psqva23adt7f9a7632fhp4.apps.googleusercontent.com
   vnpay:

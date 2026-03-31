@@ -3,6 +3,8 @@ package com.vnticket.controller;
 import com.vnticket.dto.request.LoginRequest;
 import com.vnticket.dto.request.SignupRequest;
 import com.vnticket.dto.request.GoogleLoginRequest;
+import com.vnticket.dto.request.ForgotPasswordRequest;
+import com.vnticket.dto.request.ResetPasswordRequest;
 import com.vnticket.dto.response.ApiResponse;
 import com.vnticket.dto.response.JwtResponse;
 import com.vnticket.exception.TokenRefreshException;
@@ -129,5 +131,19 @@ public class AuthController {
         return ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, jwtRefreshCookie.toString())
                 .body(ApiResponse.success("You've been signed out!", null));
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<ApiResponse<Object>> processForgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        log.info("Processing forgot password for email: {}", request.getEmail());
+        authService.processForgotPassword(request);
+        return ResponseEntity.ok(ApiResponse.success("Mã OTP đã được gửi đến email của bạn.", null));
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<ApiResponse<Object>> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        log.info("Processing reset password for email: {}", request.getEmail());
+        authService.resetPassword(request);
+        return ResponseEntity.ok(ApiResponse.success("Đổi mật khẩu thành công. Vui lòng đăng nhập lại.", null));
     }
 }

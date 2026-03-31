@@ -10,4 +10,8 @@ public interface AuthService {
     void registerUser(SignupRequest signUpRequest);
 
     JwtResponse authenticateGoogleUser(String idToken);
+
+    void processForgotPassword(com.vnticket.dto.request.ForgotPasswordRequest request);
+
+    void resetPassword(com.vnticket.dto.request.ResetPasswordRequest request);
 }

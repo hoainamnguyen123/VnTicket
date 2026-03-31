@@ -25,6 +25,12 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import com.vnticket.service.EmailService;
+import com.vnticket.dto.request.ForgotPasswordRequest;
+import com.vnticket.dto.request.ResetPasswordRequest;
+import java.util.concurrent.TimeUnit;
+import java.util.Random;
 import java.util.UUID;
 
 @Slf4j
@@ -35,16 +41,20 @@ public class AuthServiceImpl implements AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder encoder;
     private final JwtUtils jwtUtils;
+    private final StringRedisTemplate redisTemplate;
+    private final EmailService emailService;
 
     @Value("${app.google.clientId}")
     private String googleClientId;
 
     public AuthServiceImpl(AuthenticationManager authenticationManager, UserRepository userRepository,
-            PasswordEncoder encoder, JwtUtils jwtUtils) {
+            PasswordEncoder encoder, JwtUtils jwtUtils, StringRedisTemplate redisTemplate, EmailService emailService) {
         this.authenticationManager = authenticationManager;
         this.userRepository = userRepository;
         this.encoder = encoder;
         this.jwtUtils = jwtUtils;
+        this.redisTemplate = redisTemplate;
+        this.emailService = emailService;
     }
 
     @Override
@@ -167,6 +177,76 @@ public class AuthServiceImpl implements AuthService {
                 user.getUsername(),
                 user.getEmail(),
                 user.getRole().name());
+    }
+
+    @Override
+    public void processForgotPassword(ForgotPasswordRequest request) {
+        String email = request.getEmail();
+        
+        // 1. Check user exists
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new BadRequestException("Email không tồn tại trong hệ thống"));
+                
+        // 2. Rate limiting check
+        String rateLimitKey = "rate_limit:forgot_password:" + email;
+        if (Boolean.TRUE.equals(redisTemplate.hasKey(rateLimitKey))) {
+            throw new BadRequestException("Bạn vừa gửi yêu cầu. Vui lòng đợi 60 giây để thử lại.");
+        }
+        
+        // Check daily limit (e.g. max 5 times per day)
+        String dailyLimitKey = "daily_limit:forgot_password:" + email;
+        String dailyStr = redisTemplate.opsForValue().get(dailyLimitKey);
+        int dailyCount = dailyStr != null ? Integer.parseInt(dailyStr) : 0;
+        
+        if (dailyCount >= 5) {
+            throw new BadRequestException("Bạn đã vượt quá giới hạn gửi OTP trong ngày.");
+        }
+
+        // 3. Generate OTP
+        String otp = String.format("%06d", new Random().nextInt(999999));
+        
+        // 4. Save to Redis
+        String otpKey = "otp:forgot_password:" + email;
+        redisTemplate.opsForValue().set(otpKey, otp, 5, TimeUnit.MINUTES);
+        
+        // 5. Update limits
+        redisTemplate.opsForValue().set(rateLimitKey, "1", 60, TimeUnit.SECONDS);
+        if (dailyCount == 0) {
+            redisTemplate.opsForValue().set(dailyLimitKey, "1", 24, TimeUnit.HOURS);
+        } else {
+            redisTemplate.opsForValue().increment(dailyLimitKey);
+        }
+        
+        // 6. Send Email
+        emailService.sendOtpEmail(email, otp);
+    }
+
+    @Override
+    @Transactional
+    public void resetPassword(ResetPasswordRequest request) {
+        String email = request.getEmail();
+        String providedOtp = request.getOtp();
+        String newPassword = request.getNewPassword();
+        
+        String otpKey = "otp:forgot_password:" + email;
+        String savedOtp = redisTemplate.opsForValue().get(otpKey);
+        
+        if (savedOtp == null) {
+            throw new BadRequestException("Mã OTP đã hết hạn hoặc không tồn tại.");
+        }
+        
+        if (!savedOtp.equals(providedOtp)) {
+            throw new BadRequestException("Mã OTP không chính xác.");
+        }
+        
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new BadRequestException("Người dùng không tồn tại."));
+                
+        user.setPassword(encoder.encode(newPassword));
+        userRepository.save(user);
+        
+        // Xóa OTP sau khi sử dụng thành công
+        redisTemplate.delete(otpKey);
     }
 }
 
