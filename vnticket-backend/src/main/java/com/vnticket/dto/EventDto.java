@@ -9,11 +9,13 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import java.io.Serializable;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class EventDTO {
+public class EventDTO implements Serializable {
     private Long id;
     private String name;
     private String imageUrl;
@@ -30,4 +32,5 @@ public class EventDTO {
     private Long organizerId;
     private String organizerEmail;
     private String organizerPhone;
+    private String rejectionReason;
 }

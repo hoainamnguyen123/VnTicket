@@ -31,7 +31,7 @@ public class TraceIdFilter extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
         try {
-            // Tạo traceId ngắn 8 ký tự
+            // Tạo traceId
             String traceId = UUID.randomUUID().toString().substring(0, 8);
 
             // Đặt vào MDC để hiển thị trong log

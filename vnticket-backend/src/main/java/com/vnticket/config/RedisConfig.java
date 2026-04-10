@@ -2,26 +2,15 @@ package com.vnticket.config;
 
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.springframework.boot.autoconfigure.data.redis.RedisProperties;
+import org.springframework.cache.CacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.redis.cache.RedisCacheConfiguration;
+import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
 import org.springframework.data.redis.connection.jedis.JedisClientConfiguration;
 import org.springframework.data.redis.connection.jedis.JedisConnectionFactory;
 
-/**
- * Cấu hình Redis sử dụng Jedis client với connection pool.
- *
- * Tại sao cần class này?
- * ─────────────────────
- * Mặc định Spring Boot auto-config tạo connection KHÔNG có pool (mỗi request tạo connection mới).
- * Class này tạo JedisConnectionFactory với pool để:
- *   - Tái sử dụng connection (giảm overhead tạo/đóng connection)
- *   - Giới hạn số connection tối đa tới Redis server
- *   - Mỗi thread mượn 1 connection, dùng xong trả lại pool
- *
- * Flow:
- *   Request → Service → StringRedisTemplate → JedisConnectionFactory → JedisPool → Redis
- */
 @Configuration
 public class RedisConfig {
 
@@ -60,5 +49,13 @@ public class RedisConfig {
                 .build();
 
         return new JedisConnectionFactory(redisConfig, clientConfig);
+    }
+
+    @Bean
+    public CacheManager cacheManager(JedisConnectionFactory jedisConnectionFactory) {
+        RedisCacheConfiguration cacheConfig = RedisCacheConfiguration.defaultCacheConfig();
+        return RedisCacheManager.builder(jedisConnectionFactory)
+                .cacheDefaults(cacheConfig)
+                .build();
     }
 }

@@ -53,9 +53,6 @@ public class RefreshTokenService {
         return Optional.of(Long.parseLong(userIdStr));
     }
 
-    /**
-     * Xóa refresh token khi đăng xuất. Xóa ngay lập tức, không cần chờ TTL.
-     */
     public boolean deleteByToken(String token) {
         String key = REFRESH_TOKEN_PREFIX + token;
         Boolean deleted = redisTemplate.delete(key);

@@ -62,6 +62,15 @@ public class EventController {
         return ResponseEntity.ok(ApiResponse.success("Event created successfully", createdEvent));
     }
 
+    @PutMapping("/events/my/{id}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<EventDTO>> updateMyEvent(@PathVariable Long id, @RequestBody EventDTO EventDTO) {
+        Long userId = getCurrentUserId();
+        log.info("User {} updating their event: {}", userId, id);
+        EventDTO updatedEvent = eventService.updateMyEvent(userId, id, EventDTO);
+        return ResponseEntity.ok(ApiResponse.success("Event updated successfully", updatedEvent));
+    }
+
     @GetMapping("/events/my")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<ApiResponse<Page<EventDTO>>> getMyEvents(
@@ -73,6 +82,15 @@ public class EventController {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, sortBy));
         Page<EventDTO> events = eventService.getMyEvents(userId, pageable);
         return ResponseEntity.ok(ApiResponse.success("Fetched user events", events));
+    }
+
+    @DeleteMapping("/events/my/{id}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<Object>> deleteMyEvent(@PathVariable Long id) {
+        Long userId = getCurrentUserId();
+        log.info("User {} deleting rejected event {}", userId, id);
+        eventService.deleteMyEvent(userId, id);
+        return ResponseEntity.ok(ApiResponse.success("Event deleted successfully", null));
     }
 
     // Admin API
@@ -112,9 +130,10 @@ public class EventController {
     @PutMapping("/admin/events/{id}/status")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<EventDTO>> updateEventStatus(@PathVariable Long id,
-            @RequestParam com.vnticket.enums.EventStatus status) {
+            @RequestParam com.vnticket.enums.EventStatus status,
+            @RequestParam(required = false) String rejectionReason) {
         log.info("Admin updating event status id: {} to {}", id, status);
-        EventDTO updatedEvent = eventService.updateEventStatus(id, status);
+        EventDTO updatedEvent = eventService.updateEventStatus(id, status, rejectionReason);
         return ResponseEntity.ok(ApiResponse.success("Event status updated", updatedEvent));
     }
 

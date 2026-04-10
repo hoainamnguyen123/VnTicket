@@ -7,11 +7,13 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 
+import java.io.Serializable;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class TicketTypeDTO {
+public class TicketTypeDTO implements Serializable {
     private Long id;
     private Long eventId;
     private String zoneName;

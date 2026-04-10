@@ -8,7 +8,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
-@Table(name = "events")
+@Table(name = "events", indexes = {
+    @Index(name = "idx_event_status", columnList = "status")
+})
 @Getter
 @Setter
 @NoArgsConstructor
@@ -60,4 +62,7 @@ public class Event {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "organizer_id")
     private User organizer;
+
+    @Column(columnDefinition = "TEXT")
+    private String rejectionReason;
 }

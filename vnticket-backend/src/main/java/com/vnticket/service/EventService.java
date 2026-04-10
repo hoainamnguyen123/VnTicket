@@ -20,9 +20,13 @@ public interface EventService {
 
     EventDTO createMyEvent(Long userId, EventDTO EventDTO);
 
+    EventDTO updateMyEvent(Long userId, Long eventId, EventDTO EventDTO);
+
     EventDTO updateEvent(Long id, EventDTO EventDTO);
 
-    EventDTO updateEventStatus(Long id, EventStatus status);
+    EventDTO updateEventStatus(Long id, EventStatus status, String rejectionReason);
+
+    void deleteMyEvent(Long userId, Long eventId);
 
     void deleteEvent(Long id);
 }

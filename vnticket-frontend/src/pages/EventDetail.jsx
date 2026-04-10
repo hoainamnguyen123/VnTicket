@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { Row, Col, Typography, Card, Button, InputNumber, Divider, Table, Tag, message, Skeleton, Modal, Switch, Image, Alert } from 'antd';
 import { useParams, useNavigate } from 'react-router-dom';
-import { CalendarOutlined, EnvironmentOutlined, CheckCircleOutlined, ExclamationCircleOutlined, UserOutlined } from '@ant-design/icons';
+import { CalendarOutlined, EnvironmentOutlined, CheckCircleOutlined, ExclamationCircleOutlined, UserOutlined, ArrowRightOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import { ThemeContext } from '../context/ThemeContext';
 import axiosClient from '../api/axiosClient';
+import FeaturedEventCard from '../components/FeaturedEventCard';
 import { formatCurrency, formatDate } from '../utils/formatters';
 import { AuthContext } from '../context/AuthContext';
 
@@ -18,6 +19,7 @@ const EventDetail = () => {
     const { isDark } = useContext(ThemeContext);
 
     const [event, setEvent] = useState(null);
+    const [relatedEvents, setRelatedEvents] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedTicket, setSelectedTicket] = useState(null);
     const [quantity, setQuantity] = useState(1);
@@ -31,6 +33,20 @@ const EventDetail = () => {
             try {
                 const response = await axiosClient.get(`/events/${id}`);
                 setEvent(response.data);
+
+                // Fetch random related events
+                try {
+                    const relatedRes = await axiosClient.get(`/events?page=0&size=50`);
+                    if (relatedRes.data?.content) {
+                        const allEvents = relatedRes.data.content;
+                        // Filter out current event and shuffle
+                        const filtered = allEvents.filter(e => Number(e.id) !== Number(id));
+                        const shuffled = filtered.sort(() => 0.5 - Math.random());
+                        setRelatedEvents(shuffled.slice(0, 8)); // Get 8 random events
+                    }
+                } catch (e) {
+                    console.error("Failed to fetch related events:", e);
+                }
             } catch (error) {
                 message.error(t('eventDetail.loadError'));
             } finally {
@@ -222,18 +238,42 @@ const EventDetail = () => {
             </Modal>
 
             <Modal
-                title={<><CheckCircleOutlined style={{ color: '#52c41a', marginRight: 8 }} /> {t('eventDetail.bookingSuccess') || 'Đặt Vé Thành Công'}</>}
+                title={<><CheckCircleOutlined style={{ color: '#52c41a', marginRight: 8 }} /> {t('eventDetail.bookingSuccess', 'Đặt Vé Thành Công')}</>}
                 open={isSuccessVisible}
                 onOk={() => { setIsSuccessVisible(false); navigate('/history'); }}
                 onCancel={() => { setIsSuccessVisible(false); navigate('/history'); }}
-                okText="Xem Lịch Sử Giao Dịch"
+                okText={t('eventDetail.viewHistory', 'Xem Lịch Sử Giao Dịch')}
                 cancelButtonProps={{ style: { display: 'none' } }}
                 centered
             >
                 <div style={{ padding: '10px 0' }}>
-                    <Text>{t('eventDetail.bookingSuccessContent') || 'Đơn đặt vé của bạn đã được ghi nhận. Vui lòng tiến hành thanh toán trong mục Lịch sử đặt vé.'}</Text>
+                    <Text>{t('eventDetail.bookingSuccessContent', 'Đơn đặt vé của bạn đã được ghi nhận. Vui lòng tiến hành thanh toán trong mục Lịch sử đặt vé.')}</Text>
                 </div>
             </Modal>
+
+            {relatedEvents.length > 0 && (
+                <div style={{ marginTop: '60px', paddingBottom: '40px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                        <Title level={2} style={{ margin: 0 }}>
+                            {t('eventDetail.youMightLike', 'Sự kiện có thể bạn sẽ thích')}
+                        </Title>
+                        <Button 
+                            type="text" 
+                            style={{ fontSize: '16px', color: '#1890ff', fontWeight: 500, padding: 0 }} 
+                            onClick={() => navigate('/events')}
+                        >
+                            {t('eventDetail.seeMore', 'Xem thêm tất cả')} <ArrowRightOutlined style={{ fontSize: '14px', marginLeft: '4px' }} />
+                        </Button>
+                    </div>
+                    <Row gutter={[24, 24]}>
+                        {relatedEvents.map(ev => (
+                            <Col xs={24} sm={12} md={6} key={ev.id}>
+                                <FeaturedEventCard event={ev} />
+                            </Col>
+                        ))}
+                    </Row>
+                </div>
+            )}
         </div>
     );
 };

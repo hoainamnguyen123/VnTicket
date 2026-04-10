@@ -1,6 +1,7 @@
 D:\VNTicket\vnticket-backend\src\main\java\com\vnticket\controller\EventController.java
 D:\VNTicket\vnticket-backend\src\main\java\com\vnticket\dto\EventDTO.java
 D:\VNTicket\vnticket-backend\src\main\java\com\vnticket\controller\PaymentController.java
+D:\VNTicket\vnticket-backend\src\main\java\com\vnticket\config\CloudinaryConfig.java
 D:\VNTicket\vnticket-backend\src\main\java\com\vnticket\dto\request\BookingRequest.java
 D:\VNTicket\vnticket-backend\src\main\java\com\vnticket\dto\request\GoogleLoginRequest.java
 D:\VNTicket\vnticket-backend\src\main\java\com\vnticket\repository\TicketRepository.java
@@ -9,6 +10,7 @@ D:\VNTicket\vnticket-backend\src\main\java\com\vnticket\dto\request\SignupReques
 D:\VNTicket\vnticket-backend\src\main\java\com\vnticket\security\jwt\AuthTokenFilter.java
 D:\VNTicket\vnticket-backend\src\main\java\com\vnticket\service\AuthService.java
 D:\VNTicket\vnticket-backend\src\main\java\com\vnticket\config\RedisConfig.java
+D:\VNTicket\vnticket-backend\src\main\java\com\vnticket\dto\request\ForgotPasswordRequest.java
 D:\VNTicket\vnticket-backend\src\main\java\com\vnticket\repository\EventRepository.java
 D:\VNTicket\vnticket-backend\src\main\java\com\vnticket\entity\Event.java
 D:\VNTicket\vnticket-backend\src\main\java\com\vnticket\runner\TicketInventorySyncRunner.java
@@ -27,10 +29,14 @@ D:\VNTicket\vnticket-backend\src\main\java\com\vnticket\security\services\Refres
 D:\VNTicket\vnticket-backend\src\main\java\com\vnticket\entity\BookingDetail.java
 D:\VNTicket\vnticket-backend\src\main\java\com\vnticket\service\EventService.java
 D:\VNTicket\vnticket-backend\src\main\java\com\vnticket\dto\response\BookingStatsDTO.java
+D:\VNTicket\vnticket-backend\src\main\java\com\vnticket\service\CloudinaryService.java
 D:\VNTicket\vnticket-backend\src\main\java\com\vnticket\repository\TicketTypeRepository.java
 D:\VNTicket\vnticket-backend\src\main\java\com\vnticket\dto\response\ApiResponse.java
 D:\VNTicket\vnticket-backend\src\main\java\com\vnticket\security\WebSecurityConfig.java
+D:\VNTicket\vnticket-backend\src\main\java\com\vnticket\service\impl\EmailServiceImpl.java
+D:\VNTicket\vnticket-backend\src\main\java\com\vnticket\dto\request\ResetPasswordRequest.java
 D:\VNTicket\vnticket-backend\src\main\java\com\vnticket\dto\UserDTO.java
+D:\VNTicket\vnticket-backend\src\main\java\com\vnticket\service\EmailService.java
 D:\VNTicket\vnticket-backend\src\main\java\com\vnticket\service\TicketInventoryRedisService.java
 D:\VNTicket\vnticket-backend\src\main\java\com\vnticket\dto\BookingDetailDTO.java
 D:\VNTicket\vnticket-backend\src\main\java\com\vnticket\exception\BadRequestException.java
@@ -38,6 +44,7 @@ D:\VNTicket\vnticket-backend\src\main\java\com\vnticket\service\impl\BookingServ
 D:\VNTicket\vnticket-backend\src\main\java\com\vnticket\scheduler\BookingCleanupTask.java
 D:\VNTicket\vnticket-backend\src\main\java\com\vnticket\controller\UserController.java
 D:\VNTicket\vnticket-backend\src\main\java\com\vnticket\service\impl\EventServiceImpl.java
+D:\VNTicket\vnticket-backend\src\main\java\com\vnticket\controller\ImageUploadController.java
 D:\VNTicket\vnticket-backend\src\main\java\com\vnticket\service\BookingService.java
 D:\VNTicket\vnticket-backend\src\main\java\com\vnticket\dto\response\JwtResponse.java
 D:\VNTicket\vnticket-backend\src\main\java\com\vnticket\enums\BookingStatus.java

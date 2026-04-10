@@ -6,12 +6,15 @@ com\vnticket\exception\ResourceNotFoundException.class
 com\vnticket\filter\TraceIdFilter.class
 com\vnticket\dto\response\ApiResponse$ApiResponseBuilder.class
 com\vnticket\entity\BookingDetail.class
+com\vnticket\dto\request\ResetPasswordRequest.class
 com\vnticket\runner\TicketInventorySyncRunner.class
 com\vnticket\security\jwt\AuthEntryPointJwt.class
+com\vnticket\service\EmailService.class
 com\vnticket\enums\BookingStatus.class
 com\vnticket\enums\Role.class
 com\vnticket\dto\UserDTO.class
 com\vnticket\entity\User.class
+com\vnticket\config\CloudinaryConfig.class
 com\vnticket\service\impl\EventServiceImpl.class
 com\vnticket\dto\BookingDTO.class
 com\vnticket\dto\TicketTypeDTO$TicketTypeDTOBuilder.class
@@ -21,6 +24,7 @@ com\vnticket\controller\AuthController.class
 com\vnticket\dto\UserDTO$UserDTOBuilder.class
 com\vnticket\dto\TicketDTO$TicketDTOBuilder.class
 com\vnticket\VnTicketApplication.class
+com\vnticket\controller\ImageUploadController.class
 com\vnticket\config\RedisConfig.class
 com\vnticket\dto\request\BookingRequest.class
 com\vnticket\dto\BookingDTO$BookingDTOBuilder.class
@@ -29,6 +33,7 @@ com\vnticket\config\VnPayConfig.class
 com\vnticket\security\services\UserDetailsImpl.class
 com\vnticket\dto\response\BookingStatsDTO$BookingStatsDTOBuilder.class
 com\vnticket\security\services\RefreshTokenService.class
+com\vnticket\dto\request\ForgotPasswordRequest.class
 com\vnticket\entity\Event.class
 com\vnticket\repository\TicketTypeRepository.class
 com\vnticket\service\BookingService.class
@@ -48,6 +53,7 @@ com\vnticket\scheduler\BookingCleanupTask.class
 com\vnticket\dto\request\LoginRequest.class
 com\vnticket\service\EventService.class
 com\vnticket\controller\UserController.class
+com\vnticket\service\CloudinaryService.class
 com\vnticket\repository\EventRepository.class
 com\vnticket\dto\BookingDetailDTO$BookingDetailDTOBuilder.class
 com\vnticket\dto\response\ApiResponse.class
@@ -63,6 +69,7 @@ com\vnticket\service\impl\BookingServiceImpl.class
 com\vnticket\exception\TokenRefreshException.class
 com\vnticket\repository\BookingDetailRepository.class
 com\vnticket\dto\response\BookingStatsDTO.class
+com\vnticket\service\impl\EmailServiceImpl.class
 com\vnticket\entity\Ticket$TicketBuilder.class
 com\vnticket\exception\GlobalExceptionHandler.class
 com\vnticket\enums\EventStatus.class

@@ -65,7 +65,7 @@ public class AuthServiceImpl implements AuthService {
 
         SecurityContextHolder.getContext().setAuthentication(authentication);
         String jwt = jwtUtils.generateJwtToken(authentication);
-
+        SecurityContextHolder.getContext().getAuthentication().getName();
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
         String role = userDetails.getAuthorities().iterator().next().getAuthority();
 
@@ -92,7 +92,6 @@ public class AuthServiceImpl implements AuthService {
         }
 
         log.info("Creating new user account for: {}", signUpRequest.getUsername());
-        // Create new user's account
         User user = User.builder()
                 .username(signUpRequest.getUsername())
                 .fullName(signUpRequest.getFullName())

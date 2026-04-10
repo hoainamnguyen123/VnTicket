@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import History from './History';
 import MyEvents from './MyEvents';
 import { AuthContext } from '../context/AuthContext';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import axiosClient from '../api/axiosClient';
 
 const { Title } = Typography;
@@ -17,6 +17,14 @@ const Profile = () => {
     const [editing, setEditing] = useState(false);
     const [form] = Form.useForm();
     const { t } = useTranslation();
+    const location = useLocation();
+    const [activeTab, setActiveTab] = useState(location.state?.activeTab || '1');
+
+    useEffect(() => {
+        if (location.state?.activeTab) {
+            setActiveTab(location.state.activeTab);
+        }
+    }, [location.state]);
 
     useEffect(() => {
         if (user) {
@@ -151,7 +159,7 @@ const Profile = () => {
     return (
         <div>
             <Title level={2} style={{ marginBottom: '24px' }}>{t('profile.title')}</Title>
-            <Tabs defaultActiveKey="1" items={items} />
+            <Tabs activeKey={activeTab} onChange={setActiveTab} items={items} />
         </div>
     );
 };

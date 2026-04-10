@@ -71,16 +71,16 @@ const CountdownTimer = ({ bookingTime, onExpire }) => {
 };
 
 /* ── Payment Method Card ── */
-const PaymentMethodCard = ({ name, imgSrc, borderColor, bgColor, disabled, comingSoon, onClick, selected, comingSoonText }) => (
+const PaymentMethodCard = ({ name, imgSrc, borderColor, bgColor, disabled, comingSoon, onClick, selected, comingSoonText, isDark }) => (
     <div
         onClick={disabled ? undefined : onClick}
         style={{
-            border: `2px solid ${selected ? borderColor : '#e8e8e8'}`,
+            border: `2px solid ${selected ? borderColor : (isDark ? '#434343' : '#e8e8e8')}`,
             borderRadius: '12px',
             padding: '20px 16px',
             cursor: disabled ? 'not-allowed' : 'pointer',
             opacity: disabled ? 0.5 : 1,
-            background: selected ? bgColor : '#fff',
+            background: selected ? bgColor : (isDark ? '#141414' : '#fff'),
             transition: 'all 0.3s ease',
             position: 'relative',
             textAlign: 'center',
@@ -90,13 +90,13 @@ const PaymentMethodCard = ({ name, imgSrc, borderColor, bgColor, disabled, comin
             alignItems: 'center',
             justifyContent: 'center',
             gap: '8px',
-            boxShadow: selected ? `0 4px 12px ${borderColor}40` : '0 1px 4px rgba(0,0,0,0.08)',
+            boxShadow: selected ? `0 4px 12px ${borderColor}40` : (isDark ? '0 1px 4px rgba(0,0,0,0.5)' : '0 1px 4px rgba(0,0,0,0.08)'),
         }}
         onMouseEnter={(e) => { if (!disabled) { e.currentTarget.style.borderColor = borderColor; e.currentTarget.style.boxShadow = `0 4px 12px ${borderColor}40`; } }}
-        onMouseLeave={(e) => { if (!disabled && !selected) { e.currentTarget.style.borderColor = '#e8e8e8'; e.currentTarget.style.boxShadow = '0 1px 4px rgba(0,0,0,0.08)'; } }}
+        onMouseLeave={(e) => { if (!disabled && !selected) { e.currentTarget.style.borderColor = isDark ? '#434343' : '#e8e8e8'; e.currentTarget.style.boxShadow = isDark ? '0 1px 4px rgba(0,0,0,0.5)' : '0 1px 4px rgba(0,0,0,0.08)'; } }}
     >
         {comingSoon && (
-            <Tag color="default" style={{ position: 'absolute', top: '8px', right: '8px', fontSize: '10px', margin: 0 }}>
+            <Tag color="default" style={{ position: 'absolute', top: '8px', right: '8px', fontSize: '10px', margin: 0, background: isDark ? '#262626' : undefined, borderColor: isDark ? '#434343' : undefined, color: isDark ? '#e8e8e8' : undefined }}>
                 {comingSoonText}
             </Tag>
         )}
@@ -105,7 +105,7 @@ const PaymentMethodCard = ({ name, imgSrc, borderColor, bgColor, disabled, comin
             alt={name}
             style={{ width: '56px', height: '56px', objectFit: 'contain' }}
         />
-        <Text strong style={{ fontSize: '14px', color: selected ? borderColor : '#333' }}>{name}</Text>
+        <Text strong style={{ fontSize: '14px', color: selected ? borderColor : (isDark ? '#e8e8e8' : '#333') }}>{name}</Text>
     </div>
 );
 
@@ -214,6 +214,7 @@ const History = () => {
     const navigate = useNavigate();
     const isMobile = useIsMobile();
     const { t } = useTranslation();
+    const [modal, contextHolder] = Modal.useModal();
 
     const fetchBookings = React.useCallback(async (silent = false) => {
         if (!silent) setLoading(true);
@@ -238,7 +239,7 @@ const History = () => {
     }, [user, navigate, authLoading, fetchBookings]);
 
     const handleCancel = (bookingId) => {
-        confirm({
+        modal.confirm({
             title: t('history.confirmCancel'),
             icon: <ExclamationCircleOutlined />,
             content: t('history.confirmCancelContent'),
@@ -468,6 +469,7 @@ const History = () => {
 
     return (
         <div>
+            {contextHolder}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                 <Title level={isMobile ? 4 : 2} style={{ margin: 0 }}>{t('history.title')}</Title>
                 <Button icon={<SyncOutlined />} onClick={fetchBookings} size={isMobile ? 'small' : 'middle'}>
@@ -522,28 +524,31 @@ const History = () => {
                         <PaymentMethodCard
                             name="VNPay"
                             imgSrc="/images/vnpay-logo.png"
-                            bgColor="#e6f4ff"
-                            borderColor="#0060af"
+                            bgColor={isDark ? 'rgba(0, 96, 175, 0.2)' : '#e6f4ff'}
+                            borderColor={isDark ? '#4096ff' : '#0060af'}
                             selected={selectedMethod === 'vnpay'}
                             onClick={() => setSelectedMethod('vnpay')}
+                            isDark={isDark}
                         />
                         <PaymentMethodCard
                             name="MoMo"
                             imgSrc="/images/momo-logo.png"
-                            bgColor="#fff0f6"
-                            borderColor="#ae2070"
+                            bgColor={isDark ? 'rgba(174, 32, 112, 0.2)' : '#fff0f6'}
+                            borderColor={isDark ? '#ff69b4' : '#ae2070'}
                             disabled
                             comingSoon
                             comingSoonText={t('history.comingSoon')}
+                            isDark={isDark}
                         />
                         <PaymentMethodCard
                             name="ZaloPay"
                             imgSrc="/images/zalopay-logo.png"
-                            bgColor="#e6f7ff"
-                            borderColor="#008fe5"
+                            bgColor={isDark ? 'rgba(0, 143, 229, 0.2)' : '#e6f7ff'}
+                            borderColor={isDark ? '#4096ff' : '#008fe5'}
                             disabled
                             comingSoon
                             comingSoonText={t('history.comingSoon')}
+                            isDark={isDark}
                         />
                     </div>
                 </div>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { Table, Button, Modal, Form, Input, Select, DatePicker, message, Space, Popconfirm, Row, Col, Card, Statistic, Tag, Typography, Image, Divider, Tabs, Badge } from 'antd';
 import { EditOutlined, DeleteOutlined, PlusOutlined, MinusCircleOutlined, DollarOutlined, TagsOutlined, CheckCircleOutlined, BarChartOutlined, UserOutlined, EnvironmentOutlined, ClockCircleOutlined, ExclamationCircleOutlined, MailOutlined, PhoneOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
@@ -6,12 +6,14 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import axiosClient from '../api/axiosClient';
 import EventFormModal from '../components/EventFormModal';
+import { ThemeContext } from '../context/ThemeContext';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
 const { Option } = Select;
 const { TextArea } = Input;
 
 const Admin = () => {
+    const { isDark } = useContext(ThemeContext);
     const { t } = useTranslation();
     const navigate = useNavigate();
     const [events, setEvents] = useState([]);
@@ -29,6 +31,8 @@ const Admin = () => {
     const [selectedEventName, setSelectedEventName] = useState('');
     const [editingEvent, setEditingEvent] = useState(null);
     const [form] = Form.useForm();
+    const [isRejectModalVisible, setIsRejectModalVisible] = useState(false);
+    const [rejectionReasonText, setRejectionReasonText] = useState('');
 
     const [pagination, setPagination] = useState({ current: 1, pageSize: 10, total: 0 });
 
@@ -57,7 +61,7 @@ const Admin = () => {
             allEvents.sort((a, b) => b.id - a.id);
 
             setEvents(allEvents);
-            setPendingEvents(allEvents.filter(e => e.status === 'PENDING'));
+            setPendingEvents(allEvents.filter(e => e.status === 'PENDING' || e.status === 'PENDING_EDIT'));
             setApprovedEvents(allEvents.filter(e => e.status === 'APPROVED'));
             setRejectedEvents(allEvents.filter(e => e.status === 'REJECTED'));
 
@@ -154,14 +158,26 @@ const Admin = () => {
         setIsEventDetailVisible(true);
     };
 
-    const handleUpdateStatus = async (id, status) => {
+    const handleUpdateStatus = async (id, status, reason = '') => {
         try {
-            await axiosClient.put(`/admin/events/${id}/status?status=${status}`);
+            let url = `/admin/events/${id}/status?status=${status}`;
+            if (reason) url += `&rejectionReason=${encodeURIComponent(reason)}`;
+            await axiosClient.put(url);
             message.success(t('admin.statusUpdateSuccess', { action: status === 'APPROVED' ? t('admin.approve') : t('admin.reject') }));
             fetchEvents();
         } catch (error) {
             message.error(t('admin.statusUpdateError'));
         }
+    };
+
+    const handleRejectSubmit = async () => {
+        if (!rejectionReasonText.trim()) {
+            message.warning(t('admin.enterRejectionReason', 'Vui lòng nhập lý do từ chối'));
+            return;
+        }
+        await handleUpdateStatus(viewingEvent.id, 'REJECTED', rejectionReasonText);
+        setIsRejectModalVisible(false);
+        setIsEventDetailVisible(false);
     };
 
     const handleOk = async () => {
@@ -228,8 +244,8 @@ const Admin = () => {
             key: 'status',
             width: 120,
             render: (status) => {
-                let color = status === 'APPROVED' ? 'green' : status === 'PENDING' ? 'gold' : 'red';
-                let text = status === 'APPROVED' ? t('admin.approved') : status === 'PENDING' ? t('admin.pending') : t('admin.rejected');
+                let color = status === 'APPROVED' ? 'green' : (status === 'PENDING' ? 'gold' : (status === 'PENDING_EDIT' ? 'orange' : 'red'));
+                let text = status === 'APPROVED' ? t('admin.approved') : status === 'PENDING' ? t('admin.pending') : status === 'PENDING_EDIT' ? t('admin.pendingEdit', 'Chờ duyệt (Chỉnh sửa)') : t('admin.rejected');
                 return <Tag color={color}>{text}</Tag>;
             }
         }
@@ -249,7 +265,7 @@ const Admin = () => {
                                                 <Typography.Text type="secondary" style={{ fontSize: '16px' }}>{t('admin.totalBookings')}</Typography.Text>
                                                 <Typography.Title level={2} style={{ margin: 0 }}>{stats.totalBookings}</Typography.Title>
                                             </div>
-                                            <div className="stat-icon-wrapper" style={{ background: '#e6f4ff', color: '#1890ff' }}>
+                                            <div className="stat-icon-wrapper" style={{ background: isDark ? 'transparent' : '#e6f4ff', color: '#1890ff' }}>
                                                 <TagsOutlined />
                                             </div>
                                         </div>
@@ -262,7 +278,7 @@ const Admin = () => {
                                                 <Typography.Text type="secondary" style={{ fontSize: '16px' }}>{t('admin.bookedTickets')}</Typography.Text>
                                                 <Typography.Title level={2} style={{ margin: 0 }}>{stats.totalTicketsBooked}</Typography.Title>
                                             </div>
-                                            <div className="stat-icon-wrapper" style={{ background: '#fff0f6', color: '#eb2f96' }}>
+                                            <div className="stat-icon-wrapper" style={{ background: isDark ? 'transparent' : '#fff0f6', color: '#eb2f96' }}>
                                                 <UserOutlined />
                                             </div>
                                         </div>
@@ -275,7 +291,7 @@ const Admin = () => {
                                                 <Typography.Text type="secondary" style={{ fontSize: '16px' }}>{t('admin.paidTickets')}</Typography.Text>
                                                 <Typography.Title level={2} style={{ margin: 0, color: '#52c41a' }}>{stats.totalTicketsPaid}</Typography.Title>
                                             </div>
-                                            <div className="stat-icon-wrapper" style={{ background: '#f6ffed', color: '#52c41a' }}>
+                                            <div className="stat-icon-wrapper" style={{ background: isDark ? 'transparent' : '#f6ffed', color: '#52c41a' }}>
                                                 <CheckCircleOutlined />
                                             </div>
                                         </div>
@@ -288,7 +304,7 @@ const Admin = () => {
                                                 <Typography.Text type="secondary" style={{ fontSize: '16px' }}>{t('admin.totalRevenue')}</Typography.Text>
                                                 <Typography.Title level={3} style={{ margin: 0, color: '#f5222d' }}>{stats.totalRevenue?.toLocaleString()} ₫</Typography.Title>
                                             </div>
-                                            <div className="stat-icon-wrapper" style={{ background: '#fff1f0', color: '#f5222d' }}>
+                                            <div className="stat-icon-wrapper" style={{ background: isDark ? 'transparent' : '#fff1f0', color: '#f5222d' }}>
                                                 <DollarOutlined />
                                             </div>
                                         </div>
@@ -298,13 +314,13 @@ const Admin = () => {
 
                             <Row gutter={[16, 16]} style={{ marginTop: 24 }}>
                                 <Col xs={24} lg={16}>
-                                    <Card title={t('admin.topRevenueEvents')} className="dashboard-card" bodyStyle={{ height: 350, padding: '20px 0' }} headStyle={{ borderBottom: '1px solid #f0f0f0' }}>
+                                    <Card title={t('admin.topRevenueEvents')} className="dashboard-card" bodyStyle={{ height: 350, padding: '20px 0' }} headStyle={{ borderBottom: isDark ? '1px solid #303030' : '1px solid #f0f0f0' }}>
                                         <ResponsiveContainer width="100%" height="100%">
                                             <BarChart data={eventRevenueData} layout="vertical" margin={{ top: 20, right: 30, left: 120, bottom: 20 }}>
                                                 <CartesianGrid strokeDasharray="3 3" horizontal={false} />
                                                 <XAxis type="number" tickFormatter={(val) => `${val / 1000000}M`} />
                                                 <YAxis type="category" dataKey="name" tick={{ fontSize: 13 }} width={110} />
-                                                <RechartsTooltip formatter={(value) => `${value.toLocaleString()} VNĐ`} cursor={{ fill: 'transparent' }} />
+                                                <RechartsTooltip formatter={(value) => `${value.toLocaleString()} VNĐ`} cursor={{ fill: 'transparent' }} contentStyle={{ backgroundColor: isDark ? '#1f1f1f' : '#fff', borderColor: isDark ? '#303030' : '#ccc', color: isDark ? '#e8e8e8' : '#000' }} itemStyle={{ color: isDark ? '#e8e8e8' : '#000' }} />
                                                 <Bar dataKey="revenue" fill="#1890ff" radius={[0, 4, 4, 0]} barSize={30}>
                                                     {eventRevenueData.map((entry, index) => (
                                                         <Cell key={`cell-${index}`} fill={['#1890ff', '#52c41a', '#faad14', '#eb2f96', '#722ed1'][index % 5]} />
@@ -315,7 +331,7 @@ const Admin = () => {
                                     </Card>
                                 </Col>
                                 <Col xs={24} lg={8}>
-                                    <Card title={t('admin.eventTypeDistrib')} className="dashboard-card" bodyStyle={{ height: 350, padding: 0 }} headStyle={{ borderBottom: '1px solid #f0f0f0' }}>
+                                    <Card title={t('admin.eventTypeDistrib')} className="dashboard-card" bodyStyle={{ height: 350, padding: 0 }} headStyle={{ borderBottom: isDark ? '1px solid #303030' : '1px solid #f0f0f0' }}>
                                         <ResponsiveContainer width="100%" height="100%">
                                             <PieChart>
                                                 <Pie data={eventTypeData} cx="50%" cy="50%" innerRadius={70} outerRadius={110} paddingAngle={5} dataKey="value" label>
@@ -323,7 +339,7 @@ const Admin = () => {
                                                         <Cell key={`cell-${index}`} fill={['#f5222d', '#fa8c16', '#a0d911', '#1890ff', '#722ed1'][index % 5]} />
                                                     ))}
                                                 </Pie>
-                                                <RechartsTooltip />
+                                                <RechartsTooltip contentStyle={{ backgroundColor: isDark ? '#1f1f1f' : '#fff', borderColor: isDark ? '#303030' : '#ccc', color: isDark ? '#e8e8e8' : '#000' }} itemStyle={{ color: isDark ? '#e8e8e8' : '#000' }} />
                                                 <Legend verticalAlign="bottom" height={36} />
                                             </PieChart>
                                         </ResponsiveContainer>
@@ -486,10 +502,10 @@ const Admin = () => {
                 width={1000}
                 style={{ top: 20 }}
                 footer={viewingEvent ? (
-                    viewingEvent.status === 'PENDING' ? [
+                    (viewingEvent.status === 'PENDING' || viewingEvent.status === 'PENDING_EDIT') ? [
                         <Button key="reject" type="primary" danger onClick={() => {
-                            handleUpdateStatus(viewingEvent.id, 'REJECTED');
-                            setIsEventDetailVisible(false);
+                            setRejectionReasonText('');
+                            setIsRejectModalVisible(true);
                         }}>
                             {t('admin.reject')}
                         </Button>,
@@ -606,6 +622,24 @@ const Admin = () => {
                         </Row>
                     </div>
                 )}
+            </Modal>
+
+            <Modal
+                title={t('admin.rejectEventTitle', 'Lý do từ chối phê duyệt')}
+                open={isRejectModalVisible}
+                onOk={handleRejectSubmit}
+                onCancel={() => setIsRejectModalVisible(false)}
+                okText={t('admin.confirmReject', 'Từ chối sự kiện')}
+                okButtonProps={{ danger: true }}
+                cancelText={t('common.cancel', 'Hủy')}
+            >
+                <div style={{ marginBottom: 8 }}>{t('admin.rejectReasonLabel', 'Vui lòng cho người dùng biết lý do sự kiện bị từ chối:')}</div>
+                <TextArea 
+                    rows={4} 
+                    value={rejectionReasonText}
+                    onChange={(e) => setRejectionReasonText(e.target.value)}
+                    placeholder={t('admin.rejectReasonPlaceholder', 'Ví dụ: Hình ảnh chưa phù hợp, thông tin thiếu chi tiết...')}
+                />
             </Modal>
         </div>
     );

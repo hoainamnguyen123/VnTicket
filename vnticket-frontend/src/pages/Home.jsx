@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { Row, Col, Typography, Input, message, Skeleton, Empty, Carousel, Button } from 'antd';
+import { Row, Col, Typography, Input, message, Skeleton, Empty, Carousel, Button, Select, Grid } from 'antd';
 import { useTranslation } from 'react-i18next';
 import axiosClient from '../api/axiosClient';
 import EventCard from '../components/EventCard';
@@ -23,6 +23,8 @@ const Home = () => {
     const scrollContainerRef = React.useRef(null);
     const { t } = useTranslation();
     const { isDark } = useContext(ThemeContext);
+    const screens = Grid.useBreakpoint();
+    const isMobile = !screens.md;
 
     const categories = [
         { label: t('home.all'), value: '' },
@@ -114,45 +116,55 @@ const Home = () => {
 
             {/* Danh mục lướt nhanh & Tìm kiếm */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px', flexWrap: 'wrap', gap: '15px' }}>
-                <div
-                    className="hide-scrollbar"
-                    style={{
-                        display: 'flex',
-                        gap: '12px',
-                        overflowX: 'auto',
-                        flex: '1 1 auto',
-                        paddingBottom: '5px'
-                    }}
-                >
-                    {categories.map(cat => {
-                        const isSelected = eventType === cat.value;
-                        return (
-                            <Button
-                                key={cat.value}
-                                type={isSelected ? 'primary' : 'default'}
-                                shape="round"
-                                onClick={() => setEventType(cat.value)}
-                                size="large"
-                                style={{
-                                    minWidth: '100px',
-                                    fontWeight: '600',
-                                    border: isSelected ? 'none' : `1px solid ${isDark ? '#434343' : '#d9d9d9'}`,
-                                    backgroundColor: isSelected ? '#1890ff' : (isDark ? '#303030' : 'white'),
-                                    color: isSelected ? 'white' : (isDark ? '#d9d9d9' : '#595959'),
-                                    boxShadow: isSelected ? '0 4px 12px rgba(24, 144, 255, 0.3)' : 'none'
-                                }}
-                            >
-                                {cat.label}
-                            </Button>
-                        );
-                    })}
-                </div>
+                {isMobile ? (
+                    <Select
+                        size="large"
+                        value={eventType}
+                        onChange={(value) => setEventType(value)}
+                        style={{ width: '100%', flex: '1 1 100%' }}
+                        options={categories}
+                    />
+                ) : (
+                    <div
+                        className="hide-scrollbar"
+                        style={{
+                            display: 'flex',
+                            gap: '12px',
+                            overflowX: 'auto',
+                            flex: '1 1 auto',
+                            paddingBottom: '5px'
+                        }}
+                    >
+                        {categories.map(cat => {
+                            const isSelected = eventType === cat.value;
+                            return (
+                                <Button
+                                    key={cat.value}
+                                    type={isSelected ? 'primary' : 'default'}
+                                    shape="round"
+                                    onClick={() => setEventType(cat.value)}
+                                    size="large"
+                                    style={{
+                                        minWidth: '100px',
+                                        fontWeight: '600',
+                                        border: isSelected ? 'none' : `1px solid ${isDark ? '#434343' : '#d9d9d9'}`,
+                                        backgroundColor: isSelected ? '#1890ff' : (isDark ? '#303030' : 'white'),
+                                        color: isSelected ? 'white' : (isDark ? '#d9d9d9' : '#595959'),
+                                        boxShadow: isSelected ? '0 4px 12px rgba(24, 144, 255, 0.3)' : 'none'
+                                    }}
+                                >
+                                    {cat.label}
+                                </Button>
+                            );
+                        })}
+                    </div>
+                )}
 
                 <Search
                     placeholder={t('home.searchPlaceholder')}
                     allowClear
                     onSearch={setSearchTerm}
-                    style={{ width: '100%', maxWidth: '350px', flex: '0 0 auto' }}
+                    style={{ width: '100%', maxWidth: isMobile ? '100%' : '350px', flex: '0 0 auto' }}
                     size="large"
                 />
             </div>

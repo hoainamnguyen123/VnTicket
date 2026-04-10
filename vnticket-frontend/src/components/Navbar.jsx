@@ -3,7 +3,7 @@ import { Layout, Menu, Button, Dropdown, Form, message, Drawer, Grid, Badge } fr
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { ThemeContext } from '../context/ThemeContext';
-import { UserOutlined, LogoutOutlined, HistoryOutlined, PlusOutlined, MenuOutlined, TagsOutlined } from '@ant-design/icons';
+import { UserOutlined, LogoutOutlined, HistoryOutlined, PlusOutlined, MenuOutlined, TagsOutlined, CalendarOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import EventFormModal from './EventFormModal';
 import LanguageSwitcher from './LanguageSwitcher';
@@ -19,6 +19,14 @@ const Navbar = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const { t } = useTranslation();
+
+    const [isEventModalVisible, setIsEventModalVisible] = useState(false);
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [eventForm] = Form.useForm();
+    const [pendingCount, setPendingCount] = useState(0);
+    const [userRejectedCount, setUserRejectedCount] = useState(0);
+    const screens = useBreakpoint();
+    const isMobile = !screens.md;
 
     const handleLogout = () => {
         logout();
@@ -39,6 +47,17 @@ const Navbar = () => {
             onClick: () => navigate('/history'),
         },
         {
+            key: 'my-events',
+            icon: <CalendarOutlined />,
+            label: (
+                <Badge count={userRejectedCount} offset={[10, 0]} size="small">
+                    {t('profile.myEvents', 'Sự kiện của tôi')}
+                    <span style={{ paddingRight: 10 }}></span>
+                </Badge>
+            ),
+            onClick: () => navigate('/profile', { state: { activeTab: '3' } }),
+        },
+        {
             type: 'divider',
         },
         {
@@ -50,29 +69,48 @@ const Navbar = () => {
         },
     ];
 
-    const [isEventModalVisible, setIsEventModalVisible] = useState(false);
-    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-    const [eventForm] = Form.useForm();
-    const [pendingCount, setPendingCount] = useState(0);
-    const screens = useBreakpoint();
-    const isMobile = !screens.md;
-
     useEffect(() => {
-        if (user?.role === 'ROLE_ADMIN') {
-            const fetchPendingCount = async () => {
+        if (user) {
+            const fetchUserRejectedCount = async () => {
                 try {
-                    const res = await axiosClient.get(`/admin/events?page=0&size=1000`);
-                    const count = res.data.content ? res.data.content.filter(e => e.status === 'PENDING').length : 0;
-                    setPendingCount(count);
+                    const res = await axiosClient.get(`/events/my?page=0&size=1000`);
+                    if (res.data.content) {
+                        const count = res.data.content.filter(e => e.status === 'REJECTED').length;
+                        setUserRejectedCount(count);
+                    }
                 } catch (error) {
-                    console.error("Failed to fetch pending events count");
+                    console.error("Failed to fetch user events for notification", error);
                 }
             };
-            fetchPendingCount();
+            fetchUserRejectedCount();
 
-            const handleStatusChange = () => fetchPendingCount();
-            window.addEventListener('event-status-updated', handleStatusChange);
-            return () => window.removeEventListener('event-status-updated', handleStatusChange);
+            const handleUserEventRead = () => fetchUserRejectedCount();
+            window.addEventListener('user-event-read', handleUserEventRead);
+
+            // Admin polling
+            let handleStatusChange = null;
+            if (user.role === 'ROLE_ADMIN') {
+                const fetchPendingCount = async () => {
+                    try {
+                        const res = await axiosClient.get(`/admin/events?page=0&size=1000`);
+                        const count = res.data.content ? res.data.content.filter(e => e.status === 'PENDING').length : 0;
+                        setPendingCount(count);
+                    } catch (error) {
+                        console.error("Failed to fetch pending events count");
+                    }
+                };
+                fetchPendingCount();
+
+                handleStatusChange = () => fetchPendingCount();
+                window.addEventListener('event-status-updated', handleStatusChange);
+            }
+
+            return () => {
+                window.removeEventListener('user-event-read', handleUserEventRead);
+                if (handleStatusChange) {
+                    window.removeEventListener('event-status-updated', handleStatusChange);
+                }
+            };
         }
     }, [user]);
 
@@ -132,7 +170,7 @@ const Navbar = () => {
                 }}
                 onClick={() => navigate('/')}
             >
-                <div 
+                <div
                     className="logo-icon"
                     style={{
                         display: 'flex',
@@ -146,10 +184,10 @@ const Navbar = () => {
                         transform: 'rotate(-5deg)'
                     }}
                 >
-                    <span style={{ 
-                        color: 'white', 
-                        fontSize: isMobile ? '20px' : '24px', 
-                        fontWeight: '900', 
+                    <span style={{
+                        color: 'white',
+                        fontSize: isMobile ? '20px' : '24px',
+                        fontWeight: '900',
                         fontStyle: 'italic',
                         fontFamily: 'system-ui, sans-serif'
                     }}>
@@ -168,18 +206,6 @@ const Navbar = () => {
                     <span style={{ color: isDark ? '#e8e8e8' : '#1f1f1f' }}>
                         TICKET
                     </span>
-                    <span 
-                        className="logo-dot"
-                        style={{
-                            width: '6px',
-                            height: '6px',
-                            background: '#1890ff',
-                            borderRadius: '50%',
-                            marginLeft: '4px',
-                            alignSelf: 'flex-end',
-                            marginBottom: isMobile ? '4px' : '6px'
-                        }}
-                    ></span>
                 </h2>
             </div>
 
@@ -330,6 +356,12 @@ const Navbar = () => {
                         <>
                             <Button type="text" block style={{ textAlign: 'left', height: 'auto', padding: '10px 15px' }} onClick={() => { navigate('/history'); setMobileMenuOpen(false); }}>
                                 🎟️ {t('navbar.myTickets')}
+                            </Button>
+                            <Button type="text" block style={{ textAlign: 'left', height: 'auto', padding: '10px 15px' }} onClick={() => { navigate('/profile', { state: { activeTab: '3' } }); setMobileMenuOpen(false); }}>
+                                <Badge count={userRejectedCount} offset={[10, 0]} size="small">
+                                    📅 {t('profile.myEvents', 'Sự kiện của tôi')}
+                                    <span style={{ paddingRight: 10 }}></span>
+                                </Badge>
                             </Button>
                             <Button type="text" block style={{ textAlign: 'left', height: 'auto', padding: '10px 15px' }} onClick={() => { navigate('/profile'); setMobileMenuOpen(false); }}>
                                 👤 {t('navbar.profile')}

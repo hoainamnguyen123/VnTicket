@@ -46,7 +46,7 @@ public class AuthController {
         String refreshTokenStr = refreshTokenService.createRefreshToken(jwtResponse.getId());
 
         ResponseCookie jwtRefreshCookie = ResponseCookie.from("vnticket-refresh", refreshTokenStr)
-                .maxAge(30 * 24 * 60 * 60) // 30 days
+                .maxAge(24 * 60 * 60) // 30 days
                 .httpOnly(true)
                 .secure(false)
                 .path("/api/auth")
@@ -75,7 +75,7 @@ public class AuthController {
         String refreshTokenStr = refreshTokenService.createRefreshToken(jwtResponse.getId());
 
         ResponseCookie jwtRefreshCookie = ResponseCookie.from("vnticket-refresh", refreshTokenStr)
-                .maxAge(30 * 24 * 60 * 60) // 30 days
+                .maxAge(24 * 60 * 60) // 30 days
                 .httpOnly(true)
                 .secure(false)
                 .path("/api/auth")
@@ -98,7 +98,7 @@ public class AuthController {
         return refreshTokenService.findUserIdByToken(requestRefreshToken)
                 .flatMap(userId -> userRepository.findById(userId))
                 .map(user -> {
-                    log.info("🔄 Refreshing new access token successfully for user: {}", user.getUsername());
+                    log.info("Refreshing new access token successfully for user: {}", user.getUsername());
                     String accessToken = jwtUtils.generateTokenFromUsername(user.getUsername());
                     JwtResponse response = JwtResponse.builder()
                             .token(accessToken)

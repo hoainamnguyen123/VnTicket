@@ -14,6 +14,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.CacheEvict;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -81,8 +83,9 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
+    @Cacheable(value = "eventDetail", key = "#id")
     public EventDTO getEventById(Long id) {
-        log.debug("Fetching event with ID: {}", id);
+        log.info("CACHE MISS! Fetching event details from Postgres database for Event ID: {}", id);
         Event event = eventRepository.findById(id)
                 .orElseThrow(() -> {
                     log.error("Event not found with ID: {}", id);
@@ -93,6 +96,7 @@ public class EventServiceImpl implements EventService {
 
     @Override
     @Transactional
+    @CacheEvict(value = { "events", "eventDetail" }, allEntries = true)
     public EventDTO updateEvent(Long id, EventDTO EventDTO) {
         log.info("Updating event ID: {}", id);
         Event event = eventRepository.findById(id)
@@ -128,18 +132,42 @@ public class EventServiceImpl implements EventService {
 
     @Override
     @Transactional
-    public EventDTO updateEventStatus(Long id, com.vnticket.enums.EventStatus status) {
+    @CacheEvict(value = { "events", "eventDetail" }, allEntries = true)
+    public EventDTO updateEventStatus(Long id, com.vnticket.enums.EventStatus status, String rejectionReason) {
         log.info("Updating status for event ID: {} to {}", id, status);
         Event event = eventRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Event not found with id: " + id));
 
         event.setStatus(status);
+        if (status == com.vnticket.enums.EventStatus.REJECTED) {
+            event.setRejectionReason(rejectionReason);
+        } else {
+            event.setRejectionReason(null);
+        }
         Event updatedEvent = eventRepository.save(event);
         return mapToDto(updatedEvent);
     }
 
     @Override
     @Transactional
+    @CacheEvict(value = { "events", "eventDetail" }, allEntries = true)
+    public void deleteMyEvent(Long userId, Long eventId) {
+        log.info("User {} deleting their rejected event ID: {}", userId, eventId);
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new ResourceNotFoundException("Event not found with id: " + eventId));
+        if (event.getOrganizer() == null || !event.getOrganizer().getId().equals(userId)) {
+            throw new com.vnticket.exception.BadRequestException("Bạn không có quyền xóa sự kiện này.");
+        }
+        if (event.getStatus() != com.vnticket.enums.EventStatus.REJECTED) {
+            throw new com.vnticket.exception.BadRequestException("Chỉ có thể xóa sự kiện đã bị từ chối.");
+        }
+        eventRepository.deleteById(eventId);
+        log.info("Successfully deleted rejected event ID: {} by user {}", eventId, userId);
+    }
+
+    @Override
+    @Transactional
+    @CacheEvict(value = { "events", "eventDetail" }, allEntries = true)
     public EventDTO createAdminEvent(EventDTO EventDTO) {
         log.info("Creating new admin event (auto-approved): {}", EventDTO.getName());
         Event event = mapToEntity(EventDTO);
@@ -152,6 +180,7 @@ public class EventServiceImpl implements EventService {
 
     @Override
     @Transactional
+    @CacheEvict(value = { "events", "eventDetail" }, allEntries = true)
     public EventDTO createMyEvent(Long userId, EventDTO EventDTO) {
         log.info("Creating user event (pending approval) for user: {}", userId);
         Event event = mapToEntity(EventDTO);
@@ -165,6 +194,41 @@ public class EventServiceImpl implements EventService {
         Event savedEvent = eventRepository.save(event);
         saveTicketTypes(EventDTO, savedEvent);
         return mapToDto(savedEvent);
+    }
+
+    @Override
+    @Transactional
+    @CacheEvict(value = { "events", "eventDetail" }, allEntries = true)
+    public EventDTO updateMyEvent(Long userId, Long eventId, EventDTO EventDTO) {
+        log.info("User {} updating their event ID: {}", userId, eventId);
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new ResourceNotFoundException("Event not found with id: " + eventId));
+
+        if (event.getOrganizer() == null || !event.getOrganizer().getId().equals(userId)) {
+            throw new com.vnticket.exception.BadRequestException("Bạn không có quyền chỉnh sửa sự kiện này.");
+        }
+
+        // Update fields (excluding ticket types)
+        event.setName(EventDTO.getName());
+        event.setImageUrl(EventDTO.getImageUrl());
+        event.setAdditionalImages(EventDTO.getAdditionalImages());
+        event.setDescription(EventDTO.getDescription());
+        event.setStartTime(EventDTO.getStartTime());
+        event.setLocation(EventDTO.getLocation());
+        event.setType(EventDTO.getType());
+        event.setOrganizerName(EventDTO.getOrganizerName());
+
+        // Update status intelligently
+        if (event.getStatus() == com.vnticket.enums.EventStatus.APPROVED) {
+            event.setStatus(com.vnticket.enums.EventStatus.PENDING_EDIT);
+        } else if (event.getStatus() == com.vnticket.enums.EventStatus.REJECTED) {
+            event.setStatus(com.vnticket.enums.EventStatus.PENDING);
+            event.setRejectionReason(null);
+        }
+
+        Event updatedEvent = eventRepository.save(event);
+        log.info("Successfully updated user event ID: {} by user {}", eventId, userId);
+        return mapToDto(updatedEvent);
     }
 
     private void saveTicketTypes(EventDTO EventDTO, Event savedEvent) {
@@ -189,6 +253,7 @@ public class EventServiceImpl implements EventService {
 
     @Override
     @Transactional
+    @CacheEvict(value = { "events", "eventDetail" }, allEntries = true)
     public void deleteEvent(Long id) {
         log.info("Attempting to delete event ID: {}", id);
         if (!eventRepository.existsById(id)) {
@@ -212,7 +277,9 @@ public class EventServiceImpl implements EventService {
                 .id(event.getId())
                 .name(event.getName())
                 .imageUrl(event.getImageUrl())
-                .additionalImages(event.getAdditionalImages())
+                .additionalImages(
+                        event.getAdditionalImages() != null ? new java.util.ArrayList<>(event.getAdditionalImages())
+                                : new java.util.ArrayList<>())
                 .description(event.getDescription())
                 .startTime(event.getStartTime())
                 .location(event.getLocation())
@@ -225,6 +292,7 @@ public class EventServiceImpl implements EventService {
                 .ticketTypes(TicketTypeDTOs)
                 .isSlider(event.getIsSlider())
                 .isFeatured(event.getIsFeatured())
+                .rejectionReason(event.getRejectionReason())
                 .build();
     }
 
@@ -241,6 +309,7 @@ public class EventServiceImpl implements EventService {
                 .status(dto.getStatus() != null ? dto.getStatus() : com.vnticket.enums.EventStatus.APPROVED)
                 .isSlider(dto.getIsSlider() != null ? dto.getIsSlider() : false)
                 .isFeatured(dto.getIsFeatured() != null ? dto.getIsFeatured() : false)
+                .rejectionReason(dto.getRejectionReason())
                 .build();
     }
 
