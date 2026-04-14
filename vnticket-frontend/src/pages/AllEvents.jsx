@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Row, Col, Typography, Input, message, Skeleton, Empty, Select, Pagination } from 'antd';
 import { useTranslation } from 'react-i18next';
 import axiosClient from '../api/axiosClient';
@@ -10,8 +11,6 @@ const { Search } = Input;
 const { Option } = Select;
 
 const AllEvents = () => {
-    const [events, setEvents] = useState([]);
-    const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [eventType, setEventType] = useState('');
     const { t } = useTranslation();
@@ -19,34 +18,30 @@ const AllEvents = () => {
     // Phân trang
     const [currentPage, setCurrentPage] = useState(1);
     const [pageSize, setPageSize] = useState(12);
-    const [totalElements, setTotalElements] = useState(0);
-
-    useEffect(() => {
-        fetchEvents(currentPage, pageSize);
-    }, [searchTerm, eventType, currentPage, pageSize]);
 
     // Reset về trang 1 khi đổi bộ lọc
     useEffect(() => {
         setCurrentPage(1);
     }, [searchTerm, eventType]);
 
-    const fetchEvents = async (page, size) => {
-        setLoading(true);
-        try {
-            // Spring Boot pagination is 0-indexed
-            let url = `/events?page=${page - 1}&size=${size}`;
+    // Sử dụng React-Query tự động Caching cho Phân Trang
+    const { data, isLoading: loading, isError } = useQuery({
+        queryKey: ['allEvents', currentPage, pageSize, searchTerm, eventType],
+        queryFn: async () => {
+            let url = `/events?page=${currentPage - 1}&size=${pageSize}`;
             if (searchTerm) url += `&search=${searchTerm}`;
             if (eventType) url += `&type=${eventType}`;
-
             const response = await axiosClient.get(url);
-            setEvents(response.data.content);
-            setTotalElements(response.data.totalElements);
-        } catch (error) {
-            message.error(t('allEvents.loadError'));
-        } finally {
-            setLoading(false);
+            return response.data;
         }
-    };
+    });
+
+    if (isError) {
+        message.error(t('allEvents.loadError'));
+    }
+
+    const events = data?.content || [];
+    const totalElements = data?.totalElements || 0;
 
     const handlePageChange = (page, size) => {
         setCurrentPage(page);

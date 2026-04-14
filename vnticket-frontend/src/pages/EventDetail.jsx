@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Row, Col, Typography, Card, Button, InputNumber, Divider, Table, Tag, message, Skeleton, Modal, Switch, Image, Alert } from 'antd';
 import { useParams, useNavigate } from 'react-router-dom';
 import { CalendarOutlined, EnvironmentOutlined, CheckCircleOutlined, ExclamationCircleOutlined, UserOutlined, ArrowRightOutlined } from '@ant-design/icons';
@@ -18,43 +19,38 @@ const EventDetail = () => {
     const { t } = useTranslation();
     const { isDark } = useContext(ThemeContext);
 
-    const [event, setEvent] = useState(null);
-    const [relatedEvents, setRelatedEvents] = useState([]);
-    const [loading, setLoading] = useState(true);
+    const queryClient = useQueryClient();
+    
+    // Auto cuộn lên đầu mỗi khi Đổi sự kiện
+    useEffect(() => {
+        window.scrollTo(0, 0);
+    }, [id]);
+
     const [selectedTicket, setSelectedTicket] = useState(null);
     const [quantity, setQuantity] = useState(1);
-    const [bookingLoading, setBookingLoading] = useState(false);
     const [isConfirmVisible, setIsConfirmVisible] = useState(false);
     const [isSuccessVisible, setIsSuccessVisible] = useState(false);
 
-    useEffect(() => {
-        window.scrollTo(0, 0);
-        const fetchEventDetail = async () => {
-            try {
-                const response = await axiosClient.get(`/events/${id}`);
-                setEvent(response.data);
+    // Fetch Event bằng useQuery
+    const { data: event, isLoading: loading } = useQuery({
+        queryKey: ['event', id],
+        queryFn: async () => {
+            const response = await axiosClient.get(`/events/${id}`);
+            return response.data;
+        }
+    });
 
-                // Fetch random related events
-                try {
-                    const relatedRes = await axiosClient.get(`/events?page=0&size=50`);
-                    if (relatedRes.data?.content) {
-                        const allEvents = relatedRes.data.content;
-                        // Filter out current event and shuffle
-                        const filtered = allEvents.filter(e => Number(e.id) !== Number(id));
-                        const shuffled = filtered.sort(() => 0.5 - Math.random());
-                        setRelatedEvents(shuffled.slice(0, 8)); // Get 8 random events
-                    }
-                } catch (e) {
-                    console.error("Failed to fetch related events:", e);
-                }
-            } catch (error) {
-                message.error(t('eventDetail.loadError'));
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchEventDetail();
-    }, [id]);
+    // Fetch Related Events
+    const { data: relatedEvents = [] } = useQuery({
+        queryKey: ['relatedEvents', id],
+        queryFn: async () => {
+            const relatedRes = await axiosClient.get(`/events?page=0&size=50`);
+            const allEvents = relatedRes.data?.content || [];
+            const filtered = allEvents.filter(e => Number(e.id) !== Number(id));
+            return filtered.sort(() => 0.5 - Math.random()).slice(0, 8);
+        },
+        enabled: !!event // Bật khi event đã tồn tại
+    });
 
     const showConfirmModal = () => {
         if (!user) {
@@ -70,32 +66,38 @@ const EventDetail = () => {
         setIsConfirmVisible(true);
     };
 
-    const handleConfirmBooking = async () => {
-
-        setBookingLoading(true);
-        try {
-            await axiosClient.post('/bookings', {
-                eventId: event.id,
-                ticketTypeId: selectedTicket.id,
-                quantity: quantity
-            });
-
+    // Thao tác Mua Vé qua Mutation
+    const bookingMutation = useMutation({
+        mutationFn: async (payload) => {
+            return await axiosClient.post('/bookings', payload);
+        },
+        onSuccess: () => {
+            // Xóa rác, ép Hệ thống tải lại Số lượng Vé Mới Nhất ngay lập tức sau khi trừ vé!
+            queryClient.invalidateQueries({ queryKey: ['event', id] });
+            queryClient.invalidateQueries({ queryKey: ['events'] });
+            
             setIsConfirmVisible(false);
             setIsSuccessVisible(true);
-        } catch (error) {
+        },
+        onError: (error) => {
             message.error(error.message || t('eventDetail.bookingError'));
 
-            // If Optimistic Locking Exception
             if (error.status === 409) {
                 Modal.error({
                     title: t('eventDetail.ticketChanged'),
                     content: t('eventDetail.ticketChangedContent'),
-                    onOk: () => window.location.reload()
+                    onOk: () => queryClient.invalidateQueries({ queryKey: ['event', id] }) // Load lại vé
                 });
             }
-        } finally {
-            setBookingLoading(false);
         }
+    });
+
+    const handleConfirmBooking = () => {
+        bookingMutation.mutate({
+            eventId: event.id,
+            ticketTypeId: selectedTicket.id,
+            quantity: quantity
+        });
     };
 
     const columns = [
@@ -199,7 +201,7 @@ const EventDetail = () => {
                             block
                             style={{ marginTop: '20px', height: '50px', fontSize: '16px', borderRadius: '8px' }}
                             onClick={showConfirmModal}
-                            loading={bookingLoading}
+                            loading={bookingMutation.isPending}
                             disabled={!selectedTicket}
                         >
                             {t('eventDetail.bookNow')}
@@ -220,7 +222,7 @@ const EventDetail = () => {
                 onCancel={() => setIsConfirmVisible(false)}
                 okText="Xác nhận & Tiếp tục"
                 cancelText="Hủy"
-                confirmLoading={bookingLoading}
+                confirmLoading={bookingMutation.isPending}
                 centered
             >
                 <div style={{ padding: '10px 0' }}>

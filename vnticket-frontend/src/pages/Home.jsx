@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Row, Col, Typography, Input, message, Skeleton, Empty, Carousel, Button, Select, Grid } from 'antd';
 import { useTranslation } from 'react-i18next';
 import axiosClient from '../api/axiosClient';
@@ -13,10 +14,6 @@ const { Title } = Typography;
 const { Search } = Input;
 
 const Home = () => {
-    const [events, setEvents] = useState([]);
-    const [sliderEvents, setSliderEvents] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [sliderLoading, setSliderLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [eventType, setEventType] = useState('');
     const navigate = useNavigate();
@@ -35,6 +32,30 @@ const Home = () => {
         { label: t('home.art'), value: 'Sân khấu, Nghệ thuật' },
         { label: t('home.other'), value: 'Khác' },
     ];
+
+    // GIẢI QUYẾT TRẮNG TRANG: Đưa 2 cái useQuery này LÊN TRƯỚC useEffect để không bị Reference Error!
+    // Sử dụng React-Query tự động Caching Banner (Slider)
+    const { data: sliderEvents = [], isLoading: sliderLoading } = useQuery({
+        queryKey: ['sliderEvents'],
+        queryFn: async () => {
+            const res = await axiosClient.get('/events?size=100');
+            const content = res.data.content || [];
+            return content.filter(e => e.isSlider);
+        }
+    });
+
+    // Sử dụng React-Query tự động Caching Sự kiện theo Filter
+    const { data: events = [], isLoading: loading } = useQuery({
+        queryKey: ['events', 'home', searchTerm, eventType],
+        queryFn: async () => {
+            let url = `/events?size=20`;
+            if (searchTerm) url += `&search=${searchTerm}`;
+            if (eventType) url += `&type=${eventType}`;
+
+            const response = await axiosClient.get(url);
+            return response.data.content;
+        }
+    });
 
     const scroll = (scrollOffset) => {
         if (scrollContainerRef.current) {
@@ -63,41 +84,6 @@ const Home = () => {
 
         return () => clearInterval(interval); // Cleanup khi component unmount
     }, [events]);
-
-    useEffect(() => {
-        fetchEvents();
-    }, [searchTerm, eventType]);
-
-    useEffect(() => {
-        const fetchSliderEvents = async () => {
-            try {
-                const res = await axiosClient.get('/events?size=100');
-                const content = res.data.content || [];
-                setSliderEvents(content.filter(e => e.isSlider));
-            } catch (err) {
-                console.error("Failed to load slider events:", err);
-            } finally {
-                setSliderLoading(false);
-            }
-        };
-        fetchSliderEvents();
-    }, []);
-
-    const fetchEvents = async () => {
-        setLoading(true);
-        try {
-            let url = `/events?size=20`;
-            if (searchTerm) url += `&search=${searchTerm}`;
-            if (eventType) url += `&type=${eventType}`;
-
-            const response = await axiosClient.get(url);
-            setEvents(response.data.content); // Spring Page structure
-        } catch (error) {
-            message.error(t('home.loadError'));
-        } finally {
-            setLoading(false);
-        }
-    };
 
     return (
         <div>
