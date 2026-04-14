@@ -369,5 +369,31 @@
     "rule2": "2. Trong trường hợp Ban tổ chức tạo mới sự kiện không đúng theo quy định nêu trên, hoặc cố tình Spam nhiều sự kiện ảo, VNTicket có quyền từ chối phê duyệt hoặc khóa vĩnh viễn tài khoản Ban Tổ Chức.",
     "rule3": "3. VNTicket sẽ liên tục kiểm tra thông tin các sự kiện đang được hiển thị trên nền tảng, nếu phát hiện có sai phạm liên quan đến hình ảnh/ nội dung bài đăng, VNTicket có quyền gỡ bỏ hoặc từ chối cung cấp dịch vụ đối với các sự kiện này, dựa theo các điều khoản chung.",
     "understandBtn": "Đã hiểu & Tiếp tục"
+  },
+  "forgotPassword": {
+    "otpSent": "Mã OTP đã được gửi đến email của bạn.",
+    "error": "Lỗi! Không thể gửi mã OTP.",
+    "passwordMismatch": "Mật khẩu không khớp.",
+    "success": "Đặt lại mật khẩu thành công. Vui lòng đăng nhập.",
+    "resetError": "Đặt lại mật khẩu thất bại.",
+    "title": "Quên Mật Khẩu",
+    "descStep1": "Nhập email tài khoản của bạn",
+    "descStep2": "Nhập mã xác thực và mật khẩu mới",
+    "step1": "Gửi Email",
+    "step2": "Đặt Lại",
+    "emailRequired": "Vui lòng nhập email!",
+    "emailInvalid": "Định dạng email không hợp lệ!",
+    "emailPlaceholder": "Địa chỉ email",
+    "sendOtpBtn": "Lấy mã xác thực (OTP)",
+    "otpRequired": "Vui lòng nhập mã OTP!",
+    "otpPlaceholder": "Mã OTP (6 chữ số)",
+    "newPwdRequired": "Vui lòng nhập mật khẩu mới!",
+    "newPwdPlaceholder": "Mật khẩu mới",
+    "confirmPwdRequired": "Vui lòng xác nhận mật khẩu!",
+    "confirmPwdPlaceholder": "Xác nhận mật khẩu",
+    "resetBtn": "Cập Nhật Mật Khẩu",
+    "resendCooldown": "Gửi lại OTP sau {{cooldown}}s",
+    "resendBtn": "Gửi lại mã OTP",
+    "backToLogin": "Trở lại màn hình Đăng nhập"
   }
 }

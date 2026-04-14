@@ -21,6 +21,7 @@ import RefundPolicy from './pages/RefundPolicy';
 import FAQ from './pages/FAQ';
 import OperatingRules from './pages/OperatingRules';
 import PaymentReturn from './pages/PaymentReturn';
+import VirtualQueue from './components/VirtualQueue';
 import { Layout } from 'antd';
 
 const { Content } = Layout;
@@ -46,6 +47,9 @@ function App() {
       }}>
         <ScrollToTop />
         <Navbar />
+        
+        {/* Lớp phòng chờ đè nén lên vạn vật (Flash Sale Guard) */}
+        <VirtualQueue />
 
         <Content
           className="app-content"

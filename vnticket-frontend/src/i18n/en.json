@@ -368,5 +368,31 @@
     "rule2": "2. In case the Organizer creates a new event that does not comply with the above regulations, or spam multiple fake events, VNTicket reserves the right to refuse approval or permanently ban the Organizer's account.",
     "rule3": "3. VNTicket will continuously check event information. If violations are found regarding images/content, VNTicket has the right to remove or refuse to provide services for these events.",
     "understandBtn": "I understand & Continue"
+  },
+  "forgotPassword": {
+    "otpSent": "OTP has been sent to your email.",
+    "error": "Failed to send OTP.",
+    "passwordMismatch": "Passwords do not match.",
+    "success": "Password reset successfully. Please login.",
+    "resetError": "Reset password failed.",
+    "title": "Forgot Password",
+    "descStep1": "Enter your registered email",
+    "descStep2": "Enter OTP and your new password",
+    "step1": "Email",
+    "step2": "Reset",
+    "emailRequired": "Email is required",
+    "emailInvalid": "Invalid email format",
+    "emailPlaceholder": "Email address",
+    "sendOtpBtn": "Send OTP",
+    "otpRequired": "OTP is required",
+    "otpPlaceholder": "6-digit OTP",
+    "newPwdRequired": "New password is required",
+    "newPwdPlaceholder": "New Password",
+    "confirmPwdRequired": "Please confirm password",
+    "confirmPwdPlaceholder": "Confirm New Password",
+    "resetBtn": "Reset Password",
+    "resendCooldown": "Resend OTP in {{cooldown}}s",
+    "resendBtn": "Resend OTP",
+    "backToLogin": "Back to Login"
   }
 }

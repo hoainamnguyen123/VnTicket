@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { Modal } from 'antd';
 
 const axiosClient = axios.create({
     baseURL: 'http://localhost:8080/api',
@@ -41,6 +42,39 @@ axiosClient.interceptors.response.use(
     },
     async (error) => {
         const originalConfig = error.config;
+
+        // --- BẮT SỰ KIỆN TỪ RATE LIMIT FILTER ---
+        if (error.response) {
+            if (error.response.status === 429) {
+                Modal.warning({
+                    title: 'Giới hạn Truy cập (429)',
+                    content: error.response.data?.message || 'Bạn đang gửi quá nhiều yêu cầu cùng một lúc. Vui lòng chậm lại!',
+                    okText: 'Đã hiểu',
+                    centered: true
+                });
+                return Promise.reject(error.response.data);
+            }
+            if (error.response.status === 503) {
+                // 1. Phóng tín hiệu Bật Giao diện Xếp Hàng Ảo (Gấu Panda)
+                window.dispatchEvent(new CustomEvent('toggle-queue', { detail: true }));
+
+                // 2. Thuật toán Đệ quy tự động Retry không cần F5
+                return new Promise((resolve) => {
+                    // Ngủ 3 giây để Server có thời gian xả Request chờ Flash Sale
+                    setTimeout(() => {
+                        console.log("[VIRTUAL QUEUE] Automatically retrying the request...");
+                        resolve(axiosClient(originalConfig)); // Ném Request ngầm lại vào Server
+                    }, 3000);
+                }).then(res => {
+                    // Nếu ở lần gọi sau mà xin được vé thành công -> Mở màn hình tắt chờ đợi!
+                    window.dispatchEvent(new CustomEvent('toggle-queue', { detail: false }));
+                    return res;
+                }).catch(err => {
+                    // Thất bại (Ví dụ lại ăn 503) -> Ném xuống cuối tự động lặp lại quy trình này
+                    return Promise.reject(err);
+                });
+            }
+        }
         if (error.response && error.response.status === 401 && !originalConfig._retry && originalConfig.url !== '/auth/login') {
             originalConfig._retry = true;
 
