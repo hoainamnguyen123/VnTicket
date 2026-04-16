@@ -17,10 +17,15 @@ import com.vnticket.repository.TicketTypeRepository;
 import com.vnticket.repository.UserRepository;
 import com.vnticket.service.BookingService;
 import com.vnticket.service.TicketInventoryRedisService;
+import com.vnticket.rabbitmq.BookingProducer;
+import com.vnticket.dto.request.BookingMessageDTO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.cache.annotation.CacheEvict;
 
 import java.math.BigDecimal;
 import java.time.Duration;
@@ -30,6 +35,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.slf4j.MDC;
 
 @Slf4j
 @Service
@@ -41,6 +47,7 @@ public class BookingServiceImpl implements BookingService {
     private final TicketTypeRepository ticketTypeRepository;
     private final UserRepository userRepository;
     private final TicketInventoryRedisService inventoryRedisService;
+    private final BookingProducer bookingProducer;
 
     @Value("${app.reservation.ttlMinutes:15}")
     private int reservationTtlMinutes;
@@ -50,13 +57,15 @@ public class BookingServiceImpl implements BookingService {
                               EventRepository eventRepository,
                               TicketTypeRepository ticketTypeRepository,
                               UserRepository userRepository,
-                              TicketInventoryRedisService inventoryRedisService) {
+                              TicketInventoryRedisService inventoryRedisService,
+                              BookingProducer bookingProducer) {
         this.bookingRepository = bookingRepository;
         this.bookingDetailRepository = bookingDetailRepository;
         this.eventRepository = eventRepository;
         this.ticketTypeRepository = ticketTypeRepository;
         this.userRepository = userRepository;
         this.inventoryRedisService = inventoryRedisService;
+        this.bookingProducer = bookingProducer;
     }
 
     // ──────────────────── Statistics (unchanged) ────────────────────
@@ -132,9 +141,22 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "eventDetail", key = "#request.eventId")
     public BookingDTO bookTicket(Long userId, BookingRequest request) {
         log.info("Starting ticket booking: userId={}, eventId={}, ticketTypeId={}, quantity={}",
                 userId, request.getEventId(), request.getTicketTypeId(), request.getQuantity());
+
+        // NGĂN CHẶN ĐẦU CƠ: Giới hạn tối đa 5 vé / 1 lần đặt (Chống tay to gom sạch vé)
+        if (request.getQuantity() > 5 || request.getQuantity() <= 0) {
+            log.warn("Booking rejected: Invalid quantity {} for user {}", request.getQuantity(), userId);
+            throw new BadRequestException("Invalid ticket quantity! You can only purchase a maximum of 5 tickets per order.");
+        }
+
+        // NGĂN CHẶN GIAM VÉ: Nếu User đang có 1 đơn PENDING cho Sự kiện này, tước quyền mua thêm
+        if (bookingRepository.existsByUserIdAndEventIdAndStatus(userId, request.getEventId(), BookingStatus.PENDING)) {
+            log.warn("Booking rejected: User {} already has a PENDING booking for Event {}", userId, request.getEventId());
+            throw new BadRequestException("You already have a pending booking for this event. Please pay or cancel it before creating a new one.");
+        }
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> {
@@ -166,10 +188,44 @@ public class BookingServiceImpl implements BookingService {
             throw new BadRequestException("Not enough tickets available");
         }
 
+        // ═══ Step 2: Gửi Message vào RabbitMQ (Bất đồng bộ) ═══
+        BookingMessageDTO message = BookingMessageDTO.builder()
+                .userId(userId)
+                .eventId(request.getEventId())
+                .ticketTypeId(request.getTicketTypeId())
+                .quantity(request.getQuantity())
+                .traceId(MDC.get("traceId"))
+                .build();
+        bookingProducer.sendBookingMessage(message);
+
+        log.info("Enqueued booking request to RabbitMQ for user ID {} and event ID {}", userId, request.getEventId());
+
+        // Trả dummy object báo hiệu đang xử lý
+        return BookingDTO.builder()
+                .userId(userId)
+                .eventId(request.getEventId())
+                .status(BookingStatus.PENDING)
+                .build();
+    }
+
+    // ──────────────────── Async Booking Process (RabbitMQ Consumer) ────────────────────
+    
+    @Override
+    @Transactional
+    public void processBookingMessage(BookingMessageDTO message) {
+        log.info("Starting background processing for booking message of user ID {}", message.getUserId());
+
+        User user = userRepository.findById(message.getUserId())
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        Event event = eventRepository.findById(message.getEventId())
+                .orElseThrow(() -> new ResourceNotFoundException("Event not found"));
+        TicketType ticketType = ticketTypeRepository.findById(message.getTicketTypeId())
+                .orElseThrow(() -> new ResourceNotFoundException("TicketType not found"));
+
         try {
-            // ═══ Step 2: Tạo Booking trong DB ═══
+            // ═══ Ghi vào CSDL ═══
             BigDecimal totalAmount = ticketType.getPrice()
-                    .multiply(BigDecimal.valueOf(request.getQuantity()));
+                    .multiply(BigDecimal.valueOf(message.getQuantity()));
 
             Booking booking = Booking.builder()
                     .user(user)
@@ -180,18 +236,21 @@ public class BookingServiceImpl implements BookingService {
                     .build();
             Booking savedBooking = bookingRepository.save(booking);
 
-            // ═══ Step 3: Tạo BookingDetail ═══
             BookingDetail detail = BookingDetail.builder()
                     .booking(savedBooking)
                     .ticketType(ticketType)
-                    .quantity(request.getQuantity())
+                    .quantity(message.getQuantity())
                     .price(ticketType.getPrice())
                     .build();
 
-            // ═══ Step 4: Generate Electronic Tickets ═══
             List<Ticket> tickets = new ArrayList<>();
-            for (int i = 0; i < request.getQuantity(); i++) {
-                String code = "VNT-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+            for (int i = 0; i < message.getQuantity(); i++) {
+                // Khắc phục nguy cơ trùng lặp (Collision) bằng cách kết hợp Timestamp (Base36) và Random UUID.
+                // Điều này giúp mã vé giữ được độ ngắn gọn, bí mật, lại tránh hoàn toàn trùng lặp.
+                String timePart = Long.toString(System.currentTimeMillis(), 36).toUpperCase();
+                String randomPart = UUID.randomUUID().toString().substring(0, 5).toUpperCase();
+                String code = "VNT-" + timePart + "-" + randomPart;
+
                 tickets.add(Ticket.builder()
                         .ticketCode(code)
                         .bookingDetail(detail)
@@ -201,21 +260,16 @@ public class BookingServiceImpl implements BookingService {
             detail.setTickets(tickets);
             bookingDetailRepository.save(detail);
 
-            // ═══ Step 5: Tạo reservation trong Redis ZSET ═══
-            long expireTimeMs = System.currentTimeMillis()
-                    + (long) reservationTtlMinutes * 60 * 1000;
+            // ═══ Tạo reservation trong Redis ZSET ═══
+            long expireTimeMs = System.currentTimeMillis() + (long) reservationTtlMinutes * 60 * 1000;
             inventoryRedisService.addReservation(
                     savedBooking.getId(), ticketType.getId(),
-                    request.getQuantity(), expireTimeMs);
+                    message.getQuantity(), expireTimeMs);
 
-            savedBooking.setBookingDetails(List.of(detail));
-            log.info("Booking created successfully: bookingId={}, userId={}", savedBooking.getId(), userId);
-            return mapToDto(savedBooking);
-
+            log.info("Successfully persisted booking ID {} for user ID {} in background process", savedBooking.getId(), message.getUserId());
         } catch (Exception e) {
-            // ❗ Rollback Redis stock nếu DB fail
-            log.error("DB save failed after Redis decrement. Rolling back stock. Error: {}", e.getMessage());
-            inventoryRedisService.incrementStock(ticketType.getId(), request.getQuantity());
+            log.error("Background processing failed to persist booking. Rolled back Redis stock for ticket type ID {}", ticketType.getId(), e);
+            inventoryRedisService.incrementStock(ticketType.getId(), message.getQuantity());
             throw e;
         }
     }
@@ -224,6 +278,7 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     @Transactional
+    @CacheEvict(value = { "events", "eventDetail" }, allEntries = true)
     public BookingDTO cancelBooking(Long bookingId, Long userId) {
         log.info("Cancelling booking: bookingId={}, userId={}", bookingId, userId);
 
@@ -246,12 +301,9 @@ public class BookingServiceImpl implements BookingService {
             TicketType ticketType = detail.getTicketType();
             int quantity = detail.getQuantity();
 
-            // Hoàn vé: Redis + DB
+            // Hoàn vé: Chỉ hoàn vào Redis (Vì lúc book chưa hề trừ DB)
             inventoryRedisService.incrementStock(ticketType.getId(), quantity);
             inventoryRedisService.removeReservation(bookingId, ticketType.getId(), quantity);
-
-            ticketType.setRemainingQuantity(ticketType.getRemainingQuantity() + quantity);
-            ticketTypeRepository.save(ticketType);
 
             // Cancel electronic tickets
             if (detail.getTickets() != null) {
@@ -320,6 +372,7 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     @Transactional
+    @CacheEvict(value = { "events", "eventDetail" }, allEntries = true)
     public void cancelExpiredBookings() {
         LocalDateTime expiryTime = LocalDateTime.now().minusMinutes(reservationTtlMinutes);
         List<Booking> expiredBookings = bookingRepository.findByStatusAndBookingTimeBefore(
@@ -337,10 +390,8 @@ public class BookingServiceImpl implements BookingService {
                 TicketType ticketType = detail.getTicketType();
                 int quantity = detail.getQuantity();
 
-                // Hoàn vé: Redis + DB
+                // Hoàn vé: Chỉ hoàn vào Redis (Vì lúc book chưa hề trừ DB)
                 inventoryRedisService.incrementStock(ticketType.getId(), quantity);
-                ticketType.setRemainingQuantity(ticketType.getRemainingQuantity() + quantity);
-                ticketTypeRepository.save(ticketType);
 
                 if (detail.getTickets() != null) {
                     detail.getTickets().forEach(t -> t.setStatus(TicketStatus.CANCELLED));
@@ -400,11 +451,9 @@ public class BookingServiceImpl implements BookingService {
             TicketType ticketType = detail.getTicketType();
             int quantity = detail.getQuantity();
 
+            // Hoàn vé: Chỉ hoàn vào Redis (Vì lúc book chưa hề trừ DB)
             inventoryRedisService.incrementStock(ticketType.getId(), quantity);
             inventoryRedisService.removeReservation(booking.getId(), ticketType.getId(), quantity);
-
-            ticketType.setRemainingQuantity(ticketType.getRemainingQuantity() + quantity);
-            ticketTypeRepository.save(ticketType);
 
             if (detail.getTickets() != null) {
                 detail.getTickets().forEach(t -> t.setStatus(TicketStatus.CANCELLED));

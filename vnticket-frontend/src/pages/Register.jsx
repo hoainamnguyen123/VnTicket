@@ -78,7 +78,16 @@ const Register = () => {
             message.success(t('register.success'));
             navigate('/login');
         } catch (error) {
-            message.error(error.message || t('register.failed'));
+            let errorMsg = error.message;
+            if (errorMsg) {
+                const lowerMsg = errorMsg.toLowerCase();
+                if (lowerMsg.includes('username') && lowerMsg.includes('taken')) {
+                    errorMsg = t('register.usernameTaken');
+                } else if (lowerMsg.includes('email') && (lowerMsg.includes('taken') || lowerMsg.includes('use'))) {
+                    errorMsg = t('register.emailTaken');
+                }
+            }
+            message.error(errorMsg || t('register.failed'));
         } finally {
             setLoading(false);
         }

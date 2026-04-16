@@ -314,13 +314,17 @@ public class EventServiceImpl implements EventService {
     }
 
     private TicketTypeDTO mapToTicketTypeDTO(TicketType entity) {
+        // LUÔN LẤY LIVE STOCK TỪ REDIS ĐỂ TRÁNH TRỄ NHỊP DO PENDING BOOKING
+        int liveStock = inventoryRedisService.getStock(entity.getId());
+
         return TicketTypeDTO.builder()
                 .id(entity.getId())
                 .eventId(entity.getEvent() != null ? entity.getEvent().getId() : null)
                 .zoneName(entity.getZoneName())
                 .price(entity.getPrice())
                 .totalQuantity(entity.getTotalQuantity())
-                .remainingQuantity(entity.getRemainingQuantity())
+                // Dùng Stock của Redis thay thế cho cột Database (vốn chưa trừ cho đến khi Paid)
+                .remainingQuantity(liveStock)
                 .build();
     }
 

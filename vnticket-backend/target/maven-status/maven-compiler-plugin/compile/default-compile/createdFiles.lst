@@ -22,6 +22,7 @@ com\vnticket\entity\Booking$BookingBuilder.class
 com\vnticket\repository\TicketRepository.class
 com\vnticket\controller\AuthController.class
 com\vnticket\dto\UserDTO$UserDTOBuilder.class
+com\vnticket\rabbitmq\BookingProducer.class
 com\vnticket\dto\TicketDTO$TicketDTOBuilder.class
 com\vnticket\VnTicketApplication.class
 com\vnticket\controller\ImageUploadController.class
@@ -53,6 +54,7 @@ com\vnticket\scheduler\BookingCleanupTask.class
 com\vnticket\dto\request\LoginRequest.class
 com\vnticket\service\EventService.class
 com\vnticket\controller\UserController.class
+com\vnticket\dto\request\BookingMessageDTO$BookingMessageDTOBuilder.class
 com\vnticket\service\CloudinaryService.class
 com\vnticket\repository\EventRepository.class
 com\vnticket\dto\BookingDetailDTO$BookingDetailDTOBuilder.class
@@ -61,6 +63,7 @@ com\vnticket\dto\EventDTO.class
 com\vnticket\entity\User$UserBuilder.class
 com\vnticket\entity\TicketType$TicketTypeBuilder.class
 com\vnticket\entity\Event$EventBuilder.class
+com\vnticket\filter\RateLimitFilter.class
 com\vnticket\repository\UserRepository.class
 com\vnticket\controller\BookingController.class
 com\vnticket\dto\response\JwtResponse.class
@@ -70,10 +73,13 @@ com\vnticket\exception\TokenRefreshException.class
 com\vnticket\repository\BookingDetailRepository.class
 com\vnticket\dto\response\BookingStatsDTO.class
 com\vnticket\service\impl\EmailServiceImpl.class
+com\vnticket\dto\request\BookingMessageDTO.class
 com\vnticket\entity\Ticket$TicketBuilder.class
+com\vnticket\rabbitmq\BookingConsumer.class
 com\vnticket\exception\GlobalExceptionHandler.class
 com\vnticket\enums\EventStatus.class
 com\vnticket\entity\TicketType.class
+com\vnticket\config\RabbitMQConfig.class
 com\vnticket\controller\PaymentController.class
 com\vnticket\enums\TicketStatus.class
 com\vnticket\controller\EventController.class

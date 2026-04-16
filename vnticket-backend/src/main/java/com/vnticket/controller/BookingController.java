@@ -68,10 +68,10 @@ public class BookingController {
     @PostMapping
     public ResponseEntity<ApiResponse<BookingDTO>> bookTicket(@Valid @RequestBody BookingRequest bookingRequest) {
         Long userId = getCurrentUserId();
-        log.info("User ID [{}] attempting to book tickets for Event ID: {}", userId, bookingRequest.getEventId());
-        BookingDTO booking = bookingService.bookTicket(userId, bookingRequest);
-        log.info("Booking created successfully for User ID [{}] with Booking ID: {}", userId, booking.getId());
-        return ResponseEntity.ok(ApiResponse.success("Booking created successfully", booking));
+        log.info("Received booking request from user ID {} for event ID {}", userId, bookingRequest.getEventId());
+        BookingDTO dummyBooking = bookingService.bookTicket(userId, bookingRequest);
+        log.info("Delegated booking request to RabbitMQ for user ID {}", userId);
+        return ResponseEntity.accepted().body(ApiResponse.success("Yêu cầu đặt vé đã được tiếp nhận và đang xử lý", dummyBooking));
     }
 
     @GetMapping("/my")

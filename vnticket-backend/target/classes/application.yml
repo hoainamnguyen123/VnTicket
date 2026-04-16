@@ -18,6 +18,11 @@ spring:
           max-active: 10
           max-idle: 5
           min-idle: 1
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
   jpa:
     hibernate:
       ddl-auto: update

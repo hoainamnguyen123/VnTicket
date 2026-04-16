@@ -28,7 +28,7 @@ public class RateLimitFilter implements Filter {
 
     // Ngăn kéo Lớp 1: Xô Nước Khổng Lồ chứa dung lượng toàn hệ thống (Global)
     private final Bucket globalBucket = Bucket.builder()
-            .addLimit(Bandwidth.classic(1, Refill.greedy(500, Duration.ofSeconds(1))))
+            .addLimit(Bandwidth.classic(500, Refill.greedy(500, Duration.ofSeconds(1))))
             .build();
 
     // Ngăn kéo Lớp 2: Bộ Nhớ Cache nội bộ lưu trữ trạng thái Xô (Bucket) theo từng chuỗi IP khách hàng.
@@ -61,7 +61,7 @@ public class RateLimitFilter implements Filter {
         // BƯỚC 1: KIỂM TRA QUÁ TẢI TOÀN HỆ THỐNG (GLOBAL FLASH SALE PUMP)
         if (!globalBucket.tryConsume(1)) {
             // Hệ thống hết sức chứa do hàng chục ngàn người ùa vào cùng 1 thời điểm.
-            log.warn("[SYSTEM OVERLOAD DANGER] Server reached 500 Req/s. Traffic blocked to protect Database!");
+            log.warn("Server reached 500 Req/s. Traffic blocked to protect Database!");
 
             response.setStatus(HttpStatus.SERVICE_UNAVAILABLE.value()); // 503
             response.setContentType("application/json");
@@ -83,7 +83,7 @@ public class RateLimitFilter implements Filter {
             filterChain.doFilter(request, response);
         } else {
             // Cạn Token -> Bắt giữ lại -> Quăng lỗi
-            log.warn("[SECURITY ALERT] IP {} exceeded 20 Req/Sec. Auto-blocked to prevent DDoS!", clientIp);
+            log.warn("IP {} exceeded 20 Req/Sec. Auto-blocked to prevent DDoS!", clientIp);
 
             response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
             response.setContentType("application/json");

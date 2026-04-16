@@ -13,6 +13,8 @@ import java.util.List;
 public interface BookingRepository extends JpaRepository<Booking, Long> {
     List<Booking> findByUserIdOrderByBookingTimeDesc(Long userId);
 
+    boolean existsByUserIdAndEventIdAndStatus(Long userId, Long eventId, BookingStatus status);
+
     List<Booking> findByStatusAndBookingTimeBefore(BookingStatus status, LocalDateTime time);
 
     long countByStatus(BookingStatus status);

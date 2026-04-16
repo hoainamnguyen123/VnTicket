@@ -81,15 +81,8 @@ public class ReservationCleanupTask {
 
             booking.setStatus(BookingStatus.CANCELLED);
 
-            // Hoàn vé vào Redis
+            // Hoàn vé vào Redis (Vì lúc book chưa hề trừ DB)
             inventoryRedisService.incrementStock(ticketTypeId, quantity);
-
-            // Sync DB: tăng remainingQuantity
-            TicketType ticketType = ticketTypeRepository.findById(ticketTypeId).orElse(null);
-            if (ticketType != null) {
-                ticketType.setRemainingQuantity(ticketType.getRemainingQuantity() + quantity);
-                ticketTypeRepository.save(ticketType);
-            }
 
             // Hủy electronic tickets
             for (BookingDetail detail : booking.getBookingDetails()) {

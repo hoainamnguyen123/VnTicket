@@ -1,6 +1,7 @@
 package com.vnticket.service;
 
 import com.vnticket.dto.BookingDTO;
+import com.vnticket.dto.request.BookingMessageDTO;
 import com.vnticket.dto.request.BookingRequest;
 import com.vnticket.dto.response.BookingStatsDTO;
 import com.vnticket.dto.TicketDTO;
@@ -25,4 +26,6 @@ public interface BookingService {
     void cancelExpiredBookings();
 
     void processVnPayPayment(Long bookingId);
+
+    void processBookingMessage(BookingMessageDTO message);
 }

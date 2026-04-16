@@ -22,6 +22,7 @@ D:\VNTicket\vnticket-backend\src\main\java\com\vnticket\repository\UserRepositor
 D:\VNTicket\vnticket-backend\src\main\java\com\vnticket\VnTicketApplication.java
 D:\VNTicket\vnticket-backend\src\main\java\com\vnticket\repository\BookingDetailRepository.java
 D:\VNTicket\vnticket-backend\src\main\java\com\vnticket\exception\GlobalExceptionHandler.java
+D:\VNTicket\vnticket-backend\src\main\java\com\vnticket\rabbitmq\BookingProducer.java
 D:\VNTicket\vnticket-backend\src\main\java\com\vnticket\exception\TokenRefreshException.java
 D:\VNTicket\vnticket-backend\src\main\java\com\vnticket\scheduler\ReservationCleanupTask.java
 D:\VNTicket\vnticket-backend\src\main\java\com\vnticket\repository\BookingRepository.java
@@ -34,6 +35,7 @@ D:\VNTicket\vnticket-backend\src\main\java\com\vnticket\filter\RateLimitFilter.j
 D:\VNTicket\vnticket-backend\src\main\java\com\vnticket\repository\TicketTypeRepository.java
 D:\VNTicket\vnticket-backend\src\main\java\com\vnticket\dto\response\ApiResponse.java
 D:\VNTicket\vnticket-backend\src\main\java\com\vnticket\security\WebSecurityConfig.java
+D:\VNTicket\vnticket-backend\src\main\java\com\vnticket\rabbitmq\BookingConsumer.java
 D:\VNTicket\vnticket-backend\src\main\java\com\vnticket\service\impl\EmailServiceImpl.java
 D:\VNTicket\vnticket-backend\src\main\java\com\vnticket\dto\request\ResetPasswordRequest.java
 D:\VNTicket\vnticket-backend\src\main\java\com\vnticket\dto\UserDTO.java
@@ -56,9 +58,11 @@ D:\VNTicket\vnticket-backend\src\main\java\com\vnticket\enums\Role.java
 D:\VNTicket\vnticket-backend\src\main\java\com\vnticket\service\VnPayService.java
 D:\VNTicket\vnticket-backend\src\main\java\com\vnticket\entity\Ticket.java
 D:\VNTicket\vnticket-backend\src\main\java\com\vnticket\service\impl\AuthServiceImpl.java
+D:\VNTicket\vnticket-backend\src\main\java\com\vnticket\config\RabbitMQConfig.java
 D:\VNTicket\vnticket-backend\src\main\java\com\vnticket\dto\request\LoginRequest.java
 D:\VNTicket\vnticket-backend\src\main\java\com\vnticket\dto\BookingDTO.java
 D:\VNTicket\vnticket-backend\src\main\java\com\vnticket\dto\request\UserProfileUpdateRequest.java
+D:\VNTicket\vnticket-backend\src\main\java\com\vnticket\dto\request\BookingMessageDTO.java
 D:\VNTicket\vnticket-backend\src\main\java\com\vnticket\controller\BookingController.java
 D:\VNTicket\vnticket-backend\src\main\java\com\vnticket\security\services\UserDetailsServiceImpl.java
 D:\VNTicket\vnticket-backend\src\main\java\com\vnticket\config\VnPayConfig.java

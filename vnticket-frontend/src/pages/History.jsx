@@ -6,7 +6,7 @@ import axiosClient from '../api/axiosClient';
 import { formatCurrency, formatDate } from '../utils/formatters';
 import { AuthContext } from '../context/AuthContext';
 import { ThemeContext } from '../context/ThemeContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import ElectronicTicketModal from '../components/ElectronicTicketModal';
 
 const { Title, Text } = Typography;
@@ -214,7 +214,13 @@ const History = () => {
     const navigate = useNavigate();
     const isMobile = useIsMobile();
     const { t } = useTranslation();
+    const [searchParams, setSearchParams] = useSearchParams();
+    const activeTabKey = searchParams.get('tab') || 'PENDING';
     const [modal, contextHolder] = Modal.useModal();
+
+    const onTabChange = (key) => {
+        setSearchParams({ tab: key });
+    };
 
     const fetchBookings = React.useCallback(async (silent = false) => {
         if (!silent) setLoading(true);
@@ -477,7 +483,7 @@ const History = () => {
                 </Button>
             </div>
 
-            <Tabs defaultActiveKey="PENDING" items={tabItems} size="large" />
+            <Tabs activeKey={activeTabKey} onChange={onTabChange} items={tabItems} size="large" />
 
             <ElectronicTicketModal
                 visible={isModalVisible}

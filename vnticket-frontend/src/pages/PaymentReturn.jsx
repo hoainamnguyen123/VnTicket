@@ -80,7 +80,7 @@ const PaymentReturn = () => {
                         title={t('payment.success')}
                         subTitle={t('payment.successSub', { id: paymentResult.bookingId })}
                         extra={[
-                            <Button type="primary" key="history" onClick={() => navigate('/history')}>
+                            <Button type="primary" key="history" onClick={() => navigate('/history?tab=PAID')}>
                                 {t('payment.viewMyTickets')}
                             </Button>,
                             <Button key="home" onClick={() => navigate('/')}>
@@ -101,7 +101,7 @@ const PaymentReturn = () => {
                         title={t('payment.failed')}
                         subTitle={error || t('payment.failedSub', { id: paymentResult?.bookingId })}
                         extra={[
-                            <Button type="primary" key="history" onClick={() => navigate('/history')}>
+                            <Button type="primary" key="history" onClick={() => navigate('/history?tab=PENDING')}>
                                 {t('payment.retryFromHistory')}
                             </Button>,
                             <Button key="home" onClick={() => navigate('/')}>

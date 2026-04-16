@@ -11,6 +11,8 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.InternalAuthenticationServiceException;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.AuthenticationException;
 import com.vnticket.exception.TokenRefreshException;
 
 import java.util.stream.Collectors;
@@ -70,6 +72,12 @@ public class GlobalExceptionHandler {
                 log.warn("TokenRefreshException handled: {}", ex.getMessage());
                 return ResponseEntity.status(HttpStatus.FORBIDDEN)
                                 .body(ApiResponse.error(HttpStatus.FORBIDDEN.value(), ex.getMessage(), getTraceId()));
+        }
+
+        // Bỏ qua ngoại lệ của Spring Security để lớp bảo mật (AuthEntryPointJwt) tự xử lý trả về 401/403
+        @ExceptionHandler({ AccessDeniedException.class, AuthenticationException.class })
+        public void handleSecurityExceptions(Exception ex) throws Exception {
+                throw ex;
         }
 
         @ExceptionHandler(Exception.class)

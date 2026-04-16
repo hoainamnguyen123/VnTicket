@@ -80,7 +80,16 @@ const EventDetail = () => {
             setIsSuccessVisible(true);
         },
         onError: (error) => {
-            message.error(error.message || t('eventDetail.bookingError'));
+            let errorMsg = error.message;
+            if (errorMsg === "Invalid ticket quantity! You can only purchase a maximum of 5 tickets per order.") {
+                errorMsg = t('eventDetail.maxQuantityError');
+            } else if (errorMsg === "You already have a pending booking for this event. Please pay or cancel it before creating a new one.") {
+                errorMsg = t('eventDetail.pendingExistsError');
+            } else {
+                errorMsg = errorMsg || t('eventDetail.bookingError');
+            }
+
+            message.error(errorMsg);
 
             if (error.status === 409) {
                 Modal.error({
@@ -125,32 +134,74 @@ const EventDetail = () => {
     if (!event) return <div style={{ textAlign: 'center', marginTop: 50 }}>{t('eventDetail.notFound')}</div>;
 
     return (
-        <div>
+        <div className="event-detail-page">
             <Row gutter={[32, 32]}>
                 <Col xs={24} md={12}>
-                    <div style={{ borderRadius: '12px', overflow: 'hidden', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
-                        <Image.PreviewGroup>
+                    <Image.PreviewGroup>
+                        <div style={{ borderRadius: '12px', overflow: 'hidden', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
                             <Image
                                 src={event.imageUrl}
                                 alt={event.name}
                                 style={{ width: '100%', display: 'block', objectFit: 'cover' }}
                             />
-                            {event.additionalImages && event.additionalImages.length > 0 && (
-                                <div style={{ display: 'flex', gap: '8px', padding: '8px', overflowX: 'auto', background: isDark ? '#141414' : '#f0f2f5' }}>
-                                    {event.additionalImages.map((imgUrl, index) => (
-                                        <Image
-                                            key={index}
-                                            src={imgUrl}
-                                            alt={`${t('eventDetail.additionalImage')} ${index + 1}`}
-                                            width={80}
-                                            height={60}
-                                            style={{ objectFit: 'cover', borderRadius: '4px', cursor: 'pointer', border: isDark ? '1px solid #434343' : '1px solid #d9d9d9' }}
-                                        />
-                                    ))}
-                                </div>
-                            )}
-                        </Image.PreviewGroup>
-                    </div>
+                        </div>
+
+                        <style>
+                            {`
+                                .hide-image-mask .ant-image-mask {
+                                    opacity: 0 !important;
+                                    background: transparent !important;
+                                    display: none !important;
+                                }
+                                .hide-image-mask img {
+                                    cursor: pointer !important;
+                                }
+                                .custom-scrollbar::-webkit-scrollbar {
+                                    width: 6px;
+                                }
+                                .custom-scrollbar::-webkit-scrollbar-track {
+                                    background: transparent;
+                                }
+                                .custom-scrollbar::-webkit-scrollbar-thumb {
+                                    background-color: ${isDark ? '#434343' : '#bfbfbf'};
+                                    border-radius: 10px;
+                                }
+                                @media (min-width: 768px) {
+                                    .mobile-sticky-bottom-bar {
+                                        display: none !important;
+                                    }
+                                }
+                                @media (max-width: 767px) {
+                                    .event-detail-page {
+                                        padding-bottom: 80px;
+                                    }
+                                }
+                            `}
+                        </style>
+                        {event.additionalImages && event.additionalImages.length > 0 && (
+                            <div className="custom-scrollbar" style={{ 
+                                marginTop: '24px',
+                                maxHeight: '600px', 
+                                overflowY: 'auto', 
+                                display: 'flex', 
+                                flexDirection: 'column', 
+                                border: isDark ? '1px solid #434343' : '1px solid #d9d9d9',
+                                borderRadius: '12px',
+                                boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
+                                padding: '12px'
+                            }}>
+                                {event.additionalImages.map((imgUrl, index) => (
+                                    <Image
+                                        key={index}
+                                        src={imgUrl}
+                                        alt={`${t('eventDetail.additionalImage')} ${index + 1}`}
+                                        style={{ width: '100%', display: 'block' }}
+                                        rootClassName="hide-image-mask"
+                                    />
+                                ))}
+                            </div>
+                        )}
+                    </Image.PreviewGroup>
                 </Col>
                 <Col xs={24} md={12}>
                     <Tag color={event.type === 'CONCERT' ? 'magenta' : 'geekblue'} style={{ marginBottom: 16 }}>
@@ -164,7 +215,7 @@ const EventDetail = () => {
                         <Text><EnvironmentOutlined style={{ color: '#1890ff', marginRight: 10 }} /> <strong>{t('eventDetail.location')}</strong> {event.location || t('common.notUpdated')}</Text>
                     </div>
 
-                    <Card title={t('eventDetail.selectTicketType')} bordered={false} style={{ background: isDark ? '#262626' : '#f9f9f9', borderRadius: '12px' }}>
+                    <Card id="booking-card" title={t('eventDetail.selectTicketType')} bordered={false} style={{ background: isDark ? '#262626' : '#f9f9f9', borderRadius: '12px' }}>
                         <Table
                             dataSource={event.ticketTypes}
                             columns={columns}
@@ -181,7 +232,7 @@ const EventDetail = () => {
                                 <Text strong>{t('eventDetail.quantity')} </Text>
                                 <InputNumber
                                     min={1}
-                                    max={selectedTicket ? selectedTicket.remainingQuantity : 10}
+                                    max={selectedTicket ? Math.min(selectedTicket.remainingQuantity, 5) : 5}
                                     value={quantity}
                                     onChange={setQuantity}
                                     disabled={!selectedTicket}
@@ -207,6 +258,14 @@ const EventDetail = () => {
                             {t('eventDetail.bookNow')}
                         </Button>
                     </Card>
+
+                    <Alert 
+                        message={t('eventDetail.bookingPolicyTitle')} 
+                        description={t('eventDetail.bookingPolicyDesc')} 
+                        type="info" 
+                        showIcon 
+                        style={{ marginTop: '32px', borderRadius: '8px' }} 
+                    />
                 </Col>
             </Row>
 
@@ -244,12 +303,12 @@ const EventDetail = () => {
                 open={isSuccessVisible}
                 onOk={() => { setIsSuccessVisible(false); navigate('/history'); }}
                 onCancel={() => { setIsSuccessVisible(false); navigate('/history'); }}
-                okText={t('eventDetail.viewHistory', 'Xem Lịch Sử Giao Dịch')}
+                okText={t('eventDetail.payNowBtn', 'Thanh toán ngay')}
                 cancelButtonProps={{ style: { display: 'none' } }}
                 centered
             >
                 <div style={{ padding: '10px 0' }}>
-                    <Text>{t('eventDetail.bookingSuccessContent', 'Đơn đặt vé của bạn đã được ghi nhận. Vui lòng tiến hành thanh toán trong mục Lịch sử đặt vé.')}</Text>
+                    <Text>{t('eventDetail.bookingSuccessContent', 'Đơn đặt vé của bạn đã được giữ chỗ! Vui lòng hoàn tất thanh toán ngay trong vòng 15 phút để tránh bị hệ thống hủy vé tự động nhé.')}</Text>
                 </div>
             </Modal>
 
@@ -276,6 +335,31 @@ const EventDetail = () => {
                     </Row>
                 </div>
             )}
+
+            <div className="mobile-sticky-bottom-bar" style={{
+                position: 'fixed',
+                bottom: 0, left: 0, right: 0,
+                background: isDark ? '#141414' : '#ffffff',
+                borderTop: `1px solid ${isDark ? '#434343' : '#f0f0f0'}`,
+                padding: '12px 24px',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                boxShadow: '0 -4px 12px rgba(0,0,0,0.08)',
+                zIndex: 1000,
+            }}>
+                <div>
+                    <Text type="secondary" style={{ fontSize: '13px', display: 'block', marginBottom: '2px' }}>{t('common.from', 'Từ')}</Text>
+                    <Text strong style={{ fontSize: '18px', color: '#f5222d' }}>
+                        {event.ticketTypes?.length > 0 ? formatCurrency(Math.min(...event.ticketTypes.map(t => t.price))) : '0 ₫'}
+                    </Text>
+                </div>
+                <Button type="primary" size="large" style={{ borderRadius: '8px', padding: '0 32px', fontWeight: 600 }} onClick={() => {
+                    document.getElementById('booking-card')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }}>
+                    {t('common.buyNow', 'Mua vé ngay')}
+                </Button>
+            </div>
         </div>
     );
 };
