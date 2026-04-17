@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { Table, Typography, Tag, Button, Modal, message, Skeleton, Card, Tabs } from 'antd';
-import { ExclamationCircleOutlined, SyncOutlined, WalletOutlined, CreditCardOutlined, EyeOutlined, CloseCircleOutlined } from '@ant-design/icons';
+import { Table, Typography, Tag, Button, Modal, message, Skeleton, Card, Tabs, Input, Alert } from 'antd';
+import { ExclamationCircleOutlined, SyncOutlined, WalletOutlined, CreditCardOutlined, EyeOutlined, CloseCircleOutlined, SwapOutlined, GiftOutlined, MailOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import axiosClient from '../api/axiosClient';
 import { formatCurrency, formatDate } from '../utils/formatters';
@@ -110,7 +110,7 @@ const PaymentMethodCard = ({ name, imgSrc, borderColor, bgColor, disabled, comin
 );
 
 /* ── Booking Card cho Mobile ── */
-const BookingCard = ({ booking, onPay, onViewTickets, onCancel, onExpire, t }) => {
+const BookingCard = ({ booking, onPay, onViewTickets, onCancel, onExpire, onTransfer, t }) => {
     const statusColor = booking.status === 'PAID' ? 'green' : (booking.status === 'PENDING' ? 'gold' : 'red');
     const statusText = booking.status === 'PAID' ? t('history.paid') : (booking.status === 'PENDING' ? t('history.pending') : t('history.cancelled'));
 
@@ -163,6 +163,7 @@ const BookingCard = ({ booking, onPay, onViewTickets, onCancel, onExpire, t }) =
             {/* Nút hành động */}
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                 {booking.status === 'PAID' && (
+                    <>
                     <Button
                         type="primary"
                         ghost
@@ -172,6 +173,15 @@ const BookingCard = ({ booking, onPay, onViewTickets, onCancel, onExpire, t }) =
                     >
                         {t('history.viewTickets')}
                     </Button>
+                    <Button
+                        size="small"
+                        icon={<GiftOutlined />}
+                        onClick={() => onTransfer(booking.id)}
+                        style={{ borderColor: '#722ed1', color: '#722ed1' }}
+                    >
+                        {t('eTicket.transferBtn')}
+                    </Button>
+                    </>
                 )}
                 {booking.status === 'PENDING' && (
                     <>
@@ -204,10 +214,20 @@ const History = () => {
     const [bookings, setBookings] = useState([]);
     const [loading, setLoading] = useState(true);
     const [tickets, setTickets] = useState([]);
+    const [transferHistory, setTransferHistory] = useState([]);
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [paymentModalVisible, setPaymentModalVisible] = useState(false);
     const [selectedBookingId, setSelectedBookingId] = useState(null);
+    const [viewedBookingId, setViewedBookingId] = useState(null);
     const [selectedMethod, setSelectedMethod] = useState(null);
+
+    // Transfer flow state
+    const [transferPickerVisible, setTransferPickerVisible] = useState(false);
+    const [transferableTickets, setTransferableTickets] = useState([]);
+    const [transferEmailVisible, setTransferEmailVisible] = useState(false);
+    const [transferTargetTicket, setTransferTargetTicket] = useState(null);
+    const [transferEmail, setTransferEmail] = useState('');
+    const [transferLoading, setTransferLoading] = useState(false);
     const [paymentLoading, setPaymentLoading] = useState(false);
     const { user, loading: authLoading } = useContext(AuthContext);
     const { isDark } = useContext(ThemeContext);
@@ -235,14 +255,24 @@ const History = () => {
         }
     }, [t]);
 
+    const fetchTransferHistory = React.useCallback(async () => {
+        try {
+            const response = await axiosClient.get('/tickets/transfer/history');
+            setTransferHistory(response.data);
+        } catch (error) {
+            console.error('Fetch transfer history error:', error);
+        }
+    }, []);
+
     useEffect(() => {
         if (authLoading) return;
         if (!user) {
             navigate('/login');
         } else {
             fetchBookings();
+            fetchTransferHistory();
         }
-    }, [user, navigate, authLoading, fetchBookings]);
+    }, [user, navigate, authLoading, fetchBookings, fetchTransferHistory]);
 
     const handleCancel = (bookingId) => {
         modal.confirm({
@@ -268,9 +298,79 @@ const History = () => {
         try {
             const response = await axiosClient.get(`/bookings/${bookingId}/tickets`);
             setTickets(response.data);
+            setViewedBookingId(bookingId);
             setIsModalVisible(true);
         } catch (error) {
             message.error(t('history.loadTicketsError'));
+        }
+    };
+
+    const handleTicketTransferred = async () => {
+        // Refresh ticket list in modal
+        if (viewedBookingId) {
+            try {
+                const response = await axiosClient.get(`/bookings/${viewedBookingId}/tickets`);
+                setTickets(response.data);
+            } catch (error) {
+                console.error('Refresh tickets error:', error);
+            }
+        }
+        // Also refresh bookings list and transfer history
+        fetchBookings(true);
+        fetchTransferHistory();
+    };
+
+    // ── Transfer flow handlers ──
+    const handleOpenTransfer = async (bookingId) => {
+        try {
+            const response = await axiosClient.get(`/bookings/${bookingId}/tickets`);
+            const validTickets = response.data.filter(t => t.status === 'VALID');
+            if (validTickets.length === 0) {
+                message.info(t('ticketTransfer.noValidToTransfer', 'Không có vé hợp lệ để tặng'));
+                return;
+            }
+            if (validTickets.length === 1) {
+                // Chỉ 1 vé → đi thẳng nhập email
+                setTransferTargetTicket(validTickets[0]);
+                setTransferEmail('');
+                setTransferEmailVisible(true);
+            } else {
+                // Nhiều vé → chọn vé
+                setTransferableTickets(validTickets);
+                setTransferPickerVisible(true);
+            }
+        } catch (error) {
+            message.error(t('history.loadTicketsError'));
+        }
+    };
+
+    const handlePickTicket = (ticket) => {
+        setTransferTargetTicket(ticket);
+        setTransferEmail('');
+        setTransferPickerVisible(false);
+        setTransferEmailVisible(true);
+    };
+
+    const handleConfirmTransfer = async () => {
+        if (!transferEmail || !transferEmail.includes('@')) {
+            message.warning(t('ticketTransfer.recipientEmailRequired'));
+            return;
+        }
+        setTransferLoading(true);
+        try {
+            await axiosClient.post('/tickets/transfer', {
+                ticketId: transferTargetTicket.id,
+                recipientEmail: transferEmail,
+            });
+            message.success(t('ticketTransfer.transferSuccessDetail', { email: transferEmail }));
+            setTransferEmailVisible(false);
+            setTransferTargetTicket(null);
+            fetchBookings(true);
+            fetchTransferHistory();
+        } catch (error) {
+            message.error(error.message || t('ticketTransfer.transferError'));
+        } finally {
+            setTransferLoading(false);
         }
     };
 
@@ -363,9 +463,18 @@ const History = () => {
             render: (_, record) => (
                 <div style={{ display: 'flex', gap: '8px' }}>
                     {record.status === 'PAID' && (
-                        <Button type="primary" ghost onClick={() => handleViewTickets(record.id)}>
-                            {t('history.viewTickets')}
-                        </Button>
+                        <>
+                            <Button type="primary" ghost onClick={() => handleViewTickets(record.id)}>
+                                {t('history.viewTickets')}
+                            </Button>
+                            <Button
+                                icon={<GiftOutlined />}
+                                onClick={() => handleOpenTransfer(record.id)}
+                                style={{ borderColor: '#722ed1', color: '#722ed1' }}
+                            >
+                                {t('eTicket.transferBtn')}
+                            </Button>
+                        </>
                     )}
                     {record.status === 'PENDING' && (
                         <Button
@@ -416,6 +525,7 @@ const History = () => {
                                 onPay={openPaymentModal}
                                 onViewTickets={handleViewTickets}
                                 onCancel={handleCancel}
+                                onTransfer={handleOpenTransfer}
                                 onExpire={() => fetchBookings()}
                                 t={t}
                             />
@@ -470,6 +580,112 @@ const History = () => {
             label: `${t('history.cancelled', 'Đã hủy')} (${cancelledBookings.length})`,
             key: 'CANCELLED',
             children: renderBookingsList(cancelledBookings)
+        },
+        {
+            label: (
+                <span>
+                    <SwapOutlined style={{ marginRight: 6 }} />
+                    {`${t('ticketTransfer.historyTitle', 'Lịch sử chuyển vé')} (${transferHistory.length})`}
+                </span>
+            ),
+            key: 'TRANSFER',
+            children: (
+                <div style={{ paddingTop: 12 }}>
+                    {transferHistory.length === 0 ? (
+                        <Card style={{ textAlign: 'center', padding: '40px' }}>
+                            <Text type="secondary">{t('ticketTransfer.noHistory', 'Chưa có lịch sử chuyển vé')}</Text>
+                        </Card>
+                    ) : (
+                        isMobile ? (
+                            transferHistory.map((item) => {
+                                const isSent = item.fromEmail === user?.email || item.fromUsername === user?.username;
+                                return (
+                                    <Card
+                                        key={item.id}
+                                        size="small"
+                                        style={{
+                                            marginBottom: '12px',
+                                            borderRadius: '12px',
+                                            boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                                            borderLeft: `4px solid ${isSent ? '#ff4d4f' : '#52c41a'}`,
+                                        }}
+                                    >
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                                            <Text strong style={{ color: '#1890ff' }}>{item.eventName}</Text>
+                                            <Tag color={isSent ? 'red' : 'green'}>
+                                                {isSent ? t('ticketTransfer.sent') : t('ticketTransfer.received')}
+                                            </Tag>
+                                        </div>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '13px' }}>
+                                            <Text><strong>{t('ticketTransfer.zone')}:</strong> {item.zoneName}</Text>
+                                            <Text>
+                                                <strong>{isSent ? t('ticketTransfer.to') : t('ticketTransfer.from')}:</strong>{' '}
+                                                {isSent ? item.toEmail : item.fromEmail}
+                                            </Text>
+                                            <Text type="secondary">📅 {formatDate(item.transferredAt)}</Text>
+                                        </div>
+                                    </Card>
+                                );
+                            })
+                        ) : (
+                            <Table
+                                dataSource={transferHistory}
+                                rowKey="id"
+                                pagination={{ pageSize: 10 }}
+                                columns={[
+                                    {
+                                        title: t('ticketTransfer.event'),
+                                        dataIndex: 'eventName',
+                                        key: 'eventName',
+                                        render: text => <strong style={{ color: '#1890ff' }}>{text}</strong>
+                                    },
+                                    {
+                                        title: t('ticketTransfer.zone'),
+                                        dataIndex: 'zoneName',
+                                        key: 'zoneName',
+                                        width: 120,
+                                        render: z => <Tag color="blue">{z}</Tag>
+                                    },
+                                    {
+                                        title: t('ticketTransfer.from'),
+                                        dataIndex: 'fromEmail',
+                                        key: 'fromEmail',
+                                        render: (email, record) => {
+                                            const isMe = email === user?.email || record.fromUsername === user?.username;
+                                            return <Text>{isMe ? <Tag color="default">{t('ticketTransfer.you', 'Bạn')}</Tag> : email}</Text>;
+                                        }
+                                    },
+                                    {
+                                        title: t('ticketTransfer.to'),
+                                        dataIndex: 'toEmail',
+                                        key: 'toEmail',
+                                        render: (email, record) => {
+                                            const isMe = email === user?.email || record.toUsername === user?.username;
+                                            return <Text>{isMe ? <Tag color="default">{t('ticketTransfer.you', 'Bạn')}</Tag> : email}</Text>;
+                                        }
+                                    },
+                                    {
+                                        title: t('ticketTransfer.time'),
+                                        dataIndex: 'transferredAt',
+                                        key: 'transferredAt',
+                                        width: 160,
+                                        render: time => formatDate(time)
+                                    },
+                                    {
+                                        title: '',
+                                        key: 'direction',
+                                        width: 100,
+                                        render: (_, record) => {
+                                            const isSent = record.fromEmail === user?.email || record.fromUsername === user?.username;
+                                            return <Tag color={isSent ? 'red' : 'green'}>{isSent ? t('ticketTransfer.sent') : t('ticketTransfer.received')}</Tag>;
+                                        }
+                                    }
+                                ]}
+                            />
+                        )
+                    )}
+                </div>
+            )
         }
     ];
 
@@ -489,6 +705,7 @@ const History = () => {
                 visible={isModalVisible}
                 onClose={() => setIsModalVisible(false)}
                 tickets={tickets}
+                onTicketTransferred={handleTicketTransferred}
             />
 
             {/* ── Modal chọn phương thức thanh toán ── */}
@@ -558,6 +775,120 @@ const History = () => {
                         />
                     </div>
                 </div>
+            </Modal>
+
+            {/* ── Modal chọn vé để tặng (khi có nhiều vé) ── */}
+            <Modal
+                title={
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <GiftOutlined style={{ fontSize: '20px', color: '#722ed1' }} />
+                        <span style={{ fontSize: '16px', fontWeight: 600 }}>{t('ticketTransfer.pickTicket', 'Chọn vé muốn tặng')}</span>
+                    </div>
+                }
+                open={transferPickerVisible}
+                onCancel={() => setTransferPickerVisible(false)}
+                footer={null}
+                width={460}
+                centered
+            >
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', padding: '8px 0' }}>
+                    {transferableTickets.map(ticket => (
+                        <Card
+                            key={ticket.id}
+                            hoverable
+                            size="small"
+                            onClick={() => handlePickTicket(ticket)}
+                            style={{
+                                borderRadius: '10px',
+                                border: '1px solid #d3adf7',
+                                cursor: 'pointer',
+                            }}
+                            bodyStyle={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                        >
+                            <div>
+                                <Text strong style={{ color: '#1890ff' }}>{ticket.eventName}</Text>
+                                <br />
+                                <Text type="secondary" style={{ fontSize: '12px' }}>
+                                    {t('ticketTransfer.zone')}: <Tag color="blue">{ticket.zoneName}</Tag>
+                                    {t('ticketTransfer.ticketCode')}: <code>{ticket.ticketCode}</code>
+                                </Text>
+                            </div>
+                            <GiftOutlined style={{ fontSize: '20px', color: '#722ed1' }} />
+                        </Card>
+                    ))}
+                </div>
+            </Modal>
+
+            {/* ── Modal nhập email người nhận ── */}
+            <Modal
+                title={
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <GiftOutlined style={{ fontSize: '20px', color: '#722ed1' }} />
+                        <span style={{ fontSize: '16px', fontWeight: 600 }}>{t('ticketTransfer.modalTitle')}</span>
+                    </div>
+                }
+                open={transferEmailVisible}
+                onCancel={() => { setTransferEmailVisible(false); setTransferTargetTicket(null); }}
+                footer={[
+                    <Button key="cancel" onClick={() => { setTransferEmailVisible(false); setTransferTargetTicket(null); }}>
+                        {t('common.cancel')}
+                    </Button>,
+                    <Button
+                        key="confirm"
+                        type="primary"
+                        loading={transferLoading}
+                        disabled={!transferEmail}
+                        onClick={handleConfirmTransfer}
+                        style={{
+                            background: transferEmail ? 'linear-gradient(135deg, #722ed1, #9254de)' : undefined,
+                            borderColor: transferEmail ? 'transparent' : undefined,
+                        }}
+                    >
+                        {t('ticketTransfer.confirmTransfer')}
+                    </Button>
+                ]}
+                width={460}
+                centered
+            >
+                {transferTargetTicket && (
+                    <div style={{ padding: '8px 0' }}>
+                        <div style={{
+                            background: isDark ? '#262626' : '#f6f0ff',
+                            borderRadius: '10px',
+                            padding: '16px',
+                            marginBottom: '16px',
+                            border: `1px solid ${isDark ? '#434343' : '#d3adf7'}`
+                        }}>
+                            <Text strong style={{ display: 'block', marginBottom: '4px', color: '#722ed1' }}>
+                                {t('ticketTransfer.ticketInfo')}
+                            </Text>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '8px' }}>
+                                <Text><strong>{t('ticketTransfer.event')}:</strong> {transferTargetTicket.eventName}</Text>
+                                <Text><strong>{t('ticketTransfer.zone')}:</strong> {transferTargetTicket.zoneName}</Text>
+                                <Text><strong>{t('ticketTransfer.ticketCode')}:</strong> <code>{transferTargetTicket.ticketCode}</code></Text>
+                            </div>
+                        </div>
+
+                        <Text strong style={{ display: 'block', marginBottom: '8px' }}>
+                            {t('ticketTransfer.recipientEmail')}
+                        </Text>
+                        <Input
+                            prefix={<MailOutlined style={{ color: '#bfbfbf' }} />}
+                            placeholder={t('ticketTransfer.recipientEmailPlaceholder')}
+                            value={transferEmail}
+                            onChange={(e) => setTransferEmail(e.target.value)}
+                            size="large"
+                            style={{ borderRadius: '8px', marginBottom: '16px' }}
+                        />
+
+                        <Alert
+                            type="warning"
+                            showIcon
+                            message={t('ticketTransfer.warning')}
+                            style={{ borderRadius: '8px' }}
+                        />
+                    </div>
+                )}
             </Modal>
         </div>
     );
