@@ -26,10 +26,12 @@ spring:
           min-idle: 1
   rabbitmq:
     host: ${RABBITMQ_HOST}
-    port: ${RABBITMQ_PORT:5672}
+    port: ${RABBITMQ_PORT:5671}
     username: ${RABBITMQ_USERNAME}
     password: ${RABBITMQ_PASSWORD}
     virtual-host: ${RABBITMQ_VHOST:/}
+    ssl:
+      enabled: true
   jpa:
     hibernate:
       ddl-auto: update
