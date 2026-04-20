@@ -6,13 +6,13 @@ WORKDIR /app
 COPY pom.xml .
 
 # Download dependencies (cached layer)
-RUN mvn dependency:resolve -q
+RUN mvn dependency:go-offline
 
 # Copy source code
 COPY src ./src
 
-# Build the application
-RUN mvn clean package -DskipTests -q
+# Build the application (removed -q to see full logs on Render)
+RUN mvn clean package -DskipTests
 
 # Stage 2: Run (smaller image)
 FROM eclipse-temurin:17-jre-alpine
