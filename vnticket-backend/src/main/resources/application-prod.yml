@@ -14,7 +14,12 @@ spring:
       minimum-idle: 2
   data:
     redis:
-      url: ${REDIS_URL}
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT:6379}
+      username: ${REDIS_USERNAME:default}
+      password: ${REDIS_PASSWORD:}
+      ssl:
+        enabled: ${REDIS_SSL:true}
       jedis:
         pool:
           max-active: 5
