@@ -1,9 +1,10 @@
 import React, { useContext } from 'react';
 import { Typography } from 'antd';
-import { CalendarOutlined } from '@ant-design/icons';
+import { CalendarOutlined, FireOutlined, ClockCircleOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ThemeContext } from '../context/ThemeContext';
+import { Tag } from 'antd';
 
 const { Title, Text } = Typography;
 
@@ -31,16 +32,27 @@ const FeaturedEventCard = ({ event }) => {
     // Tính giá thấp nhất nếu có ticketTypes
     let minPrice = 0;
     if (event.ticketTypes && event.ticketTypes.length > 0) {
-         minPrice = Math.min(...event.ticketTypes.map(t => t.price));
+        minPrice = Math.min(...event.ticketTypes.map(t => t.price));
+    }
+
+    // Status Badge Logic
+    const now = new Date();
+    const eventDate = new Date(event.startTime);
+    const diffTime = eventDate - now;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    let statusBadge = null;
+    if (diffDays <= 0) {
+        statusBadge = <Tag color="default" style={{ borderRadius: '6px', margin: 0, fontWeight: 600 }}>{t('common.ended', '✅ Đã diễn ra')}</Tag>;
     }
 
     return (
-        <div 
+        <div
             onClick={() => navigate(`/event/${event.id}`)}
-            style={{ 
-                cursor: 'pointer', 
-                display: 'flex', 
-                flexDirection: 'column', 
+            style={{
+                cursor: 'pointer',
+                display: 'flex',
+                flexDirection: 'column',
                 gap: '12px',
                 boxShadow: isDark ? 'none' : '0 4px 12px rgba(0,0,0,0.06)',
                 width: '100%',
@@ -56,36 +68,39 @@ const FeaturedEventCard = ({ event }) => {
                 e.currentTarget.querySelector('img').style.transform = 'scale(1)';
             }}
         >
-            <div style={{ width: '100%', aspectRatio: '16/9', borderRadius: '8px', overflow: 'hidden' }}>
-                <img 
-                    src={event.imageUrl} 
-                    alt={event.name} 
-                    style={{ 
-                        width: '100%', height: '100%', objectFit: 'cover', 
-                        transition: 'transform 0.4s ease' 
-                    }} 
+            <div style={{ width: '100%', aspectRatio: '16/9', borderRadius: '8px', overflow: 'hidden', position: 'relative' }}>
+                <div style={{ position: 'absolute', top: 8, right: 8, zIndex: 10 }}>
+                    {statusBadge}
+                </div>
+                <img
+                    src={event.imageUrl}
+                    alt={event.name}
+                    style={{
+                        width: '100%', height: '100%', objectFit: 'cover',
+                        transition: 'transform 0.4s ease'
+                    }}
                 />
             </div>
-            
-            <Title level={5} style={{ 
-                color: isDark ? '#e8e8e8' : '#1f1f1f', 
-                margin: 0, 
-                fontSize: '15px', 
-                lineHeight: '1.4', 
-                height: '42px', 
-                overflow: 'hidden', 
-                display: '-webkit-box', 
-                WebkitLineClamp: 2, 
+
+            <Title level={5} style={{
+                color: isDark ? '#e8e8e8' : '#1f1f1f',
+                margin: 0,
+                fontSize: '15px',
+                lineHeight: '1.4',
+                height: '42px',
+                overflow: 'hidden',
+                display: '-webkit-box',
+                WebkitLineClamp: 2,
                 WebkitBoxOrient: 'vertical',
                 transition: 'color 0.3s'
             }}>
                 {event.name}
             </Title>
-            
+
             <Text style={{ color: '#2ecc71', fontSize: '14px', fontWeight: 'bold' }}>
                 {t('common.from')} {formatCurrency(minPrice || (event.price || 0))}
             </Text>
-            
+
             <div style={{ display: 'flex', alignItems: 'center', color: '#a0a0a0', fontSize: '13px' }}>
                 <CalendarOutlined style={{ marginRight: '6px' }} />
                 <span>{formatCustomDate(event.startTime, i18n.language)}</span>

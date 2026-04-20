@@ -745,7 +745,7 @@ const History = () => {
                     </Text>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px' }}>
                         <PaymentMethodCard
-                            name="VNPay"
+                            name="ATM / Internet Banking / QR"
                             imgSrc="/images/vnpay-logo.png"
                             bgColor={isDark ? 'rgba(0, 96, 175, 0.2)' : '#e6f4ff'}
                             borderColor={isDark ? '#4096ff' : '#0060af'}

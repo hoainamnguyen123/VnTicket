@@ -20,7 +20,7 @@ const EventDetail = () => {
     const { isDark } = useContext(ThemeContext);
 
     const queryClient = useQueryClient();
-    
+
     // Auto cuộn lên đầu mỗi khi Đổi sự kiện
     useEffect(() => {
         window.scrollTo(0, 0);
@@ -75,7 +75,7 @@ const EventDetail = () => {
             // Xóa rác, ép Hệ thống tải lại Số lượng Vé Mới Nhất ngay lập tức sau khi trừ vé!
             queryClient.invalidateQueries({ queryKey: ['event', id] });
             queryClient.invalidateQueries({ queryKey: ['events'] });
-            
+
             setIsConfirmVisible(false);
             setIsSuccessVisible(true);
         },
@@ -109,6 +109,8 @@ const EventDetail = () => {
         });
     };
 
+    const isEnded = event ? new Date(event.startTime) <= new Date() : false;
+
     const columns = [
         { title: t('eventDetail.zone'), dataIndex: 'zoneName', key: 'zoneName', render: text => <strong style={{ color: '#1890ff' }}>{text}</strong> },
         { title: t('eventDetail.ticketPrice'), dataIndex: 'price', key: 'price', render: price => <strong>{formatCurrency(price)}</strong> },
@@ -124,7 +126,7 @@ const EventDetail = () => {
                 <Switch
                     checked={selectedTicket?.id === record.id}
                     onChange={(checked) => setSelectedTicket(checked ? record : null)}
-                    disabled={record.remainingQuantity <= 0}
+                    disabled={record.remainingQuantity <= 0 || isEnded}
                 />
             ),
         },
@@ -132,6 +134,14 @@ const EventDetail = () => {
 
     if (loading) return <Skeleton active paragraph={{ rows: 10 }} />;
     if (!event) return <div style={{ textAlign: 'center', marginTop: 50 }}>{t('eventDetail.notFound')}</div>;
+
+    const now = new Date();
+    const eventDate = new Date(event.startTime);
+    
+    let statusBadge = null;
+    if (eventDate <= now) {
+        statusBadge = <Tag color="default" style={{ borderRadius: '4px', margin: 0, fontWeight: 500 }}>{t('common.ended', '✅ Đã diễn ra')}</Tag>;
+    }
 
     return (
         <div className="event-detail-page">
@@ -179,12 +189,12 @@ const EventDetail = () => {
                             `}
                         </style>
                         {event.additionalImages && event.additionalImages.length > 0 && (
-                            <div className="custom-scrollbar" style={{ 
+                            <div className="custom-scrollbar" style={{
                                 marginTop: '24px',
-                                maxHeight: '600px', 
-                                overflowY: 'auto', 
-                                display: 'flex', 
-                                flexDirection: 'column', 
+                                maxHeight: '600px',
+                                overflowY: 'auto',
+                                display: 'flex',
+                                flexDirection: 'column',
                                 border: isDark ? '1px solid #434343' : '1px solid #d9d9d9',
                                 borderRadius: '12px',
                                 boxShadow: '0 4px 12px rgba(0,0,0,0.05)',
@@ -204,9 +214,12 @@ const EventDetail = () => {
                     </Image.PreviewGroup>
                 </Col>
                 <Col xs={24} md={12}>
-                    <Tag color={event.type === 'CONCERT' ? 'magenta' : 'geekblue'} style={{ marginBottom: 16 }}>
-                        {event.type}
-                    </Tag>
+                    <div style={{ marginBottom: 16 }}>
+                        <Tag color={event.type === 'CONCERT' ? 'magenta' : 'geekblue'}>
+                            {event.type}
+                        </Tag>
+                        {statusBadge}
+                    </div>
                     <Title level={2} style={{ marginTop: 0 }}>{event.name}</Title>
 
                     <div style={{ margin: '20px 0', display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '16px' }}>
@@ -246,6 +259,15 @@ const EventDetail = () => {
                             </div>
                         </div>
 
+                        {isEnded && (
+                            <Alert
+                                message={t('eventDetail.eventEndedMsg', 'Sự kiện này đã diễn ra. Bạn không thể đặt vé nữa.')}
+                                type="warning"
+                                showIcon
+                                style={{ marginBottom: '20px', borderRadius: '8px' }}
+                            />
+                        )}
+
                         <Button
                             type="primary"
                             size="large"
@@ -253,18 +275,18 @@ const EventDetail = () => {
                             style={{ marginTop: '20px', height: '50px', fontSize: '16px', borderRadius: '8px' }}
                             onClick={showConfirmModal}
                             loading={bookingMutation.isPending}
-                            disabled={!selectedTicket}
+                            disabled={!selectedTicket || isEnded}
                         >
-                            {t('eventDetail.bookNow')}
+                            {isEnded ? t('eventDetail.eventEndedBtn', 'SỰ KIỆN ĐÃ DIỄN RA') : t('eventDetail.bookNow')}
                         </Button>
                     </Card>
 
-                    <Alert 
-                        message={t('eventDetail.bookingPolicyTitle')} 
-                        description={t('eventDetail.bookingPolicyDesc')} 
-                        type="info" 
-                        showIcon 
-                        style={{ marginTop: '32px', borderRadius: '8px' }} 
+                    <Alert
+                        message={t('eventDetail.bookingPolicyTitle')}
+                        description={t('eventDetail.bookingPolicyDesc')}
+                        type="info"
+                        showIcon
+                        style={{ marginTop: '32px', borderRadius: '8px' }}
                     />
                 </Col>
             </Row>
@@ -318,9 +340,9 @@ const EventDetail = () => {
                         <Title level={2} style={{ margin: 0 }}>
                             {t('eventDetail.youMightLike', 'Sự kiện có thể bạn sẽ thích')}
                         </Title>
-                        <Button 
-                            type="text" 
-                            style={{ fontSize: '16px', color: '#1890ff', fontWeight: 500, padding: 0 }} 
+                        <Button
+                            type="text"
+                            style={{ fontSize: '16px', color: '#1890ff', fontWeight: 500, padding: 0 }}
                             onClick={() => navigate('/events')}
                         >
                             {t('eventDetail.seeMore', 'Xem thêm tất cả')} <ArrowRightOutlined style={{ fontSize: '14px', marginLeft: '4px' }} />

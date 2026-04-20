@@ -111,7 +111,10 @@
     "confirm": "Confirm",
     "loading": "Loading...",
     "tickets": "tickets",
-    "soldOut": "Sold out"
+    "soldOut": "Sold out",
+    "stillDays": "🔥 {{days}} days left",
+    "comingSoon": "⏰ Coming soon",
+    "ended": "✅ Already happened"
   },
   "allEvents": {
     "title": "All Events",
@@ -249,7 +252,7 @@
     "you": "You"
   },
   "payment": {
-    "verifying": "Verifying transaction with VNPay...",
+    "verifying": "Verifying transaction...",
     "success": "Payment successful!",
     "successSub": "Order #{{id}} has been confirmed and updated in the system.",
     "viewMyTickets": "View my tickets",
@@ -257,7 +260,7 @@
     "orderId": "Order ID",
     "amount": "Amount",
     "bank": "Bank",
-    "transactionNo": "VNPay Transaction ID",
+    "transactionNo": "Transaction ID",
     "failed": "Payment failed",
     "failedSub": "Transaction for order #{{id}} was rejected or an error occurred.",
     "retryFromHistory": "Retry from history",

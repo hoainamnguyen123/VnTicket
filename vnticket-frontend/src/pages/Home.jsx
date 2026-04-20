@@ -6,12 +6,12 @@ import axiosClient from '../api/axiosClient';
 import EventCard from '../components/EventCard';
 import FeaturedEventCard from '../components/FeaturedEventCard';
 import HeroSlide from '../components/HeroSlide';
+import EventSearchAutocomplete from '../components/EventSearchAutocomplete';
 import { FireOutlined, RightOutlined, LeftOutlined, HeartOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { ThemeContext } from '../context/ThemeContext';
 
 const { Title } = Typography;
-const { Search } = Input;
 
 const Home = () => {
     const [searchTerm, setSearchTerm] = useState('');
@@ -146,12 +146,10 @@ const Home = () => {
                     </div>
                 )}
 
-                <Search
+                <EventSearchAutocomplete
                     placeholder={t('home.searchPlaceholder')}
-                    allowClear
                     onSearch={setSearchTerm}
-                    style={{ width: '100%', maxWidth: isMobile ? '100%' : '350px', flex: '0 0 auto' }}
-                    size="large"
+                    style={{ maxWidth: isMobile ? '100%' : '350px' }}
                 />
             </div>
 

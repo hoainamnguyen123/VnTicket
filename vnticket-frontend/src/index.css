@@ -151,17 +151,17 @@ html[data-theme="dark"] .ant-table {
   color: rgba(255, 255, 255, 0.85) !important;
 }
 
-html[data-theme="dark"] .ant-table-thead > tr > th {
+html[data-theme="dark"] .ant-table-thead>tr>th {
   background: #262626 !important;
   color: rgba(255, 255, 255, 0.85) !important;
   border-bottom: 1px solid #303030 !important;
 }
 
-html[data-theme="dark"] .ant-table-tbody > tr > td {
+html[data-theme="dark"] .ant-table-tbody>tr>td {
   border-bottom: 1px solid #303030 !important;
 }
 
-html[data-theme="dark"] .ant-table-tbody > tr:hover > td {
+html[data-theme="dark"] .ant-table-tbody>tr:hover>td {
   background: #262626 !important;
 }
 
@@ -215,14 +215,19 @@ html[data-theme="dark"] .ant-typography.ant-typography-secondary {
   color: rgba(255, 255, 255, 0.45) !important;
 }
 
-html[data-theme="dark"] h1, html[data-theme="dark"] h2,
-html[data-theme="dark"] h3, html[data-theme="dark"] h4,
-html[data-theme="dark"] h5, html[data-theme="dark"] h6 {
+html[data-theme="dark"] h1,
+html[data-theme="dark"] h2,
+html[data-theme="dark"] h3,
+html[data-theme="dark"] h4,
+html[data-theme="dark"] h5,
+html[data-theme="dark"] h6 {
   color: rgba(255, 255, 255, 0.85) !important;
 }
 
-html[data-theme="dark"] p, html[data-theme="dark"] span,
-html[data-theme="dark"] div, html[data-theme="dark"] label {
+html[data-theme="dark"] p,
+html[data-theme="dark"] span,
+html[data-theme="dark"] div,
+html[data-theme="dark"] label {
   color: inherit;
 }
 
@@ -295,6 +300,7 @@ html[data-theme="dark"] .ant-modal-confirm-btns .ant-btn-default {
   border-color: #434343 !important;
   color: rgba(255, 255, 255, 0.85) !important;
 }
+
 html[data-theme="dark"] .ant-modal-confirm-btns .ant-btn-default:hover {
   color: #4096ff !important;
   border-color: #4096ff !important;
@@ -329,7 +335,7 @@ html[data-theme="dark"] .ant-pagination-total-text {
 html[data-theme="dark"] .ant-message-notice-content {
   background: #1f1f1f !important;
   color: rgba(255, 255, 255, 0.85) !important;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.5) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
 }
 
 html[data-theme="dark"] .ant-message-success .anticon {
@@ -358,7 +364,7 @@ html[data-theme="dark"] .ant-table-wrapper .ant-pagination {
 }
 
 /* Fix for History Desktop Table inline background */
-html[data-theme="dark"] table.ant-table-content, 
+html[data-theme="dark"] table.ant-table-content,
 html[data-theme="dark"] .ant-table-container,
 html[data-theme="dark"] .ant-table {
   background: #1f1f1f !important;
@@ -366,9 +372,11 @@ html[data-theme="dark"] .ant-table {
 
 /* Custom CSS filter trick to invert the Google Sign in button white background but keep the G logo colors */
 html[data-theme="dark"] .google-btn-wrapper {
-  color-scheme: light !important; /* Force light scheme rendering inside */
+  color-scheme: light !important;
+  /* Force light scheme rendering inside */
   border-radius: 4px;
 }
+
 html[data-theme="dark"] .google-btn-wrapper iframe {
   filter: invert(1) hue-rotate(180deg) !important;
 }
@@ -389,7 +397,7 @@ html[data-theme="dark"] .ant-empty-description {
 
 /* Skeleton */
 html[data-theme="dark"] .ant-skeleton-content .ant-skeleton-title,
-html[data-theme="dark"] .ant-skeleton-content .ant-skeleton-paragraph > li {
+html[data-theme="dark"] .ant-skeleton-content .ant-skeleton-paragraph>li {
   background: linear-gradient(90deg, #262626 25%, #303030 37%, #262626 63%) !important;
 }
 
@@ -404,7 +412,7 @@ html[data-theme="dark"] .ant-divider {
 }
 
 /* Form labels */
-html[data-theme="dark"] .ant-form-item-label > label {
+html[data-theme="dark"] .ant-form-item-label>label {
   color: rgba(255, 255, 255, 0.85) !important;
 }
 
@@ -474,7 +482,14 @@ html[data-theme="dark"] .ant-statistic-content {
 }
 
 /* Smooth transition for dark mode - only bg/border, NOT all properties */
-.ant-layout, .ant-layout-content, .ant-card, .ant-table, .ant-modal-content,
-.ant-drawer-content, .ant-input, .ant-select-selector, .ant-btn {
+.ant-layout,
+.ant-layout-content,
+.ant-card,
+.ant-table,
+.ant-modal-content,
+.ant-drawer-content,
+.ant-input,
+.ant-select-selector,
+.ant-btn {
   transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease !important;
 }

@@ -111,7 +111,10 @@
     "confirm": "Xác nhận",
     "loading": "Đang tải...",
     "tickets": "vé",
-    "soldOut": "Hết vé"
+    "soldOut": "Hết vé",
+    "stillDays": "🔥 Còn {{days}} ngày",
+    "comingSoon": "⏰ Sắp diễn ra",
+    "ended": "✅ Đã diễn ra"
   },
   "allEvents": {
     "title": "Tất cả sự kiện",
@@ -250,7 +253,7 @@
     "you": "Bạn"
   },
   "payment": {
-    "verifying": "Đang xác thực giao dịch với VNPay...",
+    "verifying": "Đang xác thực giao dịch...",
     "success": "Thanh toán thành công!",
     "successSub": "Đơn hàng #{{id}} đã được xác nhận và cập nhật vào hệ thống.",
     "viewMyTickets": "Xem vé của tôi",
@@ -258,7 +261,7 @@
     "orderId": "Mã đơn hàng",
     "amount": "Số tiền",
     "bank": "Ngân hàng",
-    "transactionNo": "Mã giao dịch VNPay",
+    "transactionNo": "Mã giao dịch ATM/Banking/QR",
     "failed": "Thanh toán không thành công",
     "failedSub": "Giao dịch cho đơn hàng #{{id}} bị từ chối hoặc có lỗi xảy ra.",
     "retryFromHistory": "Thử lại từ lịch sử",

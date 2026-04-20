@@ -59,6 +59,8 @@ app:
     returnUrl: http://localhost:5173/payment-return
   reservation:
     ttlMinutes: 15
+  cors:
+    allowed-origins: http://localhost:5173
 
 cloudinary:
   cloud-name: "dilx7nhbv"

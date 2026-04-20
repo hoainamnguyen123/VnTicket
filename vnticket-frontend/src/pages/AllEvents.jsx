@@ -4,10 +4,10 @@ import { Row, Col, Typography, Input, message, Skeleton, Empty, Select, Paginati
 import { useTranslation } from 'react-i18next';
 import axiosClient from '../api/axiosClient';
 import FeaturedEventCard from '../components/FeaturedEventCard';
+import EventSearchAutocomplete from '../components/EventSearchAutocomplete';
 import { CalendarOutlined } from '@ant-design/icons';
 
 const { Title } = Typography;
-const { Search } = Input;
 const { Option } = Select;
 
 const AllEvents = () => {
@@ -72,12 +72,10 @@ const AllEvents = () => {
                         <Option value="Khác">{t('allEvents.other')}</Option>
                     </Select>
 
-                    <Search
+                    <EventSearchAutocomplete
                         placeholder={t('allEvents.searchPlaceholder')}
-                        allowClear
                         onSearch={setSearchTerm}
-                        style={{ width: '100%', maxWidth: '300px', flex: '1 1 200px' }}
-                        size={"large"}
+                        style={{ maxWidth: '300px', flex: '1 1 200px' }}
                     />
                 </div>
             </div>

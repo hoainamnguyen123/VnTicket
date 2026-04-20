@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { Table, Button, Modal, Form, Input, Select, DatePicker, message, Space, Popconfirm, Row, Col, Card, Statistic, Tag, Typography, Image, Divider, Tabs, Badge } from 'antd';
+import { Table, Button, Modal, Form, Input, Select, DatePicker, message, Space, Popconfirm, Row, Col, Card, Statistic, Tag, Typography, Image, Divider, Tabs, Badge, Checkbox } from 'antd';
 import { EditOutlined, DeleteOutlined, PlusOutlined, MinusCircleOutlined, DollarOutlined, TagsOutlined, CheckCircleOutlined, BarChartOutlined, UserOutlined, EnvironmentOutlined, ClockCircleOutlined, ExclamationCircleOutlined, MailOutlined, PhoneOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { useTranslation } from 'react-i18next';
@@ -17,9 +17,6 @@ const Admin = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
     const [events, setEvents] = useState([]);
-    const [pendingEvents, setPendingEvents] = useState([]);
-    const [approvedEvents, setApprovedEvents] = useState([]);
-    const [rejectedEvents, setRejectedEvents] = useState([]);
     const [eventRevenueData, setEventRevenueData] = useState([]);
     const [eventTypeData, setEventTypeData] = useState([]);
     const [activeTab, setActiveTab] = useState('APPROVED');
@@ -33,6 +30,9 @@ const Admin = () => {
     const [form] = Form.useForm();
     const [isRejectModalVisible, setIsRejectModalVisible] = useState(false);
     const [rejectionReasonText, setRejectionReasonText] = useState('');
+    const [searchText, setSearchText] = useState('');
+    const [showOnlySlider, setShowOnlySlider] = useState(false);
+    const [showOnlyFeatured, setShowOnlyFeatured] = useState(false);
 
     const [pagination, setPagination] = useState({ current: 1, pageSize: 10, total: 0 });
 
@@ -61,9 +61,6 @@ const Admin = () => {
             allEvents.sort((a, b) => b.id - a.id);
 
             setEvents(allEvents);
-            setPendingEvents(allEvents.filter(e => e.status === 'PENDING' || e.status === 'PENDING_EDIT'));
-            setApprovedEvents(allEvents.filter(e => e.status === 'APPROVED'));
-            setRejectedEvents(allEvents.filter(e => e.status === 'REJECTED'));
 
             // Calculate Chart Data
             let revenueData = allEvents.map(event => {
@@ -213,6 +210,28 @@ const Admin = () => {
         }
     };
 
+    // Reactively compute filtered lists based on searchText
+    // Reactively compute filtered lists based on searchText and toggles
+    const filteredEvents = events.filter(e => {
+        const search = searchText.toLowerCase();
+        
+        // Basic fields match
+        const matchesBasic = !searchText || 
+                           e.name?.toLowerCase().includes(search) ||
+                           e.organizerName?.toLowerCase().includes(search) ||
+                           e.location?.toLowerCase().includes(search);
+        
+        // Attribute filters
+        const matchesSlider = showOnlySlider ? e.isSlider : true;
+        const matchesFeatured = showOnlyFeatured ? e.isFeatured : true;
+                           
+        return matchesBasic && matchesSlider && matchesFeatured;
+    });
+
+    const displayPending = filteredEvents.filter(e => e.status === 'PENDING' || e.status === 'PENDING_EDIT');
+    const displayApproved = filteredEvents.filter(e => e.status === 'APPROVED');
+    const displayRejected = filteredEvents.filter(e => e.status === 'REJECTED');
+
     const columns = [
         { title: t('admin.id'), dataIndex: 'id', key: 'id', width: 60 },
         {
@@ -354,14 +373,38 @@ const Admin = () => {
                     tab={
                         <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                             <TagsOutlined /> {t('admin.eventManagement')}
-                            <Badge count={pendingEvents.length} showZero={false} />
+                            <Badge count={displayPending.length} showZero={false} />
                         </span>
                     }
                     key="EVENTS"
                 >
                     <div style={{ padding: '16px 0' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 20 }}>
-                            <h2>{t('admin.eventList')}</h2>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: '16px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                    <h2 style={{ margin: 0 }}>{t('admin.eventList')}</h2>
+                                    <Input.Search
+                                        placeholder={t('admin.searchPlaceholder', 'Tìm tên, BTC, địa điểm...')}
+                                        allowClear
+                                        onChange={(e) => setSearchText(e.target.value)}
+                                        style={{ width: 300 }}
+                                    />
+                                </div>
+                                <Space size="large">
+                                    <Checkbox 
+                                        checked={showOnlySlider} 
+                                        onChange={(e) => setShowOnlySlider(e.target.checked)}
+                                    >
+                                        <Tag color="magenta" style={{ cursor: 'pointer', margin: 0 }}>Slider</Tag>
+                                    </Checkbox>
+                                    <Checkbox 
+                                        checked={showOnlyFeatured} 
+                                        onChange={(e) => setShowOnlyFeatured(e.target.checked)}
+                                    >
+                                        <Tag color="geekblue" style={{ cursor: 'pointer', margin: 0 }}>{t('admin.featured', 'Nổi bật')}</Tag>
+                                    </Checkbox>
+                                </Space>
+                            </div>
                             <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
                                 {t('admin.addEvent')}
                             </Button>
@@ -373,12 +416,12 @@ const Admin = () => {
                             type="card"
                             items={[
                                 {
-                                    label: <span><CheckCircleOutlined /> {t('admin.approved')} ({approvedEvents.length})</span>,
+                                    label: <span><CheckCircleOutlined /> {t('admin.approved')} ({displayApproved.length})</span>,
                                     key: 'APPROVED',
                                     children: (
                                         <Table
                                             columns={columns}
-                                            dataSource={approvedEvents}
+                                            dataSource={displayApproved}
                                             rowKey="id"
                                             loading={loading}
                                             pagination={{ pageSize: 10 }}
@@ -391,14 +434,14 @@ const Admin = () => {
                                     label: (
                                         <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                             <ExclamationCircleOutlined /> {t('admin.pending')}
-                                            <Badge count={pendingEvents.length} showZero={false} />
+                                            <Badge count={displayPending.length} showZero={false} />
                                         </span>
                                     ),
                                     key: 'PENDING',
                                     children: (
                                         <Table
                                             columns={columns}
-                                            dataSource={pendingEvents}
+                                            dataSource={displayPending}
                                             rowKey="id"
                                             loading={loading}
                                             pagination={{ pageSize: 10 }}
@@ -408,12 +451,12 @@ const Admin = () => {
                                     )
                                 },
                                 {
-                                    label: <span><MinusCircleOutlined /> {t('admin.rejected')} ({rejectedEvents.length})</span>,
+                                    label: <span><MinusCircleOutlined /> {t('admin.rejected')} ({displayRejected.length})</span>,
                                     key: 'REJECTED',
                                     children: (
                                         <Table
                                             columns={columns}
-                                            dataSource={rejectedEvents}
+                                            dataSource={displayRejected}
                                             rowKey="id"
                                             loading={loading}
                                             pagination={{ pageSize: 10 }}
