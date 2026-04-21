@@ -23,10 +23,20 @@ const useIsMobile = (breakpoint = 768) => {
     return isMobile;
 };
 
+/* ── Helper: Cờ kiểm tra vé đã quá hạn 15 phút chưa ── */
+const isBookingExpired = (bookingTime) => {
+    if (!bookingTime) return false;
+    const timeString = bookingTime.endsWith('Z') ? bookingTime : bookingTime + 'Z';
+    const bookingDate = new Date(timeString);
+    const expiryDate = new Date(bookingDate.getTime() + 15 * 60000);
+    return new Date() >= expiryDate;
+};
+
 /* ── Countdown Timer ── */
 const CountdownTimer = ({ bookingTime, onExpire }) => {
     const [timeLeft, setTimeLeft] = useState(null);
     const hasExpiredRef = React.useRef(false);
+    const initiallyExpiredRef = React.useRef(null);
 
     useEffect(() => {
         const calculateTimeLeft = () => {
@@ -38,12 +48,19 @@ const CountdownTimer = ({ bookingTime, onExpire }) => {
 
             if (diff <= 0) {
                 setTimeLeft('00:00');
-                if (!hasExpiredRef.current) {
-                    hasExpiredRef.current = true;
-                    onExpire();
+                if (initiallyExpiredRef.current === null) {
+                    initiallyExpiredRef.current = true; // Expired BEFORE mounting (do nothing)
+                } else if (initiallyExpiredRef.current === false) {
+                    if (!hasExpiredRef.current) {
+                        hasExpiredRef.current = true;
+                        onExpire(); // Only trigger if it actively expired DURING session
+                    }
                 }
                 return true;
             } else {
+                if (initiallyExpiredRef.current === null) {
+                    initiallyExpiredRef.current = false;
+                }
                 const minutes = Math.floor((diff / 1000) / 60);
                 const seconds = Math.floor((diff / 1000) % 60);
                 setTimeLeft(`${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`);
@@ -187,15 +204,19 @@ const BookingCard = ({ booking, onPay, onViewTickets, onCancel, onExpire, onTran
                 )}
                 {booking.status === 'PENDING' && (
                     <>
-                        <Button
-                            type="primary"
-                            size="small"
-                            icon={<WalletOutlined />}
-                            style={{ background: 'linear-gradient(135deg, #1890ff, #722ed1)', borderColor: 'transparent' }}
-                            onClick={() => onPay(booking.id)}
-                        >
-                            {t('history.pay')}
-                        </Button>
+                        {!isBookingExpired(booking.bookingTime) ? (
+                            <Button
+                                type="primary"
+                                size="small"
+                                icon={<WalletOutlined />}
+                                style={{ background: 'linear-gradient(135deg, #1890ff, #722ed1)', borderColor: 'transparent' }}
+                                onClick={() => onPay(booking.id)}
+                            >
+                                {t('history.pay')}
+                            </Button>
+                        ) : (
+                            <Tag color="error" style={{ display: 'flex', alignItems: 'center' }}>Đã quá hạn</Tag>
+                        )}
                         <Button
                             danger
                             size="small"
@@ -479,23 +500,26 @@ const History = () => {
                         </>
                     )}
                     {record.status === 'PENDING' && (
-                        <Button
-                            type="primary"
-                            icon={<WalletOutlined />}
-                            style={{ background: 'linear-gradient(135deg, #1890ff, #722ed1)', borderColor: 'transparent' }}
-                            onClick={() => openPaymentModal(record.id)}
-                        >
-                            {t('history.pay')}
-                        </Button>
+                        <>
+                            {!isBookingExpired(record.bookingTime) && (
+                                <Button
+                                    type="primary"
+                                    icon={<WalletOutlined />}
+                                    style={{ background: 'linear-gradient(135deg, #1890ff, #722ed1)', borderColor: 'transparent' }}
+                                    onClick={() => openPaymentModal(record.id)}
+                                >
+                                    {t('history.pay')}
+                                </Button>
+                            )}
+                            <Button
+                                type="link"
+                                danger
+                                onClick={() => handleCancel(record.id)}
+                            >
+                                {t('history.cancelTicket')}
+                            </Button>
+                        </>
                     )}
-                    <Button
-                        type="link"
-                        danger
-                        disabled={record.status !== 'PENDING'}
-                        onClick={() => handleCancel(record.id)}
-                    >
-                        {t('history.cancelTicket')}
-                    </Button>
                 </div>
             ),
         }
