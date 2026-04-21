@@ -30,7 +30,8 @@ const CountdownTimer = ({ bookingTime, onExpire }) => {
 
     useEffect(() => {
         const calculateTimeLeft = () => {
-            const bookingDate = new Date(bookingTime);
+            const timeString = bookingTime.endsWith('Z') ? bookingTime : bookingTime + 'Z';
+            const bookingDate = new Date(timeString);
             const expiryDate = new Date(bookingDate.getTime() + 15 * 60000);
             const now = new Date();
             const diff = expiryDate.getTime() - now.getTime();
@@ -451,7 +452,7 @@ const History = () => {
                     <div>
                         <Tag color={color}>{text}</Tag>
                         {status === 'PENDING' && (
-                            <CountdownTimer bookingTime={record.bookingTime} onExpire={() => fetchBookings()} />
+                            <CountdownTimer bookingTime={record.bookingTime} onExpire={() => fetchBookings(true)} />
                         )}
                     </div>
                 );
@@ -527,7 +528,7 @@ const History = () => {
                                 onViewTickets={handleViewTickets}
                                 onCancel={handleCancel}
                                 onTransfer={handleOpenTransfer}
-                                onExpire={() => fetchBookings()}
+                                onExpire={() => fetchBookings(true)}
                                 t={t}
                             />
                         ))
