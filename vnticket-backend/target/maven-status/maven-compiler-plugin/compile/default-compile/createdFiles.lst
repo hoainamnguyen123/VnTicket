@@ -3,6 +3,8 @@ com\vnticket\service\impl\AuthServiceImpl.class
 com\vnticket\service\TicketInventoryRedisService.class
 com\vnticket\dto\response\ApiResponse$ApiResponseBuilder.class
 com\vnticket\dto\request\ResetPasswordRequest.class
+com\vnticket\entity\TicketTransfer$TicketTransferBuilder.class
+com\vnticket\controller\TicketTransferController.class
 com\vnticket\enums\BookingStatus.class
 com\vnticket\service\impl\EventServiceImpl.class
 com\vnticket\dto\BookingDTO.class
@@ -11,11 +13,13 @@ com\vnticket\controller\AuthController.class
 com\vnticket\dto\UserDTO$UserDTOBuilder.class
 com\vnticket\rabbitmq\BookingProducer.class
 com\vnticket\security\services\UserDetailsServiceImpl.class
+com\vnticket\dto\request\TicketTransferRequest.class
 com\vnticket\dto\response\BookingStatsDTO$BookingStatsDTOBuilder.class
 com\vnticket\security\services\RefreshTokenService.class
 com\vnticket\dto\request\ForgotPasswordRequest.class
 com\vnticket\entity\Event.class
 com\vnticket\service\BookingService.class
+com\vnticket\service\TicketTransferService.class
 com\vnticket\security\jwt\JwtUtils.class
 com\vnticket\dto\request\UserProfileUpdateRequest.class
 com\vnticket\repository\BookingRepository.class
@@ -44,6 +48,7 @@ com\vnticket\config\RabbitMQConfig.class
 com\vnticket\enums\TicketStatus.class
 com\vnticket\controller\EventController.class
 com\vnticket\dto\TicketDTO.class
+com\vnticket\dto\TicketTransferDTO.class
 com\vnticket\dto\request\SignupRequest.class
 com\vnticket\exception\ResourceNotFoundException.class
 com\vnticket\filter\TraceIdFilter.class
@@ -71,12 +76,16 @@ com\vnticket\service\AuthService.class
 com\vnticket\entity\BookingDetail$BookingDetailBuilder.class
 com\vnticket\security\jwt\AuthTokenFilter.class
 com\vnticket\service\VnPayService.class
+com\vnticket\dto\TicketTransferDTO$TicketTransferDTOBuilder.class
 com\vnticket\entity\Ticket.class
 com\vnticket\service\EventService.class
 com\vnticket\controller\UserController.class
 com\vnticket\dto\BookingDetailDTO$BookingDetailDTOBuilder.class
 com\vnticket\entity\User$UserBuilder.class
 com\vnticket\repository\UserRepository.class
+com\vnticket\service\impl\TicketTransferServiceImpl.class
+com\vnticket\repository\TicketTransferRepository.class
+com\vnticket\entity\TicketTransfer.class
 com\vnticket\dto\response\JwtResponse.class
 com\vnticket\service\impl\BookingServiceImpl.class
 com\vnticket\exception\TokenRefreshException.class
