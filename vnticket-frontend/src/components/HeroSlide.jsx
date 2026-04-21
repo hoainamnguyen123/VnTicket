@@ -24,15 +24,8 @@ const HeroSlide = ({ event }) => {
     const isMobile = !screens.md;
 
     return (
-        <div 
-            style={{ 
-                position: 'relative', 
-                width: '100%', 
-                height: isMobile ? '300px' : '600px',
-                borderRadius: '16px', 
-                overflow: 'hidden', 
-                cursor: 'pointer' 
-            }}
+        <div
+            style={{ position: 'relative', width: '100%', maxWidth: '1280px', aspectRatio: '16/9', margin: '0 auto', borderRadius: '16px', overflow: 'hidden', cursor: 'pointer' }}
             onClick={() => navigate(`/event/${event.id}`)}
         >
             <img
