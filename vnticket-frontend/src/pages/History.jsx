@@ -26,8 +26,7 @@ const useIsMobile = (breakpoint = 768) => {
 /* ── Helper: Cờ kiểm tra vé đã quá hạn 15 phút chưa ── */
 const isBookingExpired = (bookingTime) => {
     if (!bookingTime) return false;
-    const timeString = bookingTime.endsWith('Z') ? bookingTime : bookingTime + 'Z';
-    const bookingDate = new Date(timeString);
+    const bookingDate = new Date(bookingTime);
     const expiryDate = new Date(bookingDate.getTime() + 15 * 60000);
     return new Date() >= expiryDate;
 };
@@ -40,8 +39,7 @@ const CountdownTimer = ({ bookingTime, onExpire }) => {
 
     useEffect(() => {
         const calculateTimeLeft = () => {
-            const timeString = bookingTime.endsWith('Z') ? bookingTime : bookingTime + 'Z';
-            const bookingDate = new Date(timeString);
+            const bookingDate = new Date(bookingTime);
             const expiryDate = new Date(bookingDate.getTime() + 15 * 60000);
             const now = new Date();
             const diff = expiryDate.getTime() - now.getTime();
