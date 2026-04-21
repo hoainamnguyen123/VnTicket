@@ -26,6 +26,7 @@ const useIsMobile = (breakpoint = 768) => {
 /* ── Countdown Timer ── */
 const CountdownTimer = ({ bookingTime, onExpire }) => {
     const [timeLeft, setTimeLeft] = useState(null);
+    const hasExpiredRef = React.useRef(false);
 
     useEffect(() => {
         const calculateTimeLeft = () => {
@@ -36,6 +37,10 @@ const CountdownTimer = ({ bookingTime, onExpire }) => {
 
             if (diff <= 0) {
                 setTimeLeft('00:00');
+                if (!hasExpiredRef.current) {
+                    hasExpiredRef.current = true;
+                    onExpire();
+                }
                 return true;
             } else {
                 const minutes = Math.floor((diff / 1000) / 60);
@@ -46,16 +51,12 @@ const CountdownTimer = ({ bookingTime, onExpire }) => {
         };
 
         const isExpired = calculateTimeLeft();
-        if (isExpired) {
-            onExpire();
-            return;
-        }
+        if (isExpired) return;
 
         const interval = setInterval(() => {
             const expired = calculateTimeLeft();
             if (expired) {
                 clearInterval(interval);
-                onExpire();
             }
         }, 1000);
 
