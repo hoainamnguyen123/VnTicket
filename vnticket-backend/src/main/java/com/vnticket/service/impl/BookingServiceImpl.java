@@ -407,6 +407,7 @@ public class BookingServiceImpl implements BookingService {
     // ──────────────────── Get Tickets ────────────────────
 
     @Override
+    @Transactional(readOnly = true)
     public List<TicketDTO> getTicketsByBooking(Long bookingId, Long userId) {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new ResourceNotFoundException("Booking not found"));
