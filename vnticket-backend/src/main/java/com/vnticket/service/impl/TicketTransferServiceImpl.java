@@ -144,6 +144,7 @@ public class TicketTransferServiceImpl implements TicketTransferService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<TicketTransferDTO> getTransferHistory(Long userId) {
         List<TicketTransfer> transfers = ticketTransferRepository
                 .findByFromUserIdOrToUserIdOrderByTransferredAtDesc(userId, userId);

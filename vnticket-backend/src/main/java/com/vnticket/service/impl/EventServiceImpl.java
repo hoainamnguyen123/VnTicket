@@ -37,6 +37,7 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<EventDTO> getApprovedEvents(String type, String search, Pageable pageable) {
         log.debug("Executing getApprovedEvents with type: {}, search: {}", type, search);
         Page<Event> events;
@@ -55,6 +56,7 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<EventDTO> getAdminAllEvents(String type, String search, Pageable pageable) {
         log.debug("Executing getAdminAllEvents with type: {}, search: {}", type, search);
         Page<Event> events;
@@ -69,6 +71,7 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public Page<EventDTO> getMyEvents(Long userId, Pageable pageable) {
         log.debug("Fetching events organized by user ID: {}", userId);
         List<Event> events = eventRepository.findByOrganizerId(userId);
@@ -83,6 +86,7 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     @Cacheable(value = "eventDetail", key = "#id")
     public EventDTO getEventById(Long id) {
         log.info("CACHE MISS! Fetching event details from Postgres database for Event ID: {}", id);

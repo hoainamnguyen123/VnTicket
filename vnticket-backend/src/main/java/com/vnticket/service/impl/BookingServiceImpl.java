@@ -71,6 +71,7 @@ public class BookingServiceImpl implements BookingService {
     // ──────────────────── Statistics (unchanged) ────────────────────
 
     @Override
+    @Transactional(readOnly = true)
     public BookingStatsDTO getStatistics() {
         log.info("Fetching booking statistics for admin dashboard");
 
@@ -97,6 +98,7 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public BookingStatsDTO getEventStatistics(Long eventId) {
         log.info("Fetching booking statistics for Event ID: {}", eventId);
 
@@ -131,6 +133,7 @@ public class BookingServiceImpl implements BookingService {
     // ──────────────────── My Bookings ────────────────────
 
     @Override
+    @Transactional(readOnly = true)
     public List<BookingDTO> getMyBookings(Long userId) {
         log.debug("Fetching all bookings for User ID: {}", userId);
         List<Booking> bookings = bookingRepository.findByUserIdOrderByBookingTimeDesc(userId);
