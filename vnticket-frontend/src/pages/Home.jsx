@@ -89,7 +89,7 @@ const Home = () => {
         <div>
             {/* Banner/Carousel Động */}
             {sliderLoading ? (
-                <Skeleton active paragraph={{ rows: 6 }} style={{ height: '400px', marginBottom: 40 }} />
+                <Skeleton active paragraph={{ rows: 6 }} style={{ height: '600px', marginBottom: 40 }} />
             ) : sliderEvents.length > 0 ? (
                 <Carousel autoplay effect="fade" style={{ marginBottom: 40, borderRadius: 16, overflow: 'hidden', boxShadow: '0 10px 30px rgba(0,0,0,0.1)' }}>
                     {sliderEvents.slice(0, 5).map(event => (
