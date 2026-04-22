@@ -349,7 +349,10 @@ const EventDetail = () => {
                     <div style={{ fontSize: '16px', lineHeight: '1.8', whiteSpace: 'pre-line' }}>
                         <Paragraph>{event.description}</Paragraph>
                     </div>
-                    <div style={{ marginTop: '32px' }}>
+                    <div style={{ marginTop: '40px' }}>
+                        <Divider orientation="left">
+                            <Title level={3}>{t('eventDetail.bookNow', 'Đặt vé ngay')}</Title>
+                        </Divider>
                         <BookingSection />
                     </div>
                 </div>
