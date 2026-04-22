@@ -27,12 +27,15 @@ const Login = () => {
                     client_id: GOOGLE_CLIENT_ID,
                     callback: handleGoogleCallback,
                 });
+                const btnWidth = Math.min(400, Math.max(200, window.innerWidth - 80));
                 window.google.accounts.id.renderButton(googleBtnRef.current, {
                     theme: isDark ? 'filled_black' : 'outline',
                     size: 'large',
-                    width: '352',
+                    width: btnWidth.toString(),
                     text: 'signin_with',
                     locale: i18n.language === 'vi' ? 'vi_VN' : 'en_US',
+                    shape: 'rectangular',
+                    logo_alignment: 'left'
                 });
             }
         };
@@ -84,8 +87,8 @@ const Login = () => {
     };
 
     return (
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
-            <Card style={{ width: 400, boxShadow: '0 4px 12px rgba(0,0,0,0.1)', borderRadius: '12px' }}>
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh', padding: '0 20px' }}>
+            <Card style={{ width: '100%', maxWidth: 400, boxShadow: '0 4px 12px rgba(0,0,0,0.1)', borderRadius: '12px' }}>
                 <div style={{ textAlign: 'center', marginBottom: 24 }}>
                     <Title level={2} style={{ color: '#1890ff', margin: 0 }}>{t('login.title')}</Title>
                     <div style={{ color: '#8c8c8c' }}>{t('login.welcome')}</div>
@@ -123,8 +126,14 @@ const Login = () => {
                     {t('login.or')}
                 </Divider>
 
-                <div className="google-btn-wrapper" style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
-                    <div ref={googleBtnRef}></div>
+                <div className="google-btn-wrapper" style={{ 
+                    display: 'flex', 
+                    justifyContent: 'center', 
+                    marginBottom: '16px',
+                    width: '100%',
+                    minHeight: '44px'
+                }}>
+                    <div ref={googleBtnRef} style={{ width: '100%', display: 'flex', justifyContent: 'center' }}></div>
                 </div>
 
                 <Divider style={{ margin: '12px 0' }} />

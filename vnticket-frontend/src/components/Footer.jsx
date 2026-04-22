@@ -67,7 +67,7 @@ const AppFooter = () => {
                 </Text>
 
                 <Space size={20} style={{ marginBottom: 24 }}>
-                    <a href="#" style={{ color: '#fff', fontSize: '24px' }}><FacebookOutlined /></a>
+                    <a href="https://web.facebook.com/nguyen.nam0812hb" style={{ color: '#fff', fontSize: '24px' }}><FacebookOutlined /></a>
                     <a href="#" style={{ color: '#fff', fontSize: '24px' }}><YoutubeOutlined /></a>
                     <a href="#" style={{ color: '#fff', fontSize: '24px' }}><TikTokOutlined /></a>
                 </Space>
@@ -79,7 +79,7 @@ const AppFooter = () => {
                 </div>
 
                 <Divider style={{ borderColor: 'rgba(255,255,255,0.1)', margin: '0 0 20px 0' }} />
-                
+
                 <Text style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px', display: 'block' }}>
                     {t('footer.copyright', { year: new Date().getFullYear() })}
                 </Text>
