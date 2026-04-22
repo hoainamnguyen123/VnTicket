@@ -281,11 +281,27 @@ const Home = () => {
                 ) : events.filter(e => !e.isSlider && !e.isFeatured).length > 0 ? (
                     <>
                         <Row gutter={[24, 24]}>
-                            {events.filter(e => !e.isSlider && !e.isFeatured).slice(0, 8).map((event) => (
-                                <Col xs={24} sm={12} md={8} lg={6} key={event.id}>
-                                    <FeaturedEventCard event={event} />
-                                </Col>
-                            ))}
+                            {events.filter(e => !e.isSlider && !e.isFeatured)
+                                .sort((a, b) => {
+                                    const nowVal = new Date();
+                                    const aTime = new Date(a.startTime);
+                                    const bTime = new Date(b.startTime);
+                                    const aIsFuture = aTime >= nowVal;
+                                    const bIsFuture = bTime >= nowVal;
+
+                                    if (aIsFuture && !bIsFuture) return -1;
+                                    if (!aIsFuture && bIsFuture) return 1;
+                                    
+                                    // Sắp xếp sự kiện sắp tới theo thứ tự gần nhất, sự kiện đã qua theo thứ tự mới nhất
+                                    if (aIsFuture && bIsFuture) return aTime - bTime;
+                                    return bTime - aTime;
+                                })
+                                .slice(0, 8)
+                                .map((event) => (
+                                    <Col xs={24} sm={12} md={8} lg={6} key={event.id}>
+                                        <FeaturedEventCard event={event} />
+                                    </Col>
+                                ))}
                         </Row>
                         <div style={{ textAlign: 'center', marginTop: '40px' }}>
                             <Button

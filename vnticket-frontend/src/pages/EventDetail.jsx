@@ -49,7 +49,21 @@ const EventDetail = () => {
             const relatedRes = await axiosClient.get(`/events?page=0&size=50`);
             const allEvents = relatedRes.data?.content || [];
             const filtered = allEvents.filter(e => Number(e.id) !== Number(id));
-            return filtered.sort(() => 0.5 - Math.random()).slice(0, 8);
+            
+            // Ưu tiên sự kiện chưa diễn ra, sau đó mới đến sự kiện đã diễn ra
+            return filtered.sort((a, b) => {
+                const nowVal = new Date();
+                const aTime = new Date(a.startTime);
+                const bTime = new Date(b.startTime);
+                const aIsFuture = aTime >= nowVal;
+                const bIsFuture = bTime >= nowVal;
+
+                if (aIsFuture && !bIsFuture) return -1;
+                if (!aIsFuture && bIsFuture) return 1;
+
+                // Nếu cùng trạng thái, trộn ngẫu nhiên một chút để tạo sự đa dạng
+                return Math.random() - 0.5;
+            }).slice(0, 8);
         },
         enabled: !!event // Bật khi event đã tồn tại
     });
