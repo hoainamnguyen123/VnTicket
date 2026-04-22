@@ -145,6 +145,113 @@ const EventDetail = () => {
         statusBadge = <Tag color="default" style={{ borderRadius: '4px', margin: 0, fontWeight: 500 }}>{t('common.ended', '✅ Đã diễn ra')}</Tag>;
     }
 
+    /* ── Sub-component for Ticket Selection Section ── */
+    const BookingSection = () => (
+        <Card 
+            id="booking-card" 
+            title={t('eventDetail.selectTicketType')} 
+            bordered={false} 
+            style={{ 
+                background: isDark ? '#262626' : '#f9f9f9', 
+                borderRadius: '12px',
+                boxShadow: isMobile ? '0 4px 20px rgba(0,0,0,0.08)' : 'none',
+                border: isMobile ? `1px solid ${isDark ? '#434343' : '#f0f0f0'}` : 'none'
+            }}
+        >
+            {!isMobile ? (
+                <Table
+                    dataSource={event.ticketTypes}
+                    columns={columns}
+                    rowKey="id"
+                    pagination={false}
+                    size="small"
+                    scroll={{ x: 'max-content' }}
+                />
+            ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {event.ticketTypes?.map((record) => (
+                        <div 
+                            key={record.id} 
+                            onClick={() => record.remainingQuantity > 0 && !isEnded && setSelectedTicket(selectedTicket?.id === record.id ? null : record)}
+                            style={{ 
+                                padding: '16px', 
+                                borderRadius: '10px', 
+                                cursor: record.remainingQuantity > 0 && !isEnded ? 'pointer' : 'not-allowed',
+                                border: `2px solid ${selectedTicket?.id === record.id ? '#1890ff' : (isDark ? '#434343' : '#f0f0f0')}`,
+                                background: selectedTicket?.id === record.id ? (isDark ? 'rgba(24, 144, 255, 0.15)' : '#e6f7ff') : (isDark ? '#1f1f1f' : '#fff'),
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                transition: 'all 0.3s ease'
+                            }}
+                        >
+                           <div style={{ flex: 1 }}>
+                             <Text strong style={{ fontSize: '15px', color: record.id === selectedTicket?.id ? '#1890ff' : (isDark ? '#e8e8e8' : '#262626'), display: 'block', marginBottom: '4px' }}>
+                                {record.zoneName}
+                             </Text>
+                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                <Text strong style={{ color: '#f5222d', fontSize: '15px' }}>{formatCurrency(record.price)}</Text>
+                                <Tag color={record.remainingQuantity > 0 ? 'green' : 'red'} style={{ borderRadius: '4px', margin: 0, fontSize: '11px' }}>
+                                    {record.remainingQuantity > 0 ? `${record.remainingQuantity} ${t('common.tickets')}` : t('common.soldOut')}
+                                </Tag>
+                             </div>
+                           </div>
+                           <div onClick={(e) => e.stopPropagation()}>
+                                <Switch
+                                    checked={selectedTicket?.id === record.id}
+                                    onChange={(checked) => setSelectedTicket(checked ? record : null)}
+                                    disabled={record.remainingQuantity <= 0 || isEnded}
+                                />
+                           </div>
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            <Divider />
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                    <Text strong>{t('eventDetail.quantity')} </Text>
+                    <InputNumber
+                        min={1}
+                        max={selectedTicket ? Math.min(selectedTicket.remainingQuantity, 5) : 5}
+                        value={quantity}
+                        onChange={setQuantity}
+                        disabled={!selectedTicket}
+                    />
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                    <Text type="secondary" style={{ fontSize: '14px', display: 'block' }}>{t('eventDetail.total')} </Text>
+                    <Title level={isMobile ? 4 : 3} style={{ margin: 0, color: '#f5222d' }}>
+                        {selectedTicket ? formatCurrency(selectedTicket.price * quantity) : '0 ₫'}
+                    </Title>
+                </div>
+            </div>
+
+            {isEnded && (
+                <Alert
+                    message={t('eventDetail.eventEndedMsg', 'Sự kiện này đã diễn ra. Bạn không thể đặt vé nữa.')}
+                    type="warning"
+                    showIcon
+                    style={{ marginTop: '20px', borderRadius: '8px' }}
+                />
+            )}
+
+            <Button
+                type="primary"
+                size="large"
+                block
+                style={{ marginTop: '20px', height: '50px', fontSize: '16px', borderRadius: '8px', fontWeight: 600, background: 'linear-gradient(135deg, #1890ff, #722ed1)', border: 'none' }}
+                onClick={showConfirmModal}
+                loading={bookingMutation.isPending}
+                disabled={!selectedTicket || isEnded}
+            >
+                {isEnded ? t('eventDetail.eventEndedBtn', 'SỰ KIỆN ĐÃ DIỄN RA') : t('eventDetail.bookNow')}
+            </Button>
+        </Card>
+    );
+
     return (
         <div className="event-detail-page">
             <Row gutter={[32, 32]}>
@@ -230,75 +337,67 @@ const EventDetail = () => {
                         <Text><EnvironmentOutlined style={{ color: '#1890ff', marginRight: 10 }} /> <strong>{t('eventDetail.location')}</strong> {event.location || t('common.notUpdated')}</Text>
                     </div>
 
-                    <Card id="booking-card" title={t('eventDetail.selectTicketType')} bordered={false} style={{ background: isDark ? '#262626' : '#f9f9f9', borderRadius: '12px' }}>
-                        <Table
-                            dataSource={event.ticketTypes}
-                            columns={columns}
-                            rowKey="id"
-                            pagination={false}
-                            size="small"
-                            scroll={{ x: 'max-content' }}
-                        />
-
-                        <Divider />
-
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <div>
-                                <Text strong>{t('eventDetail.quantity')} </Text>
-                                <InputNumber
-                                    min={1}
-                                    max={selectedTicket ? Math.min(selectedTicket.remainingQuantity, 5) : 5}
-                                    value={quantity}
-                                    onChange={setQuantity}
-                                    disabled={!selectedTicket}
-                                />
-                            </div>
-                            <div>
-                                <Text type="secondary" style={{ fontSize: '14px' }}>{t('eventDetail.total')} </Text>
-                                <Title level={3} style={{ margin: 0, color: '#f5222d' }}>
-                                    {selectedTicket ? formatCurrency(selectedTicket.price * quantity) : '0 ₫'}
-                                </Title>
-                            </div>
-                        </div>
-
-                        {isEnded && (
-                            <Alert
-                                message={t('eventDetail.eventEndedMsg', 'Sự kiện này đã diễn ra. Bạn không thể đặt vé nữa.')}
-                                type="warning"
-                                showIcon
-                                style={{ marginBottom: '20px', borderRadius: '8px' }}
-                            />
-                        )}
-
-                        <Button
-                            type="primary"
-                            size="large"
-                            block
-                            style={{ marginTop: '20px', height: '50px', fontSize: '16px', borderRadius: '8px' }}
-                            onClick={showConfirmModal}
-                            loading={bookingMutation.isPending}
-                            disabled={!selectedTicket || isEnded}
-                        >
-                            {isEnded ? t('eventDetail.eventEndedBtn', 'SỰ KIỆN ĐÃ DIỄN RA') : t('eventDetail.bookNow')}
-                        </Button>
-                    </Card>
-
-                    <Alert
-                        message={t('eventDetail.bookingPolicyTitle')}
-                        description={t('eventDetail.bookingPolicyDesc')}
-                        type="info"
-                        showIcon
-                        style={{ marginTop: '32px', borderRadius: '8px' }}
-                    />
+                    {!isMobile && (
+                        <BookingSection />
+                    )}
                 </Col>
             </Row>
 
-            <div style={{ padding: isMobile ? '0 24px' : 0 }}>
-                <Divider orientation="left"><Title level={3}>{t('eventDetail.eventIntro')}</Title></Divider>
-                <div style={{ fontSize: '16px', lineHeight: '1.8', whiteSpace: 'pre-line' }}>
-                    <Paragraph>{event.description}</Paragraph>
+            {isMobile && (
+                <div style={{ padding: '0 24px' }}>
+                    <Divider orientation="left"><Title level={3}>{t('eventDetail.eventIntro')}</Title></Divider>
+                    <div style={{ fontSize: '16px', lineHeight: '1.8', whiteSpace: 'pre-line' }}>
+                        <Paragraph>{event.description}</Paragraph>
+                    </div>
+                    <div style={{ marginTop: '32px' }}>
+                        <BookingSection />
+                    </div>
                 </div>
+            )}
+
+            {!isMobile && (
+                <div style={{ padding: 0 }}>
+                    <Divider orientation="left"><Title level={3}>{t('eventDetail.eventIntro')}</Title></Divider>
+                    <div style={{ fontSize: '16px', lineHeight: '1.8', whiteSpace: 'pre-line' }}>
+                        <Paragraph>{event.description}</Paragraph>
+                    </div>
+                </div>
+            )}
+            <div style={{ padding: isMobile ? '0 24px' : 0, marginTop: '32px' }}>
+                <Alert
+                    message={t('eventDetail.bookingPolicyTitle')}
+                    description={t('eventDetail.bookingPolicyDesc')}
+                    type="info"
+                    showIcon
+                    style={{ borderRadius: '8px' }}
+                />
             </div>
+
+            {relatedEvents.length > 0 && (
+                <div style={{ marginTop: '60px', paddingBottom: '40px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', padding: isMobile ? '0 24px' : 0 }}>
+                        <Title level={2} style={{ margin: 0 }}>
+                            {t('eventDetail.youMightLike', 'Sự kiện có thể bạn sẽ thích')}
+                        </Title>
+                        <Button
+                            type="text"
+                            style={{ fontSize: '14px', color: '#1890ff', fontWeight: 500, padding: 0 }}
+                            onClick={() => navigate('/events')}
+                        >
+                            {t('eventDetail.seeMore', 'Xem thêm')} <ArrowRightOutlined style={{ fontSize: '12px', marginLeft: '4px' }} />
+                        </Button>
+                    </div>
+                    <div style={{ padding: isMobile ? '0 16px' : 0 }}>
+                        <Row gutter={[isMobile ? 12 : 24, isMobile ? 12 : 24]}>
+                            {relatedEvents.map(ev => (
+                                <Col xs={24} sm={12} md={6} key={ev.id}>
+                                    <FeaturedEventCard event={ev} />
+                                </Col>
+                            ))}
+                        </Row>
+                    </div>
+                </div>
+            )}
 
             <Modal
                 title={<><ExclamationCircleOutlined style={{ color: '#faad14', marginRight: 8 }} /> Xác Nhận Thông Tin Đặt Vé</>}
@@ -338,43 +437,19 @@ const EventDetail = () => {
                 </div>
             </Modal>
 
-            {relatedEvents.length > 0 && (
-                <div style={{ marginTop: '60px', paddingBottom: '40px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', padding: isMobile ? '0 24px' : 0 }}>
-                        <Title level={2} style={{ margin: 0 }}>
-                            {t('eventDetail.youMightLike', 'Sự kiện có thể bạn sẽ thích')}
-                        </Title>
-                        <Button
-                            type="text"
-                            style={{ fontSize: '14px', color: '#1890ff', fontWeight: 500, padding: 0 }}
-                            onClick={() => navigate('/events')}
-                        >
-                            {t('eventDetail.seeMore', 'Xem thêm')} <ArrowRightOutlined style={{ fontSize: '12px', marginLeft: '4px' }} />
-                        </Button>
-                    </div>
-                <div style={{ padding: isMobile ? '0 16px' : 0 }}>
-                    <Row gutter={[isMobile ? 12 : 24, isMobile ? 12 : 24]}>
-                        {relatedEvents.map(ev => (
-                            <Col xs={24} sm={12} md={6} key={ev.id}>
-                                <FeaturedEventCard event={ev} />
-                            </Col>
-                        ))}
-                    </Row>
-                </div>
-            </div>
-        )}
-
             <div className="mobile-sticky-bottom-bar" style={{
                 position: 'fixed',
-                bottom: 0, left: 0, right: 0,
-                background: isDark ? '#141414' : '#ffffff',
-                borderTop: `1px solid ${isDark ? '#434343' : '#f0f0f0'}`,
+                bottom: '70px', left: 0, right: 0,
+                background: isDark ? 'rgba(20, 20, 20, 0.98)' : 'rgba(255, 255, 255, 0.98)',
+                backdropFilter: 'blur(10px)',
+                borderTop: `1px solid ${isDark ? '#303030' : '#f0f0f0'}`,
                 padding: '12px 24px',
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
-                boxShadow: '0 -4px 12px rgba(0,0,0,0.08)',
+                boxShadow: '0 -4px 12px rgba(0,0,0,0.12)',
                 zIndex: 1000,
+                paddingBottom: 'calc(12px + env(safe-area-inset-bottom))'
             }}>
                 <div>
                     <Text type="secondary" style={{ fontSize: '13px', display: 'block', marginBottom: '2px' }}>{t('common.from', 'Từ')}</Text>
