@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Result, Button, Card, Typography, Descriptions, Spin, message } from 'antd';
+import { Result, Button, Card, Typography, Descriptions, Spin, message, Grid } from 'antd';
 import { CheckCircleOutlined, CloseCircleOutlined, SyncOutlined } from '@ant-design/icons';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -15,6 +15,8 @@ const PaymentReturn = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const { t } = useTranslation();
+    const screens = Grid.useBreakpoint();
+    const isMobile = !screens.md;
 
     useEffect(() => {
         const verifyPayment = async () => {
@@ -72,8 +74,8 @@ const PaymentReturn = () => {
     }
 
     return (
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh', padding: '20px' }}>
-            <Card style={{ width: 600, boxShadow: '0 4px 12px rgba(0,0,0,0.1)', borderRadius: '12px' }}>
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh', padding: isMobile ? '10px' : '20px' }}>
+            <Card style={{ width: '100%', maxWidth: 600, boxShadow: '0 4px 12px rgba(0,0,0,0.1)', borderRadius: '12px' }}>
                 {paymentResult?.success ? (
                     <Result
                         icon={<CheckCircleOutlined style={{ color: '#52c41a' }} />}
@@ -88,7 +90,13 @@ const PaymentReturn = () => {
                             </Button>,
                         ]}
                     >
-                        <Descriptions column={1} bordered size="small" style={{ marginTop: '16px' }}>
+                        <Descriptions 
+                            column={1} 
+                            bordered 
+                            size="small" 
+                            layout={screens.xs ? 'vertical' : 'horizontal'}
+                            style={{ marginTop: '16px' }}
+                        >
                             <Descriptions.Item label={t('payment.orderId')}>#{paymentResult.bookingId}</Descriptions.Item>
                             <Descriptions.Item label={t('payment.amount')}>{formatCurrency(paymentResult.amount)}</Descriptions.Item>
                             <Descriptions.Item label={t('payment.bank')}>{paymentResult.bankCode}</Descriptions.Item>

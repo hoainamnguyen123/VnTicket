@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Modal, Carousel, Typography, Row, Col, Tag, Divider, Empty, Button, Input, Alert, message } from 'antd';
+import { Modal, Carousel, Typography, Row, Col, Tag, Divider, Empty, Button, Input, Alert, message, Grid } from 'antd';
 import { SwapOutlined, MailOutlined } from '@ant-design/icons';
 import { QRCodeCanvas } from 'qrcode.react';
 import { useTranslation } from 'react-i18next';
@@ -13,6 +13,7 @@ const { Title, Text } = Typography;
 const ElectronicTicketModal = ({ visible, onClose, tickets, onTicketTransferred }) => {
     const { t } = useTranslation();
     const { isDark } = useContext(ThemeContext);
+    const screens = Grid.useBreakpoint();
 
     // Transfer modal state
     const [transferModalVisible, setTransferModalVisible] = useState(false);
@@ -251,7 +252,7 @@ const ElectronicTicketModal = ({ visible, onClose, tickets, onTicketTransferred 
                 open={visible}
                 onCancel={onClose}
                 footer={null}
-                width={480}
+                width={screens.xs ? '95%' : 480}
                 centered
                 bodyStyle={{ padding: '20px 0', background: isDark ? '#141414' : '#f0f2f5' }}
             >
@@ -316,7 +317,7 @@ const ElectronicTicketModal = ({ visible, onClose, tickets, onTicketTransferred 
                         {t('ticketTransfer.confirmTransfer')}
                     </Button>
                 ]}
-                width={460}
+                width={screens.xs ? '95%' : 460}
                 centered
             >
                 {selectedTicket && (

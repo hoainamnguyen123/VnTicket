@@ -82,28 +82,30 @@ const FeaturedEventCard = ({ event }) => {
                 />
             </div>
 
-            <Title level={5} style={{
-                color: isDark ? '#e8e8e8' : '#1f1f1f',
-                margin: 0,
-                fontSize: '15px',
-                lineHeight: '1.4',
-                height: '42px',
-                overflow: 'hidden',
-                display: '-webkit-box',
-                WebkitLineClamp: 2,
-                WebkitBoxOrient: 'vertical',
-                transition: 'color 0.3s'
-            }}>
-                {event.name}
-            </Title>
+            <div style={{ padding: '0 12px 16px 12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <Title level={5} style={{
+                    color: isDark ? '#e8e8e8' : '#1f1f1f',
+                    margin: 0,
+                    fontSize: '15px',
+                    lineHeight: '1.4',
+                    height: '42px',
+                    overflow: 'hidden',
+                    display: '-webkit-box',
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: 'vertical',
+                    transition: 'color 0.3s'
+                }}>
+                    {event.name}
+                </Title>
 
-            <Text style={{ color: '#2ecc71', fontSize: '14px', fontWeight: 'bold' }}>
-                {t('common.from')} {formatCurrency(minPrice || (event.price || 0))}
-            </Text>
+                <Text style={{ color: '#2ecc71', fontSize: '14px', fontWeight: 'bold' }}>
+                    {t('common.from')} {formatCurrency(minPrice || (event.price || 0))}
+                </Text>
 
-            <div style={{ display: 'flex', alignItems: 'center', color: '#a0a0a0', fontSize: '13px' }}>
-                <CalendarOutlined style={{ marginRight: '6px' }} />
-                <span>{formatCustomDate(event.startTime, i18n.language)}</span>
+                <div style={{ display: 'flex', alignItems: 'center', color: '#a0a0a0', fontSize: '13px' }}>
+                    <CalendarOutlined style={{ marginRight: '6px' }} />
+                    <span>{formatCustomDate(event.startTime, i18n.language)}</span>
+                </div>
             </div>
         </div>
     );
