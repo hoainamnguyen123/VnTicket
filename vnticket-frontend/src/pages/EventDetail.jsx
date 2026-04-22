@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Row, Col, Typography, Card, Button, InputNumber, Divider, Table, Tag, message, Skeleton, Modal, Switch, Image, Alert } from 'antd';
+import { Row, Col, Typography, Card, Button, InputNumber, Divider, Table, Tag, message, Skeleton, Modal, Switch, Image, Alert, Grid } from 'antd';
 import { useParams, useNavigate } from 'react-router-dom';
 import { CalendarOutlined, EnvironmentOutlined, CheckCircleOutlined, ExclamationCircleOutlined, UserOutlined, ArrowRightOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
@@ -18,6 +18,8 @@ const EventDetail = () => {
     const { user } = useContext(AuthContext);
     const { t } = useTranslation();
     const { isDark } = useContext(ThemeContext);
+    const screens = Grid.useBreakpoint();
+    const isMobile = !screens.md;
 
     const queryClient = useQueryClient();
 
@@ -146,7 +148,7 @@ const EventDetail = () => {
     return (
         <div className="event-detail-page">
             <Row gutter={[32, 32]}>
-                <Col xs={24} md={12}>
+                <Col xs={24} md={12} style={{ padding: isMobile ? 0 : undefined }}>
                     <Image.PreviewGroup>
                         <div style={{ borderRadius: '12px', overflow: 'hidden', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}>
                             <Image
@@ -213,7 +215,7 @@ const EventDetail = () => {
                         )}
                     </Image.PreviewGroup>
                 </Col>
-                <Col xs={24} md={12}>
+                <Col xs={24} md={12} style={{ padding: isMobile ? '0 16px' : undefined }}>
                     <div style={{ marginBottom: 16 }}>
                         <Tag color={event.type === 'CONCERT' ? 'magenta' : 'geekblue'}>
                             {event.type}
@@ -291,9 +293,11 @@ const EventDetail = () => {
                 </Col>
             </Row>
 
-            <Divider orientation="left"><Title level={3}>{t('eventDetail.eventIntro')}</Title></Divider>
-            <div style={{ fontSize: '16px', lineHeight: '1.8', whiteSpace: 'pre-line' }}>
-                <Paragraph>{event.description}</Paragraph>
+            <div style={{ padding: isMobile ? '0 16px' : 0 }}>
+                <Divider orientation="left"><Title level={3}>{t('eventDetail.eventIntro')}</Title></Divider>
+                <div style={{ fontSize: '16px', lineHeight: '1.8', whiteSpace: 'pre-line' }}>
+                    <Paragraph>{event.description}</Paragraph>
+                </div>
             </div>
 
             <Modal
@@ -336,19 +340,20 @@ const EventDetail = () => {
 
             {relatedEvents.length > 0 && (
                 <div style={{ marginTop: '60px', paddingBottom: '40px' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', padding: isMobile ? '0 16px' : 0 }}>
                         <Title level={2} style={{ margin: 0 }}>
                             {t('eventDetail.youMightLike', 'Sự kiện có thể bạn sẽ thích')}
                         </Title>
                         <Button
                             type="text"
-                            style={{ fontSize: '16px', color: '#1890ff', fontWeight: 500, padding: 0 }}
+                            style={{ fontSize: '14px', color: '#1890ff', fontWeight: 500, padding: 0 }}
                             onClick={() => navigate('/events')}
                         >
-                            {t('eventDetail.seeMore', 'Xem thêm tất cả')} <ArrowRightOutlined style={{ fontSize: '14px', marginLeft: '4px' }} />
+                            {t('eventDetail.seeMore', 'Xem thêm')} <ArrowRightOutlined style={{ fontSize: '12px', marginLeft: '4px' }} />
                         </Button>
                     </div>
-                    <Row gutter={[24, 24]}>
+                <div style={{ padding: isMobile ? '0 12px' : 0 }}>
+                    <Row gutter={[isMobile ? 12 : 24, isMobile ? 12 : 24]}>
                         {relatedEvents.map(ev => (
                             <Col xs={24} sm={12} md={6} key={ev.id}>
                                 <FeaturedEventCard event={ev} />
@@ -356,7 +361,8 @@ const EventDetail = () => {
                         ))}
                     </Row>
                 </div>
-            )}
+            </div>
+        )}
 
             <div className="mobile-sticky-bottom-bar" style={{
                 position: 'fixed',

@@ -7,30 +7,76 @@ import EventCard from '../components/EventCard';
 import FeaturedEventCard from '../components/FeaturedEventCard';
 import HeroSlide from '../components/HeroSlide';
 import EventSearchAutocomplete from '../components/EventSearchAutocomplete';
-import { FireOutlined, RightOutlined, LeftOutlined, HeartOutlined } from '@ant-design/icons';
+import { 
+    FireOutlined, RightOutlined, LeftOutlined, HeartOutlined, 
+    AppstoreOutlined, TrophyOutlined, TeamOutlined, CompassOutlined, 
+    PictureOutlined, EllipsisOutlined, CustomerServiceOutlined 
+} from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { ThemeContext } from '../context/ThemeContext';
 
-const { Title } = Typography;
+const { Title, Text } = Typography;
+
+const MobileCategoryItem = ({ label, value, icon, isSelected, onClick, isDark }) => (
+    <div 
+        onClick={() => onClick(value)}
+        style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '8px',
+            width: '24%', // ~4 columns
+            cursor: 'pointer',
+            transition: 'all 0.3s ease',
+            transform: isSelected ? 'scale(1.05)' : 'scale(1)',
+        }}
+    >
+        <div style={{
+            width: '50px',
+            height: '50px',
+            borderRadius: '16px',
+            background: isSelected 
+                ? 'linear-gradient(135deg, #1890ff 0%, #722ed1 100%)' 
+                : (isDark ? '#303030' : '#f0f2f5'),
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '24px',
+            color: isSelected ? '#fff' : (isDark ? '#d9d9d9' : '#595959'),
+            boxShadow: isSelected ? '0 4px 12px rgba(24, 144, 255, 0.3)' : 'none',
+            border: isSelected ? 'none' : `1px solid ${isDark ? '#434343' : 'transparent'}`,
+        }}>
+            {icon}
+        </div>
+        <Text style={{ 
+            fontSize: '11px', 
+            fontWeight: isSelected ? '700' : '500',
+            color: isSelected ? (isDark ? '#fff' : '#1890ff') : (isDark ? '#a0a0a0' : '#595959'),
+            textAlign: 'center',
+            lineHeight: '1.2',
+            maxWidth: '100%'
+        }}>
+            {label}
+        </Text>
+    </div>
+);
 
 const Home = () => {
-    const [searchTerm, setSearchTerm] = useState('');
-    const [eventType, setEventType] = useState('');
     const navigate = useNavigate();
     const scrollContainerRef = React.useRef(null);
     const { t } = useTranslation();
     const { isDark } = useContext(ThemeContext);
     const screens = Grid.useBreakpoint();
-    const isMobile = !screens.md;
+    const isMobile = !screens.lg; // Chuyển sang lg (992px) để bao quát cả iPad/Tablet
 
     const categories = [
-        { label: t('home.all'), value: '' },
-        { label: t('home.music'), value: 'Âm Nhạc' },
-        { label: t('home.sports'), value: 'Thể Thao' },
-        { label: t('home.conference'), value: 'Hội Thảo' },
-        { label: t('home.experience'), value: 'Tham quan, Trải nghiệm' },
-        { label: t('home.art'), value: 'Sân khấu, Nghệ thuật' },
-        { label: t('home.other'), value: 'Khác' },
+        { label: t('home.all'), value: '', icon: <AppstoreOutlined /> },
+        { label: t('home.music'), value: 'Âm Nhạc', icon: <CustomerServiceOutlined /> },
+        { label: t('home.sports'), value: 'Thể Thao', icon: <TrophyOutlined /> },
+        { label: t('home.conference'), value: 'Hội Thảo', icon: <TeamOutlined /> },
+        { label: t('home.experience'), value: 'Tham quan, Trải nghiệm', icon: <CompassOutlined /> },
+        { label: t('home.art'), value: 'Sân khấu, Nghệ thuật', icon: <PictureOutlined /> },
+        { label: t('home.other'), value: 'Khác', icon: <EllipsisOutlined /> },
     ];
 
     // GIẢI QUYẾT TRẮNG TRANG: Đưa 2 cái useQuery này LÊN TRƯỚC useEffect để không bị Reference Error!
@@ -44,15 +90,11 @@ const Home = () => {
         }
     });
 
-    // Sử dụng React-Query tự động Caching Sự kiện theo Filter
+    // Sử dụng React-Query tự động Caching Sự kiện cho Trang chủ (Fixed Featured/New)
     const { data: events = [], isLoading: loading } = useQuery({
-        queryKey: ['events', 'home', searchTerm, eventType],
+        queryKey: ['events', 'home'],
         queryFn: async () => {
-            let url = `/events?size=20`;
-            if (searchTerm) url += `&search=${searchTerm}`;
-            if (eventType) url += `&type=${eventType}`;
-
-            const response = await axiosClient.get(url);
+            const response = await axiosClient.get(`/events?size=40`);
             return response.data.content;
         }
     });
@@ -100,17 +142,9 @@ const Home = () => {
                 </Carousel>
             ) : null}
 
-            {/* Danh mục lướt nhanh & Tìm kiếm */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px', flexWrap: 'wrap', gap: '15px' }}>
-                {isMobile ? (
-                    <Select
-                        size="large"
-                        value={eventType}
-                        onChange={(value) => setEventType(value)}
-                        style={{ width: '100%', flex: '1 1 100%' }}
-                        options={categories}
-                    />
-                ) : (
+            {/* Danh mục (Chỉ PC) & Tìm kiếm */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px', flexWrap: 'wrap', gap: '20px', padding: isMobile ? '0 10px' : 0 }}>
+                {!isMobile && (
                     <div
                         className="hide-scrollbar"
                         style={{
@@ -118,38 +152,39 @@ const Home = () => {
                             gap: '12px',
                             overflowX: 'auto',
                             flex: '1 1 auto',
-                            paddingBottom: '5px'
+                            padding: '10px 0'
                         }}
                     >
-                        {categories.map(cat => {
-                            const isSelected = eventType === cat.value;
-                            return (
-                                <Button
-                                    key={cat.value}
-                                    type={isSelected ? 'primary' : 'default'}
-                                    shape="round"
-                                    onClick={() => setEventType(cat.value)}
-                                    size="large"
-                                    style={{
-                                        minWidth: '100px',
-                                        fontWeight: '600',
-                                        border: isSelected ? 'none' : `1px solid ${isDark ? '#434343' : '#d9d9d9'}`,
-                                        backgroundColor: isSelected ? '#1890ff' : (isDark ? '#303030' : 'white'),
-                                        color: isSelected ? 'white' : (isDark ? '#d9d9d9' : '#595959'),
-                                        boxShadow: isSelected ? '0 4px 12px rgba(24, 144, 255, 0.3)' : 'none'
-                                    }}
-                                >
-                                    {cat.label}
-                                </Button>
-                            );
-                        })}
+                        {categories.map(cat => (
+                            <Button
+                                key={cat.value}
+                                type="default"
+                                shape="round"
+                                onClick={() => navigate(`/events?type=${encodeURIComponent(cat.value)}`)}
+                                size="large"
+                                style={{
+                                    minWidth: '120px',
+                                    height: '45px',
+                                    fontWeight: '600',
+                                    border: `1px solid ${isDark ? '#434343' : '#d9d9d9'}`,
+                                    backgroundColor: (isDark ? '#303030' : 'white'),
+                                    color: (isDark ? '#d9d9d9' : '#595959'),
+                                }}
+                            >
+                                {cat.label}
+                            </Button>
+                        ))}
                     </div>
                 )}
-
+                
                 <EventSearchAutocomplete
                     placeholder={t('home.searchPlaceholder')}
-                    onSearch={setSearchTerm}
-                    style={{ maxWidth: isMobile ? '100%' : '350px' }}
+                    onSearch={(val) => navigate(`/events?search=${encodeURIComponent(val)}`)}
+                    style={{ 
+                        width: '100%', 
+                        maxWidth: isMobile ? '100%' : '350px', 
+                        margin: isMobile ? '0' : '0' 
+                    }}
                 />
             </div>
 
@@ -256,9 +291,17 @@ const Home = () => {
                             <Button
                                 type="primary"
                                 ghost
-                                size="large"
+                                size={isMobile ? 'middle' : 'large'}
                                 onClick={() => navigate('/events')}
-                                style={{ borderRadius: '100px', padding: '0 40px', height: '50px', fontWeight: 'bold' }}
+                                style={{
+                                    borderRadius: '100px',
+                                    padding: isMobile ? '0 12px' : '0 40px',
+                                    height: isMobile ? '40px' : '50px',
+                                    fontWeight: 'bold',
+                                    fontSize: isMobile ? '13px' : '16px',
+                                    width: isMobile ? 'calc(100% - 32px)' : 'auto',
+                                    maxWidth: '400px'
+                                }}
                             >
                                 {t('home.exploreMore')}
                             </Button>
@@ -268,6 +311,37 @@ const Home = () => {
                     <Empty description={<span style={{ color: '#888' }}>{t('home.notEnoughEvents')}</span>} style={{ margin: '50px 0' }} />
                 )}
             </div>
+
+            {/* Danh mục (Chỉ hiển thị ở cuối trên Mobile) */}
+            {isMobile && (
+                <div style={{ padding: '0 10px', marginTop: '40px', marginBottom: '80px' }}>
+                    <Title level={2} style={{ marginBottom: '24px', color: isDark ? '#e8e8e8' : '#1f1f1f' }}>
+                        <AppstoreOutlined style={{ marginRight: '8px', color: '#1890ff' }} /> {t('home.exploreByGenre', 'Khám phá theo thể loại')}
+                    </Title>
+                    <div style={{ 
+                        display: 'flex', 
+                        flexWrap: 'wrap', 
+                        rowGap: '20px', 
+                        columnGap: '1%',
+                        background: isDark ? 'rgba(31, 31, 31, 0.5)' : '#fff',
+                        padding: '20px 10px',
+                        borderRadius: '20px',
+                        boxShadow: isDark ? '0 4px 16px rgba(0,0,0,0.2)' : '0 4px 16px rgba(0,0,0,0.04)',
+                    }}>
+                        {categories.map(cat => (
+                            <MobileCategoryItem 
+                                key={cat.value}
+                                label={cat.label}
+                                value={cat.value}
+                                icon={cat.icon}
+                                isSelected={false}
+                                onClick={(val) => navigate(`/events?type=${encodeURIComponent(val)}`)}
+                                isDark={isDark}
+                            />
+                        ))}
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

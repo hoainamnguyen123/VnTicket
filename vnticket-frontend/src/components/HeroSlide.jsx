@@ -21,17 +21,46 @@ const HeroSlide = ({ event }) => {
     const navigate = useNavigate();
     const { t } = useTranslation();
     const screens = Grid.useBreakpoint();
-    const isMobile = !screens.md;
+    const isMobile = !screens.lg; // Chuyển sang lg (992px) để bao quát cả iPad/Tablet
 
     return (
         <div
-            style={{ position: 'relative', width: '100%', maxWidth: '1280px', aspectRatio: '16/9', margin: '0 auto', borderRadius: '16px', overflow: 'hidden', cursor: 'pointer' }}
+            style={{ 
+                position: 'relative', 
+                width: '100%', 
+                maxWidth: isMobile ? 'none' : '1280px', 
+                aspectRatio: isMobile ? '4/3' : '21/9', // Tăng độ rộng cho PC để hợp poster ngang
+                margin: isMobile ? '0' : '0 auto', 
+                borderRadius: isMobile ? '0' : '16px', 
+                overflow: 'hidden', 
+                cursor: 'pointer',
+                background: '#000'
+            }}
             onClick={() => navigate(`/event/${event.id}`)}
         >
+            {/* Lớp nền mờ bên dưới để lấp đầy khoảng trống */}
+            <div style={{
+                position: 'absolute',
+                top: 0, left: 0, right: 0, bottom: 0,
+                backgroundImage: `url(${event.imageUrl})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                filter: 'blur(15px) brightness(0.5)',
+                transform: 'scale(1.1)',
+                zIndex: 0
+            }} />
+
+            {/* Ảnh chính hiển thị trọn vẹn */}
             <img
                 src={event.imageUrl}
                 alt={event.name}
-                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                style={{ 
+                    width: '100%', 
+                    height: '100%', 
+                    objectFit: 'contain', 
+                    position: 'relative', 
+                    zIndex: 1 
+                }}
             />
 
             {!isMobile && (

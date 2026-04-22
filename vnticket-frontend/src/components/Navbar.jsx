@@ -26,7 +26,7 @@ const Navbar = () => {
     const [pendingCount, setPendingCount] = useState(0);
     const [userRejectedCount, setUserRejectedCount] = useState(0);
     const screens = useBreakpoint();
-    const isMobile = !screens.md;
+    const isMobile = !screens.lg; // Chuyển sang lg (992px) để bao quát cả iPad/Tablet
 
     const handleLogout = () => {
         logout();
@@ -304,90 +304,78 @@ const Navbar = () => {
                     </div>
                 </>
             ) : (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                     <DarkModeToggle />
                     <LanguageSwitcher />
                     <Button
                         type="text"
-                        icon={<MenuOutlined style={{ fontSize: '20px', color: isDark ? '#e8e8e8' : undefined }} />}
+                        icon={<MenuOutlined style={{ fontSize: '20px', color: isDark ? '#fff' : '#000' }} />}
                         onClick={() => setMobileMenuOpen(true)}
+                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                     />
                 </div>
             )}
 
+            {/* Mobile/Tablet Drawer Menu */}
             <Drawer
-                title={t('navbar.menu')}
+                title={
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <div style={{
+                            width: '32px', height: '32px', borderRadius: '8px',
+                            background: 'linear-gradient(135deg, #1890ff 0%, #722ed1 100%)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            color: 'white', fontWeight: 'bold'
+                        }}>VN</div>
+                        <span style={{ fontWeight: 'bold' }}>TICKET</span>
+                    </div>
+                }
                 placement="right"
                 onClose={() => setMobileMenuOpen(false)}
                 open={mobileMenuOpen}
                 width={280}
-                styles={{ body: { padding: 0, display: 'flex', flexDirection: 'column', height: '100%' } }}
+                styles={{ body: { padding: 0 } }}
             >
-                <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px', flex: 1, overflowY: 'auto' }}>
-                    {user && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', paddingBottom: '16px', borderBottom: `1px solid ${isDark ? '#303030' : '#f0f0f0'}` }}>
-                            <div style={{
-                                width: '40px', height: '40px', borderRadius: '50%', background: '#1890ff',
-                                color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px'
-                            }}>
-                                <UserOutlined />
-                            </div>
-                            <div>
-                                <div style={{ fontWeight: 'bold' }}>{user.username}</div>
-                                <div style={{ fontSize: '12px', color: '#888' }}>{user.role === 'ROLE_ADMIN' ? t('navbar.admin') : t('navbar.member')}</div>
-                            </div>
-                        </div>
-                    )}
-
-                    <Button type="text" block style={{ textAlign: 'left', height: 'auto', padding: '10px 15px' }} onClick={() => { navigate('/'); setMobileMenuOpen(false); }}>
-                        {t('navbar.home')}
-                    </Button>
-
-                    {user?.role === 'ROLE_ADMIN' && (
-                        <Button type="text" block style={{ textAlign: 'left', height: 'auto', padding: '10px 15px' }} onClick={() => { navigate('/admin'); setMobileMenuOpen(false); }}>
-                            <Badge count={pendingCount} offset={[10, 0]} size="small">
-                                🕹️ {t('navbar.systemManagement')}
-                                <span style={{ paddingRight: 10 }}></span>
-                            </Badge>
-                        </Button>
-                    )}
-
+                <Menu
+                    mode="inline"
+                    selectedKeys={[location.pathname]}
+                    style={{ borderRight: 'none' }}
+                    onClick={() => setMobileMenuOpen(false)}
+                >
+                    <Menu.Item key="/" icon={<UserOutlined />}>
+                        <Link to="/">{t('navbar.home')}</Link>
+                    </Menu.Item>
                     {user && (
                         <>
-                            <Button type="text" block style={{ textAlign: 'left', height: 'auto', padding: '10px 15px' }} onClick={() => { navigate('/history'); setMobileMenuOpen(false); }}>
-                                🎟️ {t('navbar.myTickets')}
-                            </Button>
-                            <Button type="text" block style={{ textAlign: 'left', height: 'auto', padding: '10px 15px' }} onClick={() => { navigate('/profile', { state: { activeTab: '3' } }); setMobileMenuOpen(false); }}>
-                                <Badge count={userRejectedCount} offset={[10, 0]} size="small">
-                                    📅 {t('profile.myEvents', 'Sự kiện của tôi')}
-                                    <span style={{ paddingRight: 10 }}></span>
-                                </Badge>
-                            </Button>
-                            <Button type="text" block style={{ textAlign: 'left', height: 'auto', padding: '10px 15px' }} onClick={() => { navigate('/profile'); setMobileMenuOpen(false); }}>
-                                👤 {t('navbar.profile')}
-                            </Button>
+                            <Menu.Item key="/history" icon={<TagsOutlined />}>
+                                <Link to="/history">{t('navbar.myTickets')}</Link>
+                            </Menu.Item>
+                            <Menu.Item key="/profile" icon={<UserOutlined />}>
+                                <Link to="/profile">{t('navbar.profile')}</Link>
+                            </Menu.Item>
+                            {user.role === 'ROLE_ADMIN' && (
+                                <Menu.Item key="/admin" icon={<PlusOutlined />}>
+                                    <Link to="/admin">{t('navbar.systemManagement')}</Link>
+                                </Menu.Item>
+                            )}
+                            <Menu.Divider />
+                            <Menu.Item key="logout" icon={<LogoutOutlined />} danger onClick={handleLogout}>
+                                {t('navbar.logout')}
+                            </Menu.Item>
                         </>
                     )}
-                </div>
-
-                <div style={{ padding: '20px', borderTop: `1px solid ${isDark ? '#303030' : '#f0f0f0'}`, marginTop: 'auto' }}>
-                    {user ? (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                            <Button type="primary" block size="large" icon={<PlusOutlined />} onClick={() => { setMobileMenuOpen(false); navigate('/create-event'); }}>
-                                {t('navbar.createEvent')}
-                            </Button>
-                            <Button danger block size="large" icon={<LogoutOutlined />} onClick={() => { handleLogout(); setMobileMenuOpen(false); }}>
-                                {t('navbar.logout')}
-                            </Button>
-                        </div>
-                    ) : (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                            <Button block size="large" onClick={() => { navigate('/login'); setMobileMenuOpen(false); }}>{t('navbar.login')}</Button>
-                            <Button type="primary" block size="large" onClick={() => { navigate('/register'); setMobileMenuOpen(false); }}>{t('navbar.register')}</Button>
-                        </div>
+                    {!user && (
+                        <>
+                            <Menu.Item key="/login">
+                                <Link to="/login">{t('navbar.login')}</Link>
+                            </Menu.Item>
+                            <Menu.Item key="/register">
+                                <Link to="/register">{t('navbar.register')}</Link>
+                            </Menu.Item>
+                        </>
                     )}
-                </div>
+                </Menu>
             </Drawer>
+
 
             <EventFormModal
                 visible={isEventModalVisible}

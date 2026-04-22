@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { Table, Button, Modal, Form, Input, InputNumber, DatePicker, message, Space, Upload, Tag, Statistic, Row, Col, Card, Typography, Image, Divider, Tabs, Badge, Alert } from 'antd';
+import { Table, Button, Modal, Form, Input, InputNumber, DatePicker, message, Space, Upload, Tag, Statistic, Row, Col, Card, Typography, Image, Divider, Tabs, Badge, Alert, Grid, Empty } from 'antd';
 import { PlusOutlined, UploadOutlined, EditOutlined, BarChartOutlined, UserOutlined, EnvironmentOutlined, ClockCircleOutlined, MailOutlined, PhoneOutlined, TagsOutlined, CheckCircleOutlined, ExclamationCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import axiosClient from '../api/axiosClient';
@@ -10,8 +10,67 @@ import { formatDate } from '../utils/formatters';
 import dayjs from 'dayjs';
 
 const { TextArea } = Input;
+const { Text, Title: TypographyTitle } = Typography;
+
+const MobileEventCard = ({ event, onClick, onEdit, onStats, t }) => {
+    const statusColor = event.status === 'APPROVED' ? 'green' : (event.status === 'PENDING' ? 'gold' : (event.status === 'PENDING_EDIT' ? 'orange' : 'red'));
+    const statusText = event.status === 'APPROVED' ? t('myEvents.approved', 'Đã duyệt') 
+                     : event.status === 'PENDING' ? t('myEvents.pendingStatus', 'Chờ duyệt')
+                     : event.status === 'PENDING_EDIT' ? t('myEvents.pendingEdit', 'Chờ duyệt (Chỉnh sửa)')
+                     : t('myEvents.rejected', 'Từ chối');
+
+    return (
+        <Card 
+            size="small" 
+            style={{ marginBottom: '16px', borderRadius: '16px', borderLeft: `5px solid ${statusColor === 'green' ? '#52c41a' : (statusColor === 'gold' ? '#faad14' : '#ff4d4f')}`, overflow: 'hidden', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}
+            bodyStyle={{ padding: '16px' }}
+        >
+            <div onClick={onClick} style={{ cursor: 'pointer' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
+                    <Text strong style={{ fontSize: '16px', color: '#1f1f1f', flex: 1, marginRight: '8px' }}>{event.name}</Text>
+                    <Tag color={statusColor} style={{ margin: 0, borderRadius: '4px' }}>{statusText}</Tag>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '16px' }}>
+                    <Text type="secondary" style={{ fontSize: '13px', display: 'flex', alignItems: 'center' }}>
+                        <EnvironmentOutlined style={{ marginRight: '8px', color: '#1890ff' }} /> {event.location}
+                    </Text>
+                    <Text type="secondary" style={{ fontSize: '13px', display: 'flex', alignItems: 'center' }}>
+                        <ClockCircleOutlined style={{ marginRight: '8px', color: '#1890ff' }} /> {formatDate(event.startTime)}
+                    </Text>
+                </div>
+            </div>
+            
+            <Divider style={{ margin: '0 0 12px 0' }} />
+            
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                <Button 
+                    size="small" 
+                    icon={<EditOutlined />} 
+                    onClick={(e) => { e.stopPropagation(); onEdit(event); }} 
+                    style={{ borderRadius: '6px' }}
+                >
+                    {t('common.edit', 'Sửa')}
+                </Button>
+                {event.status === 'APPROVED' && (
+                    <Button 
+                        size="small" 
+                        type="primary" 
+                        ghost
+                        icon={<BarChartOutlined />} 
+                        onClick={(e) => { e.stopPropagation(); onStats(event); }} 
+                        style={{ borderRadius: '6px' }}
+                    >
+                        {t('myEvents.viewStats', 'Thống kê')}
+                    </Button>
+                )}
+            </div>
+        </Card>
+    );
+};
 
 const MyEvents = () => {
+    const screens = Grid.useBreakpoint();
+    const isMobile = !screens.md;
     const [events, setEvents] = useState([]);
     const [approvedEvents, setApprovedEvents] = useState([]);
     const [pendingEvents, setPendingEvents] = useState([]);
@@ -188,11 +247,56 @@ const MyEvents = () => {
         }
     ];
 
+    const renderEvents = (eventList) => {
+        if (isMobile) {
+            return (
+                <div style={{ paddingTop: '12px' }}>
+                    {eventList.length === 0 ? (
+                        <Empty description={t('myEvents.noEvents', 'Chưa có sự kiện nào')} />
+                    ) : (
+                        eventList.map(event => (
+                            <MobileEventCard 
+                                key={event.id} 
+                                event={event} 
+                                onClick={() => handleViewEventDetail(event)} 
+                                onEdit={handleEditClick}
+                                onStats={handleViewEventStats}
+                                t={t} 
+                            />
+                        ))
+                    )}
+                </div>
+            );
+        }
+        return (
+            <Table
+                columns={columns}
+                dataSource={eventList}
+                rowKey="id"
+                loading={loading}
+                onRow={(record) => ({ onClick: () => handleViewEventDetail(record), style: { cursor: 'pointer' } })}
+            />
+        );
+    };
+
     return (
-        <div>
-            <div style={{ marginBottom: 16, display: 'flex', justifyContent: 'space-between' }}>
-                <h2>{t('myEvents.title', 'Danh sách sự kiện của bạn')}</h2>
-                <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate('/create-event')}>
+        <div style={{ padding: isMobile ? '0 16px' : 0 }}>
+            <div style={{ 
+                marginBottom: 24, 
+                display: 'flex', 
+                flexDirection: isMobile ? 'column' : 'row', 
+                justifyContent: 'space-between', 
+                alignItems: isMobile ? 'flex-start' : 'center',
+                gap: isMobile ? '12px' : 0
+            }}>
+                <h2 style={{ margin: 0, fontSize: isMobile ? '20px' : '24px' }}>{t('myEvents.title', 'Danh sách sự kiện của bạn')}</h2>
+                <Button 
+                    type="primary" 
+                    icon={<PlusOutlined />} 
+                    onClick={() => navigate('/create-event')}
+                    block={isMobile}
+                    size={isMobile ? 'middle' : 'large'}
+                >
                     {t('myEvents.createEvent', 'Tạo Sự Kiện Mới')}
                 </Button>
             </div>
@@ -203,53 +307,29 @@ const MyEvents = () => {
                 type="card"
                 items={[
                     {
-                        label: <span><CheckCircleOutlined /> {t('myEvents.approved', 'Đã duyệt')} ({approvedEvents.length})</span>,
+                        label: <span><CheckCircleOutlined /> {isMobile ? '' : t('myEvents.approved', 'Đã duyệt')} ({approvedEvents.length})</span>,
                         key: 'APPROVED',
-                        children: (
-                            <Table
-                                columns={columns}
-                                dataSource={approvedEvents}
-                                rowKey="id"
-                                loading={loading}
-                                onRow={(record) => ({ onClick: () => handleViewEventDetail(record), style: { cursor: 'pointer' } })}
-                            />
-                        )
+                        children: renderEvents(approvedEvents)
                     },
                     {
                         label: (
                             <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <ExclamationCircleOutlined /> {t('myEvents.pendingProcess', 'Chờ xử lý')}
+                                <ExclamationCircleOutlined /> {isMobile ? '' : t('myEvents.pendingProcess', 'Chờ xử lý')}
                                 <Badge count={pendingEvents.length} showZero={false} />
                             </span>
                         ),
                         key: 'PENDING',
-                        children: (
-                            <Table
-                                columns={columns}
-                                dataSource={pendingEvents}
-                                rowKey="id"
-                                loading={loading}
-                                onRow={(record) => ({ onClick: () => handleViewEventDetail(record), style: { cursor: 'pointer' } })}
-                            />
-                        )
+                        children: renderEvents(pendingEvents)
                     },
                     {
                         label: (
                             <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <CloseCircleOutlined /> {t('myEvents.rejected', 'Từ chối')}
+                                <CloseCircleOutlined /> {isMobile ? '' : t('myEvents.rejected', 'Từ chối')}
                                 <Badge count={rejectedEvents.length} showZero={false} />
                             </span>
                         ),
                         key: 'REJECTED',
-                        children: (
-                            <Table
-                                columns={columns}
-                                dataSource={rejectedEvents}
-                                rowKey="id"
-                                loading={loading}
-                                onRow={(record) => ({ onClick: () => handleViewEventDetail(record), style: { cursor: 'pointer' } })}
-                            />
-                        )
+                        children: renderEvents(rejectedEvents)
                     }
                 ]}
             />
@@ -375,6 +455,8 @@ const MyEvents = () => {
                                     dataSource={viewingEvent.ticketTypes || []}
                                     rowKey={(item, index) => item.id || index}
                                     pagination={false}
+                                    size={isMobile ? 'small' : 'default'}
+                                    scroll={{ x: 'max-content' }}
                                     columns={[
                                         { title: t('admin.zone', 'Khu vực'), dataIndex: 'zoneName', key: 'zoneName', render: (text) => <strong>{text}</strong> },
                                         { title: t('admin.price', 'Giá vé'), dataIndex: 'price', key: 'price', render: (price) => <span style={{ color: '#cf1322', fontWeight: 'bold' }}>{price?.toLocaleString()} VNĐ</span> },
@@ -401,7 +483,7 @@ const MyEvents = () => {
             >
                 {eventStats ? (
                     <Row gutter={[16, 16]}>
-                        <Col span={12}>
+                        <Col xs={24} sm={12}>
                             <Card>
                                 <Statistic
                                     title={t('myEvents.totalBooked', 'Số vé đã đặt')}
@@ -409,7 +491,7 @@ const MyEvents = () => {
                                 />
                             </Card>
                         </Col>
-                        <Col span={12}>
+                        <Col xs={24} sm={12}>
                             <Card>
                                 <Statistic
                                     title={t('myEvents.totalPaid', 'Số vé đã thanh toán')}
@@ -418,7 +500,7 @@ const MyEvents = () => {
                                 />
                             </Card>
                         </Col>
-                        <Col span={12}>
+                        <Col xs={24} sm={12}>
                             <Card>
                                 <Statistic
                                     title={t('myEvents.totalRevenue', 'Tổng doanh thu (Tạm tính)')}
@@ -428,7 +510,7 @@ const MyEvents = () => {
                                 />
                             </Card>
                         </Col>
-                        <Col span={12}>
+                        <Col xs={24} sm={12}>
                             <Card>
                                 <Statistic
                                     title={t('myEvents.netRevenue', 'Thực nhận (Sau phí 2%)')}

@@ -714,7 +714,7 @@ const History = () => {
     ];
 
     return (
-        <div>
+        <div style={{ padding: isMobile ? '0 16px' : 0 }}>
             {contextHolder}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                 <Title level={isMobile ? 4 : 2} style={{ margin: 0 }}>{t('history.title')}</Title>

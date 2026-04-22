@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Row, Col, Typography, Input, message, Skeleton, Empty, Select, Pagination } from 'antd';
+import { useSearchParams } from 'react-router-dom';
+import { Row, Col, Typography, Input, message, Skeleton, Empty, Select, Pagination, Grid } from 'antd';
 import { useTranslation } from 'react-i18next';
 import axiosClient from '../api/axiosClient';
 import FeaturedEventCard from '../components/FeaturedEventCard';
@@ -11,10 +12,19 @@ const { Title } = Typography;
 const { Option } = Select;
 
 const AllEvents = () => {
-    const [searchTerm, setSearchTerm] = useState('');
-    const [eventType, setEventType] = useState('');
+    const [searchParams] = useSearchParams();
+    const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
+    const [eventType, setEventType] = useState(searchParams.get('type') || '');
     const { t } = useTranslation();
+    const screens = Grid.useBreakpoint();
+    const isMobile = !screens.md;
     
+    // Đồng bộ state khi URL parameters thay đổi
+    useEffect(() => {
+        setSearchTerm(searchParams.get('search') || '');
+        setEventType(searchParams.get('type') || '');
+    }, [searchParams]);
+
     // Phân trang
     const [currentPage, setCurrentPage] = useState(1);
     const [pageSize, setPageSize] = useState(12);
@@ -52,7 +62,7 @@ const AllEvents = () => {
     };
 
     return (
-        <div>
+        <div style={{ padding: isMobile ? '0 16px' : 0 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '20px', marginBottom: '30px' }}>
                 <Title level={2} style={{ margin: 0 }}>
                     <CalendarOutlined style={{ color: '#1890ff', marginRight: '8px' }} /> {t('allEvents.title')}
@@ -63,17 +73,21 @@ const AllEvents = () => {
                         placeholder={t('allEvents.categoryPlaceholder')}
                         style={{ width: '100%', maxWidth: '200px', flex: '1 1 150px' }}
                         allowClear
+                        value={eventType || undefined}
                         onChange={setEventType}
                         size={"large"}
                     >
                         <Option value="Âm Nhạc">{t('allEvents.musicConcert')}</Option>
                         <Option value="Thể Thao">{t('allEvents.football')}</Option>
                         <Option value="Hội Thảo">{t('allEvents.conference')}</Option>
+                        <Option value="Tham quan, Trải nghiệm">{t('home.experience', 'Tham quan, Trải nghiệm')}</Option>
+                        <Option value="Sân khấu, Nghệ thuật">{t('home.art', 'Sân khấu, Nghệ thuật')}</Option>
                         <Option value="Khác">{t('allEvents.other')}</Option>
                     </Select>
 
                     <EventSearchAutocomplete
                         placeholder={t('allEvents.searchPlaceholder')}
+                        defaultValue={searchTerm}
                         onSearch={setSearchTerm}
                         style={{ maxWidth: '300px', flex: '1 1 200px' }}
                     />

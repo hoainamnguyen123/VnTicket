@@ -1,5 +1,5 @@
 import React, { useContext, useState, useEffect } from 'react';
-import { Tabs, Typography, Card, Descriptions, Button, Form, Input, message, Spin } from 'antd';
+import { Tabs, Typography, Card, Descriptions, Button, Form, Input, message, Spin, Grid } from 'antd';
 import { EditOutlined, SaveOutlined, CloseOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import History from './History';
@@ -18,6 +18,8 @@ const Profile = () => {
     const [form] = Form.useForm();
     const { t } = useTranslation();
     const location = useLocation();
+    const screens = Grid.useBreakpoint();
+    const isMobile = !screens.md;
     const [activeTab, setActiveTab] = useState(location.state?.activeTab || '1');
 
     useEffect(() => {
@@ -157,7 +159,7 @@ const Profile = () => {
     ];
 
     return (
-        <div>
+        <div style={{ padding: isMobile ? '0 16px' : 0 }}>
             <Title level={2} style={{ marginBottom: '24px' }}>{t('profile.title')}</Title>
             <Tabs activeKey={activeTab} onChange={setActiveTab} items={items} />
         </div>

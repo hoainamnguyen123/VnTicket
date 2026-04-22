@@ -16,6 +16,7 @@ import {
     FileProtectOutlined,
     GlobalOutlined,
 } from '@ant-design/icons';
+import { Grid } from 'antd';
 
 const { Title, Text, Link } = Typography;
 
@@ -45,6 +46,46 @@ const socialIconStyle = {
 
 const AppFooter = () => {
     const { t } = useTranslation();
+    const screens = Grid.useBreakpoint();
+    const isMobile = !screens.md;
+
+    if (isMobile) {
+        return (
+            <footer
+                style={{
+                    background: 'linear-gradient(135deg, #141e30 0%, #243b55 100%)',
+                    color: '#fff',
+                    padding: '30px 20px 40px 20px',
+                    textAlign: 'center'
+                }}
+            >
+                <Title level={3} style={{ color: '#fff', marginBottom: 16, fontWeight: 700 }}>
+                    🎫 VNTicket
+                </Title>
+                <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: '13px', display: 'block', marginBottom: 20 }}>
+                    {t('footer.description')}
+                </Text>
+
+                <Space size={20} style={{ marginBottom: 24 }}>
+                    <a href="#" style={{ color: '#fff', fontSize: '24px' }}><FacebookOutlined /></a>
+                    <a href="#" style={{ color: '#fff', fontSize: '24px' }}><YoutubeOutlined /></a>
+                    <a href="#" style={{ color: '#fff', fontSize: '24px' }}><TikTokOutlined /></a>
+                </Space>
+
+                <div style={{ display: 'flex', justifyContent: 'center', gap: '20px', marginBottom: 24, flexWrap: 'wrap' }}>
+                    <RouterLink to="/terms-of-service" style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px' }}>{t('footer.termsOfService')}</RouterLink>
+                    <RouterLink to="/privacy-policy" style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px' }}>{t('footer.privacyPolicy')}</RouterLink>
+                    <RouterLink to="/faq" style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px' }}>{t('footer.faq')}</RouterLink>
+                </div>
+
+                <Divider style={{ borderColor: 'rgba(255,255,255,0.1)', margin: '0 0 20px 0' }} />
+                
+                <Text style={{ color: 'rgba(255,255,255,0.4)', fontSize: '11px', display: 'block' }}>
+                    {t('footer.copyright', { year: new Date().getFullYear() })}
+                </Text>
+            </footer>
+        );
+    }
 
     return (
         <footer
@@ -53,10 +94,11 @@ const AppFooter = () => {
                 background: 'linear-gradient(135deg, #141e30 0%, #243b55 100%)',
                 color: '#fff',
                 marginTop: '0',
+                paddingTop: 60,
             }}
         >
             {/* Main Footer Content */}
-            <Row gutter={[48, 40]} style={{ maxWidth: 1200, margin: '0 auto' }}>
+            <Row gutter={[48, 40]} style={{ maxWidth: 1200, margin: '0 auto', padding: '0 24px' }}>
                 {/* Column 1: About */}
                 <Col xs={24} sm={12} md={6}>
                     <Title level={3} style={{ color: '#fff', marginBottom: 20, fontWeight: 700 }}>
@@ -204,7 +246,7 @@ const AppFooter = () => {
                 style={{
                     maxWidth: 1200,
                     margin: '0 auto',
-                    padding: '20px 0 24px 0',
+                    padding: '20px 24px 24px 24px',
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
