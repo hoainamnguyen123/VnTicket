@@ -34,27 +34,6 @@ const EventDetail = () => {
     const [isSuccessVisible, setIsSuccessVisible] = useState(false);
     const [isBookingInView, setIsBookingInView] = useState(false);
 
-    // Observer để ẩn hiện nút "Mua vé ngay" ở bottom
-    useEffect(() => {
-        const observer = new IntersectionObserver(
-            ([entry]) => {
-                setIsBookingInView(entry.isIntersecting);
-            },
-            { threshold: 0.1 } // Chỉ cần hiện 10% là coi như đang ở vùng đặt vé
-        );
-
-        const bookingCard = document.getElementById('booking-card');
-        if (bookingCard) {
-            observer.observe(bookingCard);
-        }
-
-        return () => {
-            if (bookingCard) {
-                observer.unobserve(bookingCard);
-            }
-        };
-    }, [loading]); // Chạy lại khi data đã load xong
-
     // Fetch Event bằng useQuery
     const { data: event, isLoading: loading } = useQuery({
         queryKey: ['event', id],
@@ -89,6 +68,27 @@ const EventDetail = () => {
         },
         enabled: !!event // Bật khi event đã tồn tại
     });
+
+    // Observer để ẩn hiện nút "Mua vé ngay" ở bottom
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                setIsBookingInView(entry.isIntersecting);
+            },
+            { threshold: 0.1 } // Chỉ cần hiện 10% là coi như đang ở vùng đặt vé
+        );
+
+        const bookingCard = document.getElementById('booking-card');
+        if (bookingCard) {
+            observer.observe(bookingCard);
+        }
+
+        return () => {
+            if (bookingCard) {
+                observer.unobserve(bookingCard);
+            }
+        };
+    }, [loading]); // Chạy lại khi data đã load xong
 
     const showConfirmModal = () => {
         if (!user) {
