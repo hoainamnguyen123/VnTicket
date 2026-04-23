@@ -29,10 +29,13 @@ public class EventController {
             @RequestParam(required = false) String search,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "startTime") String sortBy) {
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "DESC") String direction) {
 
-        log.info("Fetching events with type: {}, search: {}, page: {}, size: {}", type, search, page, size);
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, sortBy));
+        log.info("Fetching events with type: {}, search: {}, page: {}, size: {}, sort: {}, dir: {}", 
+                type, search, page, size, sortBy, direction);
+        Sort.Direction sortDir = Sort.Direction.fromString(direction.toUpperCase());
+        Pageable pageable = PageRequest.of(page, size, Sort.by(sortDir, sortBy));
         Page<EventDTO> events = eventService.getApprovedEvents(type, search, pageable);
         return ResponseEntity.ok(ApiResponse.success("Fetched events", events));
     }
@@ -76,10 +79,12 @@ public class EventController {
     public ResponseEntity<ApiResponse<Page<EventDTO>>> getMyEvents(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "startTime") String sortBy) {
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "DESC") String direction) {
         Long userId = getCurrentUserId();
-        log.info("Fetching events for user {}", userId);
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, sortBy));
+        log.info("Fetching events for user {}, page: {}, size: {}, sort: {}, dir: {}", userId, page, size, sortBy, direction);
+        Sort.Direction sortDir = Sort.Direction.fromString(direction.toUpperCase());
+        Pageable pageable = PageRequest.of(page, size, Sort.by(sortDir, sortBy));
         Page<EventDTO> events = eventService.getMyEvents(userId, pageable);
         return ResponseEntity.ok(ApiResponse.success("Fetched user events", events));
     }
@@ -101,10 +106,13 @@ public class EventController {
             @RequestParam(required = false) String search,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
-            @RequestParam(defaultValue = "startTime") String sortBy) {
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "DESC") String direction) {
 
-        log.info("Admin fetching all events with type: {}, search: {}, page: {}, size: {}", type, search, page, size);
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, sortBy));
+        log.info("Admin fetching all events with type: {}, search: {}, page: {}, size: {}, sort: {}, dir: {}", 
+                type, search, page, size, sortBy, direction);
+        Sort.Direction sortDir = Sort.Direction.fromString(direction.toUpperCase());
+        Pageable pageable = PageRequest.of(page, size, Sort.by(sortDir, sortBy));
         Page<EventDTO> events = eventService.getAdminAllEvents(type, search, pageable);
         return ResponseEntity.ok(ApiResponse.success("Fetched events", events));
     }
