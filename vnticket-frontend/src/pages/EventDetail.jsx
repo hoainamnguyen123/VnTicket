@@ -75,7 +75,7 @@ const EventDetail = () => {
             ([entry]) => {
                 setIsBookingInView(entry.isIntersecting);
             },
-            { threshold: 0.1 } // Chỉ cần hiện 10% là coi như đang ở vùng đặt vé
+            { threshold: 0 } // Bất kỳ phần nào hiện ra là ẩn nút ngay
         );
 
         const bookingCard = document.getElementById('booking-card');
@@ -88,7 +88,7 @@ const EventDetail = () => {
                 observer.unobserve(bookingCard);
             }
         };
-    }, [loading]); // Chạy lại khi data đã load xong
+    }, [loading, isMobile]); // Chạy lại khi data đã load xong hoặc đổi chế độ mobile
 
     const showConfirmModal = () => {
         if (!user) {
@@ -181,8 +181,8 @@ const EventDetail = () => {
         statusBadge = <Tag color="default" style={{ borderRadius: '4px', margin: 0, fontWeight: 500 }}>{t('common.ended', '✅ Đã diễn ra')}</Tag>;
     }
 
-    /* ── Sub-component for Ticket Selection Section ── */
-    const BookingSection = () => (
+    /* ── Helper to render Ticket Selection Section ── */
+    const renderBookingSection = () => (
         <Card 
             id="booking-card" 
             title={t('eventDetail.selectTicketType')} 
@@ -374,7 +374,7 @@ const EventDetail = () => {
                     </div>
 
                     {!isMobile && (
-                        <BookingSection />
+                        renderBookingSection()
                     )}
                 </Col>
             </Row>
@@ -389,7 +389,7 @@ const EventDetail = () => {
                         <Divider orientation="left">
                             <Title level={3}>{t('eventDetail.bookNow', 'Đặt vé ngay')}</Title>
                         </Divider>
-                        <BookingSection />
+                        {renderBookingSection()}
                     </div>
                 </div>
             )}
