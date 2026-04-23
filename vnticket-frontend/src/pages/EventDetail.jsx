@@ -33,6 +33,7 @@ const EventDetail = () => {
     const [isConfirmVisible, setIsConfirmVisible] = useState(false);
     const [isSuccessVisible, setIsSuccessVisible] = useState(false);
     const [isBookingInView, setIsBookingInView] = useState(false);
+    const bookingRef = React.useRef(null);
 
     // Fetch Event bằng useQuery
     const { data: event, isLoading: loading } = useQuery({
@@ -71,21 +72,21 @@ const EventDetail = () => {
 
     // Observer để ẩn hiện nút "Mua vé ngay" ở bottom
     useEffect(() => {
+        const currentRef = bookingRef.current;
         const observer = new IntersectionObserver(
             ([entry]) => {
                 setIsBookingInView(entry.isIntersecting);
             },
-            { threshold: 0 } // Bất kỳ phần nào hiện ra là ẩn nút ngay
+            { threshold: 0, rootMargin: '0px 0px -100px 0px' } // Kích hoạt sớm hơn 100px để mượt mà
         );
 
-        const bookingCard = document.getElementById('booking-card');
-        if (bookingCard) {
-            observer.observe(bookingCard);
+        if (currentRef) {
+            observer.observe(currentRef);
         }
 
         return () => {
-            if (bookingCard) {
-                observer.unobserve(bookingCard);
+            if (currentRef) {
+                observer.unobserve(currentRef);
             }
         };
     }, [loading, isMobile]); // Chạy lại khi data đã load xong hoặc đổi chế độ mobile
@@ -385,7 +386,7 @@ const EventDetail = () => {
                     <div style={{ fontSize: '16px', lineHeight: '1.8', whiteSpace: 'pre-line' }}>
                         <Paragraph>{event.description}</Paragraph>
                     </div>
-                    <div style={{ marginTop: '40px' }}>
+                    <div style={{ marginTop: '40px' }} ref={bookingRef}>
                         <Divider orientation="left">
                             <Title level={3}>{t('eventDetail.bookNow', 'Đặt vé ngay')}</Title>
                         </Divider>

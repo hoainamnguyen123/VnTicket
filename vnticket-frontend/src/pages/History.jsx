@@ -764,6 +764,40 @@ const History = () => {
                 centered
             >
                 <div style={{ padding: '12px 0' }}>
+                    <Alert
+                        message={<Text strong style={{ color: '#1890ff' }}>💳 Hướng dẫn thanh toán TEST (VNPAY)</Text>}
+                        description={
+                            <div style={{ fontSize: '13px' }}>
+                                <div style={{ marginBottom: '8px' }}>
+                                    1. Chọn: <strong>Thẻ nội địa và tài khoản ngân hàng</strong><br />
+                                    2. Chọn ngân hàng: <strong>NCB</strong>
+                                </div>
+                                <div style={{ background: isDark ? '#1f1f1f' : '#f0f7ff', padding: '10px', borderRadius: '8px', border: `1px dashed ${isDark ? '#434343' : '#91caff'}` }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
+                                        <Text>Số thẻ: <strong style={{ letterSpacing: '1px' }}>9704198526191432198</strong></Text>
+                                        <Button 
+                                            size="small" 
+                                            type="primary" 
+                                            ghost 
+                                            onClick={() => {
+                                                navigator.clipboard.writeText('9704198526191432198');
+                                                message.success('Đã sao chép số thẻ test!');
+                                            }}
+                                            style={{ fontSize: '11px', height: '22px', padding: '0 8px' }}
+                                        >
+                                            Sao chép
+                                        </Button>
+                                    </div>
+                                    <Text style={{ display: 'block' }}>Tên chủ thẻ: <strong>NGUYEN VAN A</strong></Text>
+                                    <Text style={{ display: 'block' }}>Ngày phát hành: <strong>07/15</strong></Text>
+                                    <Text style={{ display: 'block' }}>Mật khẩu OTP: <strong>123456</strong></Text>
+                                </div>
+                            </div>
+                        }
+                        type="info"
+                        showIcon={false}
+                        style={{ marginBottom: '20px', borderRadius: '12px', border: '1px solid #91caff' }}
+                    />
                     <Text type="secondary" style={{ display: 'block', marginBottom: '16px' }}>
                         {t('history.selectPaymentHint')}
                     </Text>
