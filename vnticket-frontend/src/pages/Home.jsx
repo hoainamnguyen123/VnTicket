@@ -99,6 +99,26 @@ const Home = () => {
         }
     });
 
+    // Logic đề xuất "Dành cho bạn": Ưu tiên tương lai + Trộn ngẫu nhiên (Shuffle)
+    const recommendedEvents = React.useMemo(() => {
+        if (!events || events.length === 0) return [];
+        
+        const nowVal = new Date();
+        return [...events]
+            .filter(e => !e.isSlider && !e.isFeatured)
+            .sort((a, b) => {
+                const aIsFuture = new Date(a.startTime) >= nowVal;
+                const bIsFuture = new Date(b.startTime) >= nowVal;
+
+                if (aIsFuture && !bIsFuture) return -1;
+                if (!aIsFuture && bIsFuture) return 1;
+                
+                // Nếu cùng trạng thái, trộn ngẫu nhiên để tạo sự tươi mới
+                return Math.random() - 0.5;
+            })
+            .slice(0, 8);
+    }, [events]);
+
     const scroll = (scrollOffset) => {
         if (scrollContainerRef.current) {
             scrollContainerRef.current.scrollBy({ left: scrollOffset, behavior: 'smooth' });
@@ -286,30 +306,14 @@ const Home = () => {
                             </Col>
                         ))}
                     </Row>
-                ) : events.filter(e => !e.isSlider && !e.isFeatured).length > 0 ? (
+                ) : recommendedEvents.length > 0 ? (
                     <>
                         <Row gutter={[24, 24]}>
-                            {events.filter(e => !e.isSlider && !e.isFeatured)
-                                .sort((a, b) => {
-                                    const nowVal = new Date();
-                                    const aTime = new Date(a.startTime);
-                                    const bTime = new Date(b.startTime);
-                                    const aIsFuture = aTime >= nowVal;
-                                    const bIsFuture = bTime >= nowVal;
-
-                                    if (aIsFuture && !bIsFuture) return -1;
-                                    if (!aIsFuture && bIsFuture) return 1;
-                                    
-                                    // Sắp xếp sự kiện sắp tới theo thứ tự gần nhất, sự kiện đã qua theo thứ tự mới nhất
-                                    if (aIsFuture && bIsFuture) return aTime - bTime;
-                                    return bTime - aTime;
-                                })
-                                .slice(0, 8)
-                                .map((event) => (
-                                    <Col xs={24} sm={12} md={8} lg={6} key={event.id}>
-                                        <FeaturedEventCard event={event} />
-                                    </Col>
-                                ))}
+                            {recommendedEvents.map((event) => (
+                                <Col xs={24} sm={12} md={8} lg={6} key={event.id}>
+                                    <FeaturedEventCard event={event} />
+                                </Col>
+                            ))}
                         </Row>
                         <div style={{ textAlign: 'center', marginTop: '40px' }}>
                             <Button

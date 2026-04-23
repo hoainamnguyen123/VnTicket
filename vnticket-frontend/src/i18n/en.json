@@ -237,6 +237,8 @@
     "ticketCode": "Ticket code",
     "warning": "Note: After transfer, the old QR code will be invalidated and the recipient will receive a new QR code. This action cannot be undone.",
     "confirmTransfer": "Confirm transfer",
+    "confirmTransferTitle": "Confirm Ticket Transfer?",
+    "confirmTransferMessage": "Are you sure you want to transfer this ticket to <b>{{email}}</b>? Once transferred, your old ticket code will be <b>invalidated</b> and this action cannot be undone.",
     "transferSuccess": "Ticket transferred successfully!",
     "transferSuccessDetail": "Ticket has been successfully transferred to {{email}}.",
     "transferError": "Ticket transfer failed!",

@@ -238,6 +238,8 @@
     "ticketCode": "Mã vé",
     "warning": "Lưu ý: Sau khi tặng, mã QR cũ sẽ bị hủy và người nhận sẽ nhận được mã QR mới. Thao tác không thể hoàn tác.",
     "confirmTransfer": "Xác nhận tặng vé",
+    "confirmTransferTitle": "Xác nhận tặng vé cho người khác?",
+    "confirmTransferMessage": "Bạn có chắc chắn muốn tặng vé này cho <b>{{email}}</b>? Sau khi tặng, mã vé cũ của bạn sẽ <b>không còn hiệu lực</b> và thao tác này không thể hoàn tác.",
     "transferSuccess": "Tặng vé thành công!",
     "transferSuccessDetail": "Vé đã được tặng thành công cho {{email}}.",
     "transferError": "Tặng vé thất bại!",

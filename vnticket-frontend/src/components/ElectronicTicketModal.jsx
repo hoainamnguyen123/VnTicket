@@ -33,27 +33,39 @@ const ElectronicTicketModal = ({ visible, onClose, tickets, onTicketTransferred 
             return;
         }
 
-        setTransferLoading(true);
-        try {
-            const response = await axiosClient.post('/tickets/transfer', {
-                ticketId: selectedTicket.id,
-                recipientEmail: recipientEmail,
-            });
-            const result = response.data;
-            message.success(t('ticketTransfer.transferSuccessDetail', {
-                email: recipientEmail
-            }));
-            setTransferModalVisible(false);
-            setSelectedTicket(null);
-            // Callback to refresh ticket list
-            if (onTicketTransferred) {
-                onTicketTransferred();
+        Modal.confirm({
+            title: t('ticketTransfer.confirmTransferTitle'),
+            content: (
+                <div dangerouslySetInnerHTML={{ 
+                    __html: t('ticketTransfer.confirmTransferMessage', { email: recipientEmail }) 
+                }} />
+            ),
+            okText: t('common.confirm'),
+            cancelText: t('common.cancel'),
+            centered: true,
+            onOk: async () => {
+                setTransferLoading(true);
+                try {
+                    const response = await axiosClient.post('/tickets/transfer', {
+                        ticketId: selectedTicket.id,
+                        recipientEmail: recipientEmail,
+                    });
+                    message.success(t('ticketTransfer.transferSuccessDetail', {
+                        email: recipientEmail
+                    }));
+                    setTransferModalVisible(false);
+                    setSelectedTicket(null);
+                    // Callback to refresh ticket list
+                    if (onTicketTransferred) {
+                        onTicketTransferred();
+                    }
+                } catch (error) {
+                    message.error(error.message || t('ticketTransfer.transferError'));
+                } finally {
+                    setTransferLoading(false);
+                }
             }
-        } catch (error) {
-            message.error(error.message || t('ticketTransfer.transferError'));
-        } finally {
-            setTransferLoading(false);
-        }
+        });
     };
 
     const getStatusBadge = (ticket) => {

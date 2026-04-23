@@ -378,22 +378,36 @@ const History = () => {
             message.warning(t('ticketTransfer.recipientEmailRequired'));
             return;
         }
-        setTransferLoading(true);
-        try {
-            await axiosClient.post('/tickets/transfer', {
-                ticketId: transferTargetTicket.id,
-                recipientEmail: transferEmail,
-            });
-            message.success(t('ticketTransfer.transferSuccessDetail', { email: transferEmail }));
-            setTransferEmailVisible(false);
-            setTransferTargetTicket(null);
-            fetchBookings(true);
-            fetchTransferHistory();
-        } catch (error) {
-            message.error(error.message || t('ticketTransfer.transferError'));
-        } finally {
-            setTransferLoading(false);
-        }
+
+        modal.confirm({
+            title: t('ticketTransfer.confirmTransferTitle'),
+            content: (
+                <div dangerouslySetInnerHTML={{ 
+                    __html: t('ticketTransfer.confirmTransferMessage', { email: transferEmail }) 
+                }} />
+            ),
+            okText: t('common.confirm'),
+            cancelText: t('common.cancel'),
+            centered: true,
+            onOk: async () => {
+                setTransferLoading(true);
+                try {
+                    await axiosClient.post('/tickets/transfer', {
+                        ticketId: transferTargetTicket.id,
+                        recipientEmail: transferEmail,
+                    });
+                    message.success(t('ticketTransfer.transferSuccessDetail', { email: transferEmail }));
+                    setTransferEmailVisible(false);
+                    setTransferTargetTicket(null);
+                    fetchBookings(true);
+                    fetchTransferHistory();
+                } catch (error) {
+                    message.error(error.message || t('ticketTransfer.transferError'));
+                } finally {
+                    setTransferLoading(false);
+                }
+            }
+        });
     };
 
     const openPaymentModal = (bookingId) => {
