@@ -73,24 +73,24 @@ const EventDetail = () => {
 
     // Observer để ẩn hiện nút "Mua vé ngay" ở bottom
     useEffect(() => {
+        const currentRef = bookingRef.current;
         const observer = new IntersectionObserver(
             ([entry]) => {
                 setIsBookingInView(entry.isIntersecting);
             },
-            { threshold: 0.1 } // Chỉ cần hiện 10% là coi như đang ở vùng đặt vé
+            { threshold: 0, rootMargin: '0px 0px -100px 0px' } // Kích hoạt sớm hơn 100px để mượt mà
         );
 
-        const bookingCard = document.getElementById('booking-card');
-        if (bookingCard) {
-            observer.observe(bookingCard);
+        if (currentRef) {
+            observer.observe(currentRef);
         }
 
         return () => {
-            if (bookingCard) {
-                observer.unobserve(bookingCard);
+            if (currentRef) {
+                observer.unobserve(currentRef);
             }
         };
-    }, [loading]); // Chạy lại khi data đã load xong
+    }, [loading, isMobile]); // Chạy lại khi data đã load xong hoặc đổi chế độ mobile
 
     const showConfirmModal = () => {
         if (!user) {
@@ -376,7 +376,9 @@ const EventDetail = () => {
                     </div>
 
                     {!isMobile && (
-                        <BookingSection />
+                        <div ref={bookingRef}>
+                            {renderBookingSection()}
+                        </div>
                     )}
                 </Col>
             </Row>
@@ -417,11 +419,11 @@ const EventDetail = () => {
                             </Button>
                         </div>
                     )}
-                    <div style={{ marginTop: '40px' }}>
+                    <div style={{ marginTop: '40px' }} ref={bookingRef}>
                         <Divider orientation="left">
                             <Title level={3}>{t('eventDetail.bookNow', 'Đặt vé ngay')}</Title>
                         </Divider>
-                        <BookingSection />
+                        {renderBookingSection()}
                     </div>
                 </div>
             )}

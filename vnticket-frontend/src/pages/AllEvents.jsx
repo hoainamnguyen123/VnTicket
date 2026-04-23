@@ -78,7 +78,7 @@ const AllEvents = () => {
                         size={"large"}
                     >
                         <Option value="Âm Nhạc">{t('allEvents.musicConcert')}</Option>
-                        <Option value="Thể Thao">{t('allEvents.football')}</Option>
+                        <Option value="Thể Thao">{t('allEvents.sports')}</Option>
                         <Option value="Hội Thảo">{t('allEvents.conference')}</Option>
                         <Option value="Tham quan, Trải nghiệm">{t('home.experience', 'Tham quan, Trải nghiệm')}</Option>
                         <Option value="Sân khấu, Nghệ thuật">{t('home.art', 'Sân khấu, Nghệ thuật')}</Option>

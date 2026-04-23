@@ -198,7 +198,11 @@ const Home = () => {
             <div style={{ padding: '0 10px', marginBottom: '40px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                        <Title level={2} style={{ margin: 0, color: isDark ? '#e8e8e8' : '#1f1f1f' }}>
+                        <Title level={2} style={{ 
+                            margin: 0, 
+                            color: isDark ? '#e8e8e8' : '#1f1f1f',
+                            fontSize: isMobile ? '20px' : undefined 
+                        }}>
                             <FireOutlined style={{ color: '#eb2f96', marginRight: '8px' }} /> {t('home.featuredEvents')}
                         </Title>
                         <div style={{ display: 'flex', gap: '8px', marginLeft: '12px' }}>
@@ -265,7 +269,11 @@ const Home = () => {
             {/* Có thể bạn sẽ thích (For You) */}
             <div style={{ padding: '0 10px', marginTop: '60px', marginBottom: '60px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-                    <Title level={2} style={{ margin: 0, color: isDark ? '#e8e8e8' : '#1f1f1f' }}>
+                    <Title level={2} style={{ 
+                        margin: 0, 
+                        color: isDark ? '#e8e8e8' : '#1f1f1f',
+                        fontSize: isMobile ? '20px' : undefined
+                    }}>
                         <HeartOutlined style={{ color: '#ff4d4f', marginRight: '8px' }} /> {t('home.forYou')}
                     </Title>
                 </div>
@@ -331,7 +339,11 @@ const Home = () => {
             {/* Danh mục (Chỉ hiển thị ở cuối trên Mobile) */}
             {isMobile && (
                 <div style={{ padding: '0 10px', marginTop: '40px', marginBottom: '80px' }}>
-                    <Title level={2} style={{ marginBottom: '24px', color: isDark ? '#e8e8e8' : '#1f1f1f' }}>
+                    <Title level={2} style={{ 
+                        marginBottom: '24px', 
+                        color: isDark ? '#e8e8e8' : '#1f1f1f',
+                        fontSize: isMobile ? '20px' : undefined
+                    }}>
                         <AppstoreOutlined style={{ marginRight: '8px', color: '#1890ff' }} /> {t('home.exploreByGenre', 'Khám phá theo thể loại')}
                     </Title>
                     <div style={{ 
