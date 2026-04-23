@@ -32,6 +32,28 @@ const EventDetail = () => {
     const [quantity, setQuantity] = useState(1);
     const [isConfirmVisible, setIsConfirmVisible] = useState(false);
     const [isSuccessVisible, setIsSuccessVisible] = useState(false);
+    const [isBookingInView, setIsBookingInView] = useState(false);
+
+    // Observer để ẩn hiện nút "Mua vé ngay" ở bottom
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                setIsBookingInView(entry.isIntersecting);
+            },
+            { threshold: 0.1 } // Chỉ cần hiện 10% là coi như đang ở vùng đặt vé
+        );
+
+        const bookingCard = document.getElementById('booking-card');
+        if (bookingCard) {
+            observer.observe(bookingCard);
+        }
+
+        return () => {
+            if (bookingCard) {
+                observer.unobserve(bookingCard);
+            }
+        };
+    }, [loading]); // Chạy lại khi data đã load xong
 
     // Fetch Event bằng useQuery
     const { data: event, isLoading: loading } = useQuery({
@@ -466,7 +488,12 @@ const EventDetail = () => {
                 alignItems: 'center',
                 boxShadow: '0 -4px 12px rgba(0,0,0,0.12)',
                 zIndex: 1000,
-                paddingBottom: 'calc(12px + env(safe-area-inset-bottom))'
+                paddingBottom: 'calc(12px + env(safe-area-inset-bottom))',
+                opacity: isBookingInView ? 0 : 1,
+                visibility: isBookingInView ? 'hidden' : 'visible',
+                pointerEvents: isBookingInView ? 'none' : 'auto',
+                transition: 'all 0.3s ease-in-out',
+                transform: isBookingInView ? 'translateY(20px)' : 'translateY(0)'
             }}>
                 <div>
                     <Text type="secondary" style={{ fontSize: '13px', display: 'block', marginBottom: '2px' }}>{t('common.from', 'Từ')}</Text>
