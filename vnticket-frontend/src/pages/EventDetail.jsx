@@ -184,7 +184,7 @@ const EventDetail = () => {
     }
 
     /* ── Sub-component for Ticket Selection Section ── */
-    const BookingSection = () => (
+    const renderBookingSection = () => (
         <Card
             id="booking-card"
             title={t('eventDetail.selectTicketType')}
