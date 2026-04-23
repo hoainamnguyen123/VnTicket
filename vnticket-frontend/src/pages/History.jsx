@@ -241,6 +241,7 @@ const History = () => {
     const [selectedBookingId, setSelectedBookingId] = useState(null);
     const [viewedBookingId, setViewedBookingId] = useState(null);
     const [selectedMethod, setSelectedMethod] = useState(null);
+    const [guideModalVisible, setGuideModalVisible] = useState(false);
 
     // Transfer flow state
     const [transferPickerVisible, setTransferPickerVisible] = useState(false);
@@ -718,9 +719,19 @@ const History = () => {
             {contextHolder}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                 <Title level={isMobile ? 4 : 2} style={{ margin: 0 }}>{t('history.title')}</Title>
-                <Button icon={<SyncOutlined />} onClick={fetchBookings} size={isMobile ? 'small' : 'middle'}>
-                    {t('history.refresh')}
-                </Button>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                    <Button 
+                        icon={<CreditCardOutlined />} 
+                        onClick={() => setGuideModalVisible(true)} 
+                        size={isMobile ? 'small' : 'middle'}
+                        style={{ border: '1px solid #1890ff', color: '#1890ff' }}
+                    >
+                        {isMobile ? 'Hướng dẫn' : 'Hướng dẫn thanh toán TEST'}
+                    </Button>
+                    <Button icon={<SyncOutlined />} onClick={fetchBookings} size={isMobile ? 'small' : 'middle'}>
+                        {t('history.refresh')}
+                    </Button>
+                </div>
             </div>
 
             <Tabs activeKey={activeTabKey} onChange={onTabChange} items={tabItems} size="large" />
@@ -764,40 +775,6 @@ const History = () => {
                 centered
             >
                 <div style={{ padding: '12px 0' }}>
-                    <Alert
-                        message={<Text strong style={{ color: '#1890ff' }}>💳 Hướng dẫn thanh toán TEST (VNPAY)</Text>}
-                        description={
-                            <div style={{ fontSize: '13px' }}>
-                                <div style={{ marginBottom: '8px' }}>
-                                    1. Chọn: <strong>Thẻ nội địa và tài khoản ngân hàng</strong><br />
-                                    2. Chọn ngân hàng: <strong>NCB</strong>
-                                </div>
-                                <div style={{ background: isDark ? '#1f1f1f' : '#f0f7ff', padding: '10px', borderRadius: '8px', border: `1px dashed ${isDark ? '#434343' : '#91caff'}` }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                                        <Text>Số thẻ: <strong style={{ letterSpacing: '1px' }}>9704198526191432198</strong></Text>
-                                        <Button 
-                                            size="small" 
-                                            type="primary" 
-                                            ghost 
-                                            onClick={() => {
-                                                navigator.clipboard.writeText('9704198526191432198');
-                                                message.success('Đã sao chép số thẻ test!');
-                                            }}
-                                            style={{ fontSize: '11px', height: '22px', padding: '0 8px' }}
-                                        >
-                                            Sao chép
-                                        </Button>
-                                    </div>
-                                    <Text style={{ display: 'block' }}>Tên chủ thẻ: <strong>NGUYEN VAN A</strong></Text>
-                                    <Text style={{ display: 'block' }}>Ngày phát hành: <strong>07/15</strong></Text>
-                                    <Text style={{ display: 'block' }}>Mật khẩu OTP: <strong>123456</strong></Text>
-                                </div>
-                            </div>
-                        }
-                        type="info"
-                        showIcon={false}
-                        style={{ marginBottom: '20px', borderRadius: '12px', border: '1px solid #91caff' }}
-                    />
                     <Text type="secondary" style={{ display: 'block', marginBottom: '16px' }}>
                         {t('history.selectPaymentHint')}
                     </Text>
@@ -947,6 +924,61 @@ const History = () => {
                         />
                     </div>
                 )}
+            </Modal>
+            {/* ── Modal Hướng dẫn thanh toán TEST ── */}
+            <Modal
+                title={
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <CreditCardOutlined style={{ fontSize: '20px', color: '#1890ff' }} />
+                        <span style={{ fontSize: '16px', fontWeight: 600 }}>Hướng dẫn thanh toán TEST (VNPAY)</span>
+                    </div>
+                }
+                open={guideModalVisible}
+                onCancel={() => setGuideModalVisible(false)}
+                footer={[
+                    <Button key="close" type="primary" onClick={() => setGuideModalVisible(false)}>
+                        Đã hiểu
+                    </Button>
+                ]}
+                width={isMobile ? '95%' : 480}
+                centered
+            >
+                <div style={{ padding: '12px 0' }}>
+                    <Alert
+                        message={<Text strong style={{ color: '#1890ff' }}>💳 Thông tin thẻ dùng để test thanh toán</Text>}
+                        description={
+                            <div style={{ fontSize: '14px', lineHeight: '1.6' }}>
+                                <div style={{ marginBottom: '12px' }}>
+                                    Tại trang thanh toán của VNPAY, hãy chọn:<br />
+                                    1. <strong>Thẻ nội địa và tài khoản ngân hàng</strong><br />
+                                    2. Ngân hàng: <strong>NCB</strong>
+                                </div>
+                                <div style={{ background: isDark ? '#1f1f1f' : '#f0f7ff', padding: '16px', borderRadius: '12px', border: `1px dashed ${isDark ? '#434343' : '#91caff'}` }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                                        <Text>Số thẻ: <strong style={{ letterSpacing: '1px', fontSize: '15px' }}>9704198526191432198</strong></Text>
+                                        <Button 
+                                            size="small" 
+                                            type="primary" 
+                                            ghost 
+                                            onClick={() => {
+                                                navigator.clipboard.writeText('9704198526191432198');
+                                                message.success('Đã sao chép số thẻ test!');
+                                            }}
+                                        >
+                                            Sao chép
+                                        </Button>
+                                    </div>
+                                    <Text style={{ display: 'block', marginBottom: '4px' }}>Tên chủ thẻ: <strong>NGUYEN VAN A</strong></Text>
+                                    <Text style={{ display: 'block', marginBottom: '4px' }}>Ngày phát hành: <strong>07/15</strong></Text>
+                                    <Text style={{ display: 'block' }}>Mật khẩu OTP: <strong>123456</strong></Text>
+                                </div>
+                            </div>
+                        }
+                        type="info"
+                        showIcon={false}
+                        style={{ borderRadius: '12px', border: '1px solid #91caff' }}
+                    />
+                </div>
             </Modal>
         </div>
     );
