@@ -33,6 +33,7 @@ const EventDetail = () => {
     const [isConfirmVisible, setIsConfirmVisible] = useState(false);
     const [isSuccessVisible, setIsSuccessVisible] = useState(false);
     const [isBookingInView, setIsBookingInView] = useState(false);
+    const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
     const bookingRef = React.useRef(null);
 
     // Fetch Event bằng useQuery
@@ -51,7 +52,7 @@ const EventDetail = () => {
             const relatedRes = await axiosClient.get(`/events?page=0&size=50`);
             const allEvents = relatedRes.data?.content || [];
             const filtered = allEvents.filter(e => Number(e.id) !== Number(id));
-            
+
             // Ưu tiên sự kiện chưa diễn ra, sau đó mới đến sự kiện đã diễn ra
             return filtered.sort((a, b) => {
                 const nowVal = new Date();
@@ -72,24 +73,24 @@ const EventDetail = () => {
 
     // Observer để ẩn hiện nút "Mua vé ngay" ở bottom
     useEffect(() => {
-        const currentRef = bookingRef.current;
         const observer = new IntersectionObserver(
             ([entry]) => {
                 setIsBookingInView(entry.isIntersecting);
             },
-            { threshold: 0, rootMargin: '0px 0px -100px 0px' } // Kích hoạt sớm hơn 100px để mượt mà
+            { threshold: 0.1 } // Chỉ cần hiện 10% là coi như đang ở vùng đặt vé
         );
 
-        if (currentRef) {
-            observer.observe(currentRef);
+        const bookingCard = document.getElementById('booking-card');
+        if (bookingCard) {
+            observer.observe(bookingCard);
         }
 
         return () => {
-            if (currentRef) {
-                observer.unobserve(currentRef);
+            if (bookingCard) {
+                observer.unobserve(bookingCard);
             }
         };
-    }, [loading, isMobile]); // Chạy lại khi data đã load xong hoặc đổi chế độ mobile
+    }, [loading]); // Chạy lại khi data đã load xong
 
     const showConfirmModal = () => {
         if (!user) {
@@ -176,20 +177,20 @@ const EventDetail = () => {
 
     const now = new Date();
     const eventDate = new Date(event.startTime);
-    
+
     let statusBadge = null;
     if (eventDate <= now) {
         statusBadge = <Tag color="default" style={{ borderRadius: '4px', margin: 0, fontWeight: 500 }}>{t('common.ended', '✅ Đã diễn ra')}</Tag>;
     }
 
-    /* ── Helper to render Ticket Selection Section ── */
-    const renderBookingSection = () => (
-        <Card 
-            id="booking-card" 
-            title={t('eventDetail.selectTicketType')} 
-            bordered={false} 
-            style={{ 
-                background: isDark ? '#262626' : '#f9f9f9', 
+    /* ── Sub-component for Ticket Selection Section ── */
+    const BookingSection = () => (
+        <Card
+            id="booking-card"
+            title={t('eventDetail.selectTicketType')}
+            bordered={false}
+            style={{
+                background: isDark ? '#262626' : '#f9f9f9',
                 borderRadius: '12px',
                 boxShadow: isMobile ? '0 4px 20px rgba(0,0,0,0.08)' : 'none',
                 border: isMobile ? `1px solid ${isDark ? '#434343' : '#f0f0f0'}` : 'none'
@@ -207,12 +208,12 @@ const EventDetail = () => {
             ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                     {event.ticketTypes?.map((record) => (
-                        <div 
-                            key={record.id} 
+                        <div
+                            key={record.id}
                             onClick={() => record.remainingQuantity > 0 && !isEnded && setSelectedTicket(selectedTicket?.id === record.id ? null : record)}
-                            style={{ 
-                                padding: '16px', 
-                                borderRadius: '10px', 
+                            style={{
+                                padding: '16px',
+                                borderRadius: '10px',
                                 cursor: record.remainingQuantity > 0 && !isEnded ? 'pointer' : 'not-allowed',
                                 border: `2px solid ${selectedTicket?.id === record.id ? '#1890ff' : (isDark ? '#434343' : '#f0f0f0')}`,
                                 background: selectedTicket?.id === record.id ? (isDark ? 'rgba(24, 144, 255, 0.15)' : '#e6f7ff') : (isDark ? '#1f1f1f' : '#fff'),
@@ -222,24 +223,24 @@ const EventDetail = () => {
                                 transition: 'all 0.3s ease'
                             }}
                         >
-                           <div style={{ flex: 1 }}>
-                             <Text strong style={{ fontSize: '15px', color: record.id === selectedTicket?.id ? '#1890ff' : (isDark ? '#e8e8e8' : '#262626'), display: 'block', marginBottom: '4px' }}>
-                                {record.zoneName}
-                             </Text>
-                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                                <Text strong style={{ color: '#f5222d', fontSize: '15px' }}>{formatCurrency(record.price)}</Text>
-                                <Tag color={record.remainingQuantity > 0 ? 'green' : 'red'} style={{ borderRadius: '4px', margin: 0, fontSize: '11px' }}>
-                                    {record.remainingQuantity > 0 ? `${record.remainingQuantity} ${t('common.tickets')}` : t('common.soldOut')}
-                                </Tag>
-                             </div>
-                           </div>
-                           <div onClick={(e) => e.stopPropagation()}>
+                            <div style={{ flex: 1 }}>
+                                <Text strong style={{ fontSize: '15px', color: record.id === selectedTicket?.id ? '#1890ff' : (isDark ? '#e8e8e8' : '#262626'), display: 'block', marginBottom: '4px' }}>
+                                    {record.zoneName}
+                                </Text>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                    <Text strong style={{ color: '#f5222d', fontSize: '15px' }}>{formatCurrency(record.price)}</Text>
+                                    <Tag color={record.remainingQuantity > 0 ? 'green' : 'red'} style={{ borderRadius: '4px', margin: 0, fontSize: '11px' }}>
+                                        {record.remainingQuantity > 0 ? `${record.remainingQuantity} ${t('common.tickets')}` : t('common.soldOut')}
+                                    </Tag>
+                                </div>
+                            </div>
+                            <div onClick={(e) => e.stopPropagation()}>
                                 <Switch
                                     checked={selectedTicket?.id === record.id}
                                     onChange={(checked) => setSelectedTicket(checked ? record : null)}
                                     disabled={record.remainingQuantity <= 0 || isEnded}
                                 />
-                           </div>
+                            </div>
                         </div>
                     ))}
                 </div>
@@ -375,7 +376,7 @@ const EventDetail = () => {
                     </div>
 
                     {!isMobile && (
-                        renderBookingSection()
+                        <BookingSection />
                     )}
                 </Col>
             </Row>
@@ -383,14 +384,44 @@ const EventDetail = () => {
             {isMobile && (
                 <div style={{ padding: '0 24px' }}>
                     <Divider orientation="left"><Title level={3}>{t('eventDetail.eventIntro')}</Title></Divider>
-                    <div style={{ fontSize: '16px', lineHeight: '1.8', whiteSpace: 'pre-line' }}>
+                    <div style={{ 
+                        position: 'relative',
+                        maxHeight: isDescriptionExpanded ? 'none' : '150px',
+                        overflow: 'hidden',
+                        transition: 'max-height 0.3s ease',
+                        fontSize: '16px', 
+                        lineHeight: '1.8', 
+                        whiteSpace: 'pre-line' 
+                    }}>
                         <Paragraph>{event.description}</Paragraph>
+                        {!isDescriptionExpanded && event.description?.length > 200 && (
+                            <div style={{
+                                position: 'absolute',
+                                bottom: 0,
+                                left: 0,
+                                right: 0,
+                                height: '60px',
+                                background: isDark ? 'linear-gradient(transparent, #141414)' : 'linear-gradient(transparent, #fff)',
+                                pointerEvents: 'none'
+                            }} />
+                        )}
                     </div>
-                    <div style={{ marginTop: '40px' }} ref={bookingRef}>
+                    {event.description?.length > 200 && (
+                        <div style={{ textAlign: 'center', marginTop: '12px' }}>
+                            <Button 
+                                type="link" 
+                                onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
+                                style={{ padding: 0, fontWeight: 500 }}
+                            >
+                                {isDescriptionExpanded ? t('common.showLess', 'Thu gọn') : t('common.showMore', 'Xem thêm')}
+                            </Button>
+                        </div>
+                    )}
+                    <div style={{ marginTop: '40px' }}>
                         <Divider orientation="left">
                             <Title level={3}>{t('eventDetail.bookNow', 'Đặt vé ngay')}</Title>
                         </Divider>
-                        {renderBookingSection()}
+                        <BookingSection />
                     </div>
                 </div>
             )}
