@@ -48,8 +48,8 @@ spring:
 app:
   jwt:
     secret: VNTicketSuperSecretKeyForJwtGenerationMustBeLongEnoughToBeSecureVNTicketSuperSecretKeyForJwtGenerationMustBeLongEnoughToBeSecure
-    expirationMs: 300000 # 5 minutes
-    jwtRefreshExpirationMs: 86400000 # 1 day
+    expirationMs: 86400000 # 5 minutes
+    jwtRefreshExpirationMs: 864000000 # 1 day
   google:
     clientId: 626920740184-b50brg5oc6psqva23adt7f9a7632fhp4.apps.googleusercontent.com
   vnpay:
@@ -61,6 +61,9 @@ app:
     ttlMinutes: 15
   cors:
     allowed-origins: http://localhost:5173
+  cookie:
+    secure: false
+    sameSite: Lax
 
 cloudinary:
   cloud-name: "dilx7nhbv"

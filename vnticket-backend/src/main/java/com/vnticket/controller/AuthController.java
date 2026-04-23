@@ -29,6 +29,12 @@ public class AuthController {
     private final JwtUtils jwtUtils;
     private final UserRepository userRepository;
 
+    @org.springframework.beans.factory.annotation.Value("${app.cookie.secure:false}")
+    private boolean cookieSecure;
+
+    @org.springframework.beans.factory.annotation.Value("${app.cookie.sameSite:Lax}")
+    private String cookieSameSite;
+
     public AuthController(AuthService authService, RefreshTokenService refreshTokenService, JwtUtils jwtUtils,
             UserRepository userRepository) {
         this.authService = authService;
@@ -48,7 +54,8 @@ public class AuthController {
         ResponseCookie jwtRefreshCookie = ResponseCookie.from("vnticket-refresh", refreshTokenStr)
                 .maxAge(24 * 60 * 60) // 30 days
                 .httpOnly(true)
-                .secure(false)
+                .secure(cookieSecure)
+                .sameSite(cookieSameSite)
                 .path("/api/auth")
                 .build();
 
@@ -77,7 +84,8 @@ public class AuthController {
         ResponseCookie jwtRefreshCookie = ResponseCookie.from("vnticket-refresh", refreshTokenStr)
                 .maxAge(24 * 60 * 60) // 30 days
                 .httpOnly(true)
-                .secure(false)
+                .secure(cookieSecure)
+                .sameSite(cookieSameSite)
                 .path("/api/auth")
                 .build();
 
@@ -125,6 +133,8 @@ public class AuthController {
         ResponseCookie jwtRefreshCookie = ResponseCookie.from("vnticket-refresh", "")
                 .maxAge(0)
                 .httpOnly(true)
+                .secure(cookieSecure)
+                .sameSite(cookieSameSite)
                 .path("/api/auth")
                 .build();
 
