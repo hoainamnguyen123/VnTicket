@@ -719,19 +719,9 @@ const History = () => {
             {contextHolder}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                 <Title level={isMobile ? 4 : 2} style={{ margin: 0 }}>{t('history.title')}</Title>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                    <Button 
-                        icon={<CreditCardOutlined />} 
-                        onClick={() => setGuideModalVisible(true)} 
-                        size={isMobile ? 'small' : 'middle'}
-                        style={{ border: '1px solid #1890ff', color: '#1890ff' }}
-                    >
-                        {isMobile ? 'Hướng dẫn' : 'Hướng dẫn thanh toán TEST'}
-                    </Button>
-                    <Button icon={<SyncOutlined />} onClick={fetchBookings} size={isMobile ? 'small' : 'middle'}>
-                        {t('history.refresh')}
-                    </Button>
-                </div>
+                <Button icon={<SyncOutlined />} onClick={fetchBookings} size={isMobile ? 'small' : 'middle'}>
+                    {t('history.refresh')}
+                </Button>
             </div>
 
             <Tabs activeKey={activeTabKey} onChange={onTabChange} items={tabItems} size="large" />
@@ -775,6 +765,16 @@ const History = () => {
                 centered
             >
                 <div style={{ padding: '12px 0' }}>
+                    <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'flex-end' }}>
+                        <Button 
+                            type="link" 
+                            icon={<ExclamationCircleOutlined />} 
+                            onClick={() => setGuideModalVisible(true)}
+                            style={{ padding: 0, height: 'auto', fontSize: '13px' }}
+                        >
+                            Hướng dẫn thanh toán TEST
+                        </Button>
+                    </div>
                     <Text type="secondary" style={{ display: 'block', marginBottom: '16px' }}>
                         {t('history.selectPaymentHint')}
                     </Text>
