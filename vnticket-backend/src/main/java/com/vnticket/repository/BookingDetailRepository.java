@@ -23,4 +23,13 @@ public interface BookingDetailRepository extends JpaRepository<BookingDetail, Lo
             @Param("status") BookingStatus status,
             @Param("cutoffTime") LocalDateTime cutoffTime
     );
+
+    /**
+     * Kiểm tra xem loại vé có bất kỳ booking PAID nào không.
+     * Dùng để ngăn xóa ticket type đã có người mua thành công.
+     */
+    @Query("SELECT COUNT(bd) > 0 FROM BookingDetail bd " +
+           "WHERE bd.ticketType.id = :ticketTypeId " +
+           "AND bd.booking.status = 'PAID'")
+    boolean existsPaidBookingByTicketTypeId(@Param("ticketTypeId") Long ticketTypeId);
 }

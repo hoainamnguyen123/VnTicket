@@ -1,6 +1,7 @@
 package com.vnticket.controller;
 
 import com.vnticket.dto.EventDTO;
+import com.vnticket.dto.TicketTypeDTO;
 import com.vnticket.dto.response.ApiResponse;
 import com.vnticket.service.EventService;
 import lombok.extern.slf4j.Slf4j;
@@ -11,6 +12,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @Slf4j
 @RestController
@@ -99,6 +102,17 @@ public class EventController {
         return ResponseEntity.ok(ApiResponse.success("Event deleted successfully", null));
     }
 
+    @PutMapping("/events/my/{id}/ticket-types")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<EventDTO>> updateMyTicketTypes(
+            @PathVariable Long id,
+            @RequestBody List<TicketTypeDTO> ticketTypes) {
+        Long userId = getCurrentUserId();
+        log.info("User {} updating ticket types for event {}", userId, id);
+        EventDTO updatedEvent = eventService.updateMyTicketTypes(userId, id, ticketTypes);
+        return ResponseEntity.ok(ApiResponse.success("Ticket types updated, pending admin review", updatedEvent));
+    }
+
     // Admin API
     @GetMapping("/admin/events")
     @PreAuthorize("hasRole('ADMIN')")
@@ -153,5 +167,16 @@ public class EventController {
         eventService.deleteEvent(id);
         log.info("Event deleted successfully with id: {}", id);
         return ResponseEntity.ok(ApiResponse.success("Event deleted successfully", null));
+    }
+
+    @PutMapping("/admin/events/{id}/ticket-types")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<EventDTO>> updateAdminTicketTypes(
+            @PathVariable Long id,
+            @RequestBody List<TicketTypeDTO> ticketTypes) {
+        log.info("Admin updating ticket types for event id: {}", id);
+        EventDTO updatedEvent = eventService.updateAdminTicketTypes(id, ticketTypes);
+        log.info("Ticket types updated for event id: {}", id);
+        return ResponseEntity.ok(ApiResponse.success("Ticket types updated successfully", updatedEvent));
     }
 }

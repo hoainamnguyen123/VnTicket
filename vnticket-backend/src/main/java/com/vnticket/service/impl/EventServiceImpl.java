@@ -4,7 +4,9 @@ import com.vnticket.dto.EventDTO;
 import com.vnticket.dto.TicketTypeDTO;
 import com.vnticket.entity.Event;
 import com.vnticket.entity.TicketType;
+import com.vnticket.exception.BadRequestException;
 import com.vnticket.exception.ResourceNotFoundException;
+import com.vnticket.repository.BookingDetailRepository;
 import com.vnticket.repository.EventRepository;
 import com.vnticket.repository.TicketTypeRepository;
 import com.vnticket.service.EventService;
@@ -19,6 +21,9 @@ import org.springframework.cache.annotation.CacheEvict;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -28,12 +33,15 @@ public class EventServiceImpl implements EventService {
     private final EventRepository eventRepository;
     private final TicketTypeRepository ticketTypeRepository;
     private final TicketInventoryRedisService inventoryRedisService;
+    private final BookingDetailRepository bookingDetailRepository;
 
     public EventServiceImpl(EventRepository eventRepository, TicketTypeRepository ticketTypeRepository,
-            TicketInventoryRedisService inventoryRedisService) {
+            TicketInventoryRedisService inventoryRedisService,
+            BookingDetailRepository bookingDetailRepository) {
         this.eventRepository = eventRepository;
         this.ticketTypeRepository = ticketTypeRepository;
         this.inventoryRedisService = inventoryRedisService;
+        this.bookingDetailRepository = bookingDetailRepository;
     }
 
     @Override
@@ -51,7 +59,7 @@ public class EventServiceImpl implements EventService {
                 events = eventRepository.findByLocationContainingIgnoreCaseAndStatus(location,
                         com.vnticket.enums.EventStatus.APPROVED, pageable);
             }
-        } else if (type != null && !type.isEmpty()) {
+        } else if (type != null && !type.isEmpty()) { 
             events = eventRepository.findByTypeContainingIgnoreCaseAndStatus(type,
                     com.vnticket.enums.EventStatus.APPROVED, pageable);
         } else {
@@ -273,6 +281,127 @@ public class EventServiceImpl implements EventService {
         }
         eventRepository.deleteById(id);
         log.info("Successfully deleted event ID: {}", id);
+    }
+
+    // ──────────────────── Ticket Type Management ────────────────────
+
+    @Override
+    @Transactional
+    @CacheEvict(value = { "events", "eventDetail" }, allEntries = true)
+    public EventDTO updateAdminTicketTypes(Long eventId, List<TicketTypeDTO> ticketTypes) {
+        log.info("Admin updating ticket types for event ID: {}", eventId);
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new ResourceNotFoundException("Event not found with id: " + eventId));
+
+        updateTicketTypesInternal(event, ticketTypes);
+        // Admin tự approve → giữ nguyên trạng thái APPROVED
+        Event saved = eventRepository.save(event);
+        log.info("Admin successfully updated ticket types for event ID: {}", eventId);
+        return mapToDto(saved);
+    }
+
+    @Override
+    @Transactional
+    @CacheEvict(value = { "events", "eventDetail" }, allEntries = true)
+    public EventDTO updateMyTicketTypes(Long userId, Long eventId, List<TicketTypeDTO> ticketTypes) {
+        log.info("User {} updating ticket types for event ID: {}", userId, eventId);
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new ResourceNotFoundException("Event not found with id: " + eventId));
+
+        // Kiểm tra quyền sở hữu
+        if (event.getOrganizer() == null || !event.getOrganizer().getId().equals(userId)) {
+            throw new BadRequestException("Bạn không có quyền chỉnh sửa sự kiện này.");
+        }
+        // Chỉ cho phép chỉnh sửa sự kiện đang APPROVED
+        if (event.getStatus() != com.vnticket.enums.EventStatus.APPROVED) {
+            throw new BadRequestException("Chỉ có thể chỉnh sửa loại vé cho sự kiện đã được duyệt.");
+        }
+
+        updateTicketTypesInternal(event, ticketTypes);
+        // Organizer chỉnh sửa → cần admin xét duyệt lại
+        event.setStatus(com.vnticket.enums.EventStatus.PENDING_EDIT);
+        Event saved = eventRepository.save(event);
+        log.info("User {} updated ticket types for event ID: {}, status → PENDING_EDIT", userId, eventId);
+        return mapToDto(saved);
+    }
+
+    /**
+     * Logic dùng chung để cập nhật danh sách ticket types:
+     * - Thêm mới: DTO không có id
+     * - Cập nhật: DTO có id tồn tại
+     * - Xóa: TicketType hiện tại không xuất hiện trong danh sách DTO mới
+     */
+    private void updateTicketTypesInternal(Event event, List<TicketTypeDTO> dtoList) {
+        List<TicketType> existing = ticketTypeRepository.findByEventId(event.getId());
+
+        // Map existing by id để tra cứu nhanh
+        Map<Long, TicketType> existingMap = existing.stream()
+                .collect(Collectors.toMap(TicketType::getId, Function.identity()));
+
+        // ID các ticket type được giữ lại / cập nhật
+        Set<Long> keptIds = dtoList.stream()
+                .filter(dto -> dto.getId() != null)
+                .map(TicketTypeDTO::getId)
+                .collect(java.util.stream.Collectors.toSet());
+
+        // 1. Xóa các ticket type bị loại bỏ
+        for (TicketType tt : existing) {
+            if (!keptIds.contains(tt.getId())) {
+                // Chặn xóa nếu đã có booking PAID
+                if (bookingDetailRepository.existsPaidBookingByTicketTypeId(tt.getId())) {
+                    throw new BadRequestException(
+                        "Không thể xóa khu vực '" + tt.getZoneName() + "' vì đã có người mua vé thành công.");
+                }
+                // Xóa Redis key trước
+                inventoryRedisService.initStock(tt.getId(), 0);
+                ticketTypeRepository.delete(tt);
+                log.info("Deleted ticket type ID: {} (zoneName={})", tt.getId(), tt.getZoneName());
+            }
+        }
+
+        // 2. Cập nhật hoặc thêm mới
+        for (TicketTypeDTO dto : dtoList) {
+            if (dto.getId() != null && existingMap.containsKey(dto.getId())) {
+                // Cập nhật ticket type đã tồn tại
+                TicketType tt = existingMap.get(dto.getId());
+                int oldTotal = tt.getTotalQuantity();
+                int newTotal = dto.getTotalQuantity();
+                int sold = oldTotal - tt.getRemainingQuantity();
+
+                if (newTotal < sold) {
+                    throw new BadRequestException(
+                        "Không thể giảm số lượng vé khu vực '" + tt.getZoneName() +
+                        "' xuống dưới số vé đã bán (" + sold + " vé).");
+                }
+
+                int delta = newTotal - oldTotal;
+                tt.setZoneName(dto.getZoneName());
+                tt.setPrice(dto.getPrice());
+                tt.setTotalQuantity(newTotal);
+                tt.setRemainingQuantity(tt.getRemainingQuantity() + delta);
+                ticketTypeRepository.save(tt);
+
+                // Sync Redis: điều chỉnh stock tương ứng với delta
+                if (delta > 0) {
+                    inventoryRedisService.incrementStock(tt.getId(), delta);
+                } else if (delta < 0) {
+                    inventoryRedisService.decrementStock(tt.getId(), -delta);
+                }
+                log.info("Updated ticket type ID: {} → total={}, delta={}", tt.getId(), newTotal, delta);
+            } else {
+                // Thêm mới ticket type
+                TicketType newTt = TicketType.builder()
+                        .event(event)
+                        .zoneName(dto.getZoneName())
+                        .price(dto.getPrice())
+                        .totalQuantity(dto.getTotalQuantity())
+                        .remainingQuantity(dto.getTotalQuantity())
+                        .build();
+                TicketType savedTt = ticketTypeRepository.save(newTt);
+                inventoryRedisService.initStock(savedTt.getId(), savedTt.getTotalQuantity());
+                log.info("Created new ticket type ID: {} for event ID: {}", savedTt.getId(), event.getId());
+            }
+        }
     }
 
     // Mappers
