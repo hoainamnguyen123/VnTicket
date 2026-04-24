@@ -15,6 +15,7 @@ const AllEvents = () => {
     const [searchParams] = useSearchParams();
     const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
     const [eventType, setEventType] = useState(searchParams.get('type') || '');
+    const [location, setLocation] = useState(searchParams.get('location') || '');
     const { t } = useTranslation();
     const screens = Grid.useBreakpoint();
     const isMobile = !screens.md;
@@ -23,6 +24,7 @@ const AllEvents = () => {
     useEffect(() => {
         setSearchTerm(searchParams.get('search') || '');
         setEventType(searchParams.get('type') || '');
+        setLocation(searchParams.get('location') || '');
     }, [searchParams]);
 
     // Phân trang
@@ -32,15 +34,16 @@ const AllEvents = () => {
     // Reset về trang 1 khi đổi bộ lọc
     useEffect(() => {
         setCurrentPage(1);
-    }, [searchTerm, eventType]);
+    }, [searchTerm, eventType, location]);
 
     // Sử dụng React-Query tự động Caching cho Phân Trang
     const { data, isLoading: loading, isError } = useQuery({
-        queryKey: ['allEvents', currentPage, pageSize, searchTerm, eventType],
+        queryKey: ['allEvents', currentPage, pageSize, searchTerm, eventType, location],
         queryFn: async () => {
             let url = `/events?page=${currentPage - 1}&size=${pageSize}`;
             if (searchTerm) url += `&search=${searchTerm}`;
             if (eventType) url += `&type=${eventType}`;
+            if (location) url += `&location=${location}`;
             const response = await axiosClient.get(url);
             return response.data;
         }

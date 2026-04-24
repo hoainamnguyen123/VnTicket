@@ -38,12 +38,19 @@ public class EventServiceImpl implements EventService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<EventDTO> getApprovedEvents(String type, String search, Pageable pageable) {
-        log.debug("Executing getApprovedEvents with type: {}, search: {}", type, search);
+    public Page<EventDTO> getApprovedEvents(String type, String search, String location, Pageable pageable) {
+        log.debug("Executing getApprovedEvents with type: {}, search: {}, location: {}", type, search, location);
         Page<Event> events;
 
         if (search != null && !search.isEmpty()) {
             events = eventRepository.searchEventsByStatus(search, com.vnticket.enums.EventStatus.APPROVED, pageable);
+        } else if (location != null && !location.isEmpty()) {
+            if ("others".equalsIgnoreCase(location)) {
+                events = eventRepository.findByLocationOtherAndStatus(com.vnticket.enums.EventStatus.APPROVED, pageable);
+            } else {
+                events = eventRepository.findByLocationContainingIgnoreCaseAndStatus(location,
+                        com.vnticket.enums.EventStatus.APPROVED, pageable);
+            }
         } else if (type != null && !type.isEmpty()) {
             events = eventRepository.findByTypeContainingIgnoreCaseAndStatus(type,
                     com.vnticket.enums.EventStatus.APPROVED, pageable);

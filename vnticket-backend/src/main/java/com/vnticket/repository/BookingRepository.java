@@ -30,10 +30,12 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     @Query("SELECT COALESCE(SUM(b.totalAmount), 0) FROM Booking b WHERE b.event.id = :eventId AND b.status = :status")
     BigDecimal sumTotalAmountByEventIdAndStatus(@Param("eventId") Long eventId, @Param("status") BookingStatus status);
 
-    @Query("SELECT COALESCE(SUM(bd.quantity), 0) FROM BookingDetail bd JOIN bd.booking b WHERE b.status IN :statuses")
+    @Query("SELECT COALESCE(SUM(bd.quantity), 0) FROM BookingDetail bd JOIN bd.booking b WHERE b.status IN :statuses AND b.totalAmount > 0")
     long sumTicketsByStatuses(@Param("statuses") List<BookingStatus> statuses);
 
-    @Query("SELECT COALESCE(SUM(bd.quantity), 0) FROM BookingDetail bd JOIN bd.booking b WHERE b.event.id = :eventId AND b.status IN :statuses")
+    @Query("SELECT COALESCE(SUM(bd.quantity), 0) FROM BookingDetail bd JOIN bd.booking b WHERE b.event.id = :eventId AND b.status IN :statuses AND b.totalAmount > 0")
     long sumTicketsByEventIdAndStatuses(@Param("eventId") Long eventId,
             @Param("statuses") List<BookingStatus> statuses);
+
+    List<Booking> findByEventIdAndStatusOrderByBookingTimeDesc(Long eventId, BookingStatus status);
 }

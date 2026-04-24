@@ -64,6 +64,7 @@ const MobileCategoryItem = ({ label, value, icon, isSelected, onClick, isDark })
 const Home = () => {
     const navigate = useNavigate();
     const scrollContainerRef = React.useRef(null);
+    const locationScrollRef = React.useRef(null);
     const { t } = useTranslation();
     const { isDark } = useContext(ThemeContext);
     const screens = Grid.useBreakpoint();
@@ -119,9 +120,9 @@ const Home = () => {
             .slice(0, 8);
     }, [events]);
 
-    const scroll = (scrollOffset) => {
-        if (scrollContainerRef.current) {
-            scrollContainerRef.current.scrollBy({ left: scrollOffset, behavior: 'smooth' });
+    const scroll = (scrollOffset, ref = scrollContainerRef) => {
+        if (ref.current) {
+            ref.current.scrollBy({ left: scrollOffset, behavior: 'smooth' });
         }
     };
 
@@ -138,14 +139,34 @@ const Home = () => {
                     // Quay lại đầu
                     scrollContainerRef.current.scrollTo({ left: 0, behavior: 'smooth' });
                 } else {
-                    // Cuộn sang phải 1 ô (320px)
-                    scrollContainerRef.current.scrollBy({ left: 320, behavior: 'smooth' });
+                    // Cuộn sang phải 1 hoặc 2 ô tùy màn hình
+                    const scrollAmount = isMobile ? (clientWidth / 2 + 6) : 320;
+                    scrollContainerRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
                 }
             }
-        }, 3000); // 3 giây trượt 1 lần
+        }, 4000); // 4 giây trượt 1 lần (tăng lên chút cho dễ đọc)
 
         return () => clearInterval(interval); // Cleanup khi component unmount
-    }, [events]);
+    }, [events, isMobile]);
+
+    // Tự động cuộn cho phần địa điểm
+    useEffect(() => {
+        const interval = setInterval(() => {
+            if (locationScrollRef.current) {
+                const { scrollLeft, scrollWidth, clientWidth } = locationScrollRef.current;
+
+                if (scrollLeft + clientWidth >= scrollWidth - 20) {
+                    locationScrollRef.current.scrollTo({ left: 0, behavior: 'smooth' });
+                } else {
+                    // Trượt 1 ô (trên mobile là nửa màn hình + gap)
+                    const scrollAmount = isMobile ? (clientWidth / 2 + 6) : 240;
+                    locationScrollRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+                }
+            }
+        }, 5000); // Trượt chậm hơn một chút so với phần trên
+
+        return () => clearInterval(interval);
+    }, [isMobile]);
 
     return (
         <div>
@@ -229,27 +250,17 @@ const Home = () => {
                             <Button
                                 shape="circle"
                                 icon={<LeftOutlined />}
-                                onClick={() => scroll(-320)}
+                                onClick={() => scroll(isMobile ? -(scrollContainerRef.current?.clientWidth / 2 + 6) : -320)}
                                 style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.1)', border: 'none' }}
                             />
                             <Button
                                 shape="circle"
                                 icon={<RightOutlined />}
-                                onClick={() => scroll(320)}
+                                onClick={() => scroll(isMobile ? (scrollContainerRef.current?.clientWidth / 2 + 6) : 320)}
                                 style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.1)', border: 'none' }}
                             />
                         </div>
                     </div>
-                    {events.filter(e => e.isFeatured).length > 4 && (
-                        <Button
-                            type="link"
-                            style={{ color: '#1890ff', fontSize: '15px', display: 'flex', alignItems: 'center' }}
-                            onClick={() => navigate('/events')}
-                        >
-                            {t('home.viewAll')}
-                            <RightOutlined style={{ marginLeft: '4px' }} />
-                        </Button>
-                    )}
                 </div>
 
                 {loading ? (
@@ -267,7 +278,7 @@ const Home = () => {
                         style={{
                             display: 'flex',
                             overflowX: 'auto',
-                            gap: '24px',
+                            gap: isMobile ? '12px' : '24px',
                             paddingBottom: '16px',
                             scrollSnapType: 'x mandatory',
                             scrollbarWidth: 'none',   // Firefox
@@ -276,7 +287,15 @@ const Home = () => {
                         }}
                     >
                         {events.filter(e => e.isFeatured).map(event => (
-                            <div key={event.id} style={{ minWidth: '280px', maxWidth: '300px', flex: '0 0 auto', scrollSnapAlign: 'start' }}>
+                            <div 
+                                key={event.id} 
+                                style={{ 
+                                    minWidth: isMobile ? 'calc(50% - 6px)' : '280px', 
+                                    maxWidth: isMobile ? 'calc(50% - 6px)' : '300px', 
+                                    flex: '0 0 auto', 
+                                    scrollSnapAlign: 'start' 
+                                }}
+                            >
                                 <FeaturedEventCard event={event} />
                             </div>
                         ))}
@@ -299,18 +318,18 @@ const Home = () => {
                 </div>
 
                 {loading ? (
-                    <Row gutter={[24, 24]}>
+                    <Row gutter={isMobile ? [12, 12] : [24, 24]}>
                         {[1, 2, 3, 4, 5, 6, 7, 8].map(i => (
-                            <Col xs={24} sm={12} md={8} lg={6} key={i}>
-                                <Skeleton active avatar={{ shape: 'square', size: 200 }} paragraph={{ rows: 3 }} />
+                            <Col xs={12} sm={12} md={8} lg={6} key={i}>
+                                <Skeleton active avatar={{ shape: 'square', size: 120 }} paragraph={{ rows: 2 }} />
                             </Col>
                         ))}
                     </Row>
                 ) : recommendedEvents.length > 0 ? (
                     <>
-                        <Row gutter={[24, 24]}>
+                        <Row gutter={isMobile ? [12, 12] : [24, 24]}>
                             {recommendedEvents.map((event) => (
-                                <Col xs={24} sm={12} md={8} lg={6} key={event.id}>
+                                <Col xs={12} sm={12} md={8} lg={6} key={event.id}>
                                     <FeaturedEventCard event={event} />
                                 </Col>
                             ))}
@@ -338,6 +357,86 @@ const Home = () => {
                 ) : (
                     <Empty description={<span style={{ color: '#888' }}>{t('home.notEnoughEvents')}</span>} style={{ margin: '50px 0' }} />
                 )}
+            </div>
+
+            {/* Khám phá theo địa điểm */}
+            <div style={{ padding: '0 10px', marginTop: '40px', marginBottom: '60px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '20px' }}>
+                        <Title level={2} style={{ 
+                            margin: 0, 
+                            color: isDark ? '#e8e8e8' : '#1f1f1f',
+                            fontSize: isMobile ? '20px' : undefined
+                        }}>
+                            <CompassOutlined style={{ color: '#1890ff', marginRight: '8px' }} /> {t('home.exploreByLocation', 'Khám phá theo địa điểm')}
+                        </Title>
+                        {!isMobile && (
+                            <div style={{ display: 'flex', gap: '8px', marginLeft: '12px' }}>
+                                <Button
+                                    shape="circle"
+                                    icon={<LeftOutlined />}
+                                    onClick={() => scroll(-240, locationScrollRef)}
+                                    style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.1)', border: 'none' }}
+                                />
+                                <Button
+                                    shape="circle"
+                                    icon={<RightOutlined />}
+                                    onClick={() => scroll(240, locationScrollRef)}
+                                    style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.1)', border: 'none' }}
+                                />
+                            </div>
+                        )}
+                    </div>
+
+                <div 
+                    ref={locationScrollRef}
+                    className="hide-scrollbar"
+                    style={{ 
+                        display: 'flex', 
+                        gap: isMobile ? '12px' : '20px', 
+                        overflowX: 'auto', 
+                        paddingBottom: '20px',
+                        scrollBehavior: 'smooth'
+                    }}
+                >
+                    {[
+                        { name: 'Hà Nội', value: 'Hà Nội', image: '/images/locations/hanoi.png' },
+                        { name: 'TP. Hồ Chí Minh', value: 'Hồ Chí Minh', image: '/images/locations/hcmc.png' },
+                        { name: 'Đà Nẵng', value: 'Đà Nẵng', image: '/images/locations/danang.png' },
+                        { name: 'Khác', value: 'others', image: '/images/locations/other.png' },
+                    ].map((loc, idx) => (
+                        <div 
+                            key={idx}
+                            onClick={() => navigate(`/events?location=${encodeURIComponent(loc.value)}`)}
+                            style={{ 
+                                minWidth: isMobile ? '140px' : '220px', 
+                                height: isMobile ? '180px' : '280px',
+                                borderRadius: '16px',
+                                overflow: 'hidden',
+                                position: 'relative',
+                                cursor: 'pointer',
+                                flex: '0 0 auto',
+                                boxShadow: '0 4px 15px rgba(0,0,0,0.1)'
+                            }}
+                        >
+                            <img 
+                                src={loc.image} 
+                                alt={loc.name}
+                                style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.5s ease' }}
+                                onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.1)'}
+                                onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                            />
+                            <div style={{ 
+                                position: 'absolute', 
+                                bottom: 0, left: 0, right: 0, 
+                                padding: '20px 12px',
+                                background: 'linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 100%)',
+                                color: 'white'
+                            }}>
+                                <Text strong style={{ color: 'white', fontSize: isMobile ? '14px' : '18px' }}>{loc.name}</Text>
+                            </div>
+                        </div>
+                    ))}
+                </div>
             </div>
 
             {/* Danh mục (Chỉ hiển thị ở cuối trên Mobile) */}

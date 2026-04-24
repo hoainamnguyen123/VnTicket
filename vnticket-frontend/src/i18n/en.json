@@ -30,6 +30,7 @@
     "forYou": "For You",
     "notEnoughEvents": "Not enough events to suggest at the moment",
     "exploreMore": "Explore hundreds of other events",
+    "exploreByLocation": "Explore by location",
     "loadError": "Unable to load events!"
   },
   "footer": {
@@ -319,6 +320,7 @@
     "time": "Time",
     "location": "Location",
     "status": "Status",
+    "action": "Actions",
     "slider": "Slider",
     "featured": "Featured",
     "approved": "Approved",

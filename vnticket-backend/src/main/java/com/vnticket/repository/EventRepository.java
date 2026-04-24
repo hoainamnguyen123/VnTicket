@@ -20,9 +20,17 @@ public interface EventRepository extends JpaRepository<Event, Long> {
     Page<Event> findByTypeContainingIgnoreCaseAndStatus(String type, com.vnticket.enums.EventStatus status,
             Pageable pageable);
 
-    @Query("SELECT e FROM Event e WHERE LOWER(e.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(e.location) LIKE LOWER(CONCAT('%', :keyword, '%')) AND e.status = :status")
+    @Query("SELECT e FROM Event e WHERE (LOWER(e.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(e.location) LIKE LOWER(CONCAT('%', :keyword, '%'))) AND e.status = :status")
     Page<Event> searchEventsByStatus(@Param("keyword") String keyword,
             @Param("status") com.vnticket.enums.EventStatus status, Pageable pageable);
+
+    Page<Event> findByLocationContainingIgnoreCaseAndStatus(String location, com.vnticket.enums.EventStatus status, Pageable pageable);
+
+    @Query("SELECT e FROM Event e WHERE " +
+           "(LOWER(e.location) NOT LIKE '%hà nội%' AND " +
+           "LOWER(e.location) NOT LIKE '%hồ chí minh%' AND " +
+           "LOWER(e.location) NOT LIKE '%đà nẵng%') AND e.status = :status")
+    Page<Event> findByLocationOtherAndStatus(@Param("status") com.vnticket.enums.EventStatus status, Pageable pageable);
 
     List<Event> findByOrganizerId(Long organizerId);
 

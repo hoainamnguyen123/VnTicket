@@ -4,7 +4,7 @@ import { CalendarOutlined, FireOutlined, ClockCircleOutlined } from '@ant-design
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { ThemeContext } from '../context/ThemeContext';
-import { Tag } from 'antd';
+import { Tag, Grid } from 'antd';
 
 const { Title, Text } = Typography;
 
@@ -46,6 +46,9 @@ const FeaturedEventCard = ({ event }) => {
         statusBadge = <Tag color="default" style={{ borderRadius: '6px', margin: 0, fontWeight: 600 }}>{t('common.ended', '✅ Đã diễn ra')}</Tag>;
     }
 
+    const screens = Grid.useBreakpoint();
+    const isMobile = !screens.md;
+
     return (
         <div
             onClick={() => navigate(`/event/${event.id}`)}
@@ -53,13 +56,14 @@ const FeaturedEventCard = ({ event }) => {
                 cursor: 'pointer',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: '12px',
+                gap: isMobile ? '8px' : '12px',
                 boxShadow: isDark ? 'none' : '0 4px 12px rgba(0,0,0,0.06)',
                 width: '100%',
                 transition: 'transform 0.3s ease, box-shadow 0.3s ease',
                 background: isDark ? 'transparent' : '#fff',
-                borderRadius: '8px',
+                borderRadius: '12px',
                 overflow: 'hidden',
+                border: isDark ? `1px solid #303030` : 'none'
             }}
             onMouseOver={(e) => {
                 e.currentTarget.querySelector('img').style.transform = 'scale(1.05)';
@@ -68,8 +72,8 @@ const FeaturedEventCard = ({ event }) => {
                 e.currentTarget.querySelector('img').style.transform = 'scale(1)';
             }}
         >
-            <div style={{ width: '100%', aspectRatio: '16/9', borderRadius: '8px', overflow: 'hidden', position: 'relative' }}>
-                <div style={{ position: 'absolute', top: 8, right: 8, zIndex: 10 }}>
+            <div style={{ width: '100%', aspectRatio: '16/9', borderRadius: '12px', overflow: 'hidden', position: 'relative' }}>
+                <div style={{ position: 'absolute', top: 8, right: 8, zIndex: 10, transform: isMobile ? 'scale(0.85)' : 'none', transformOrigin: 'right top' }}>
                     {statusBadge}
                 </div>
                 <img
@@ -82,13 +86,13 @@ const FeaturedEventCard = ({ event }) => {
                 />
             </div>
 
-            <div style={{ padding: '0 12px 16px 12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <div style={{ padding: isMobile ? '0 8px 12px 8px' : '0 12px 16px 12px', display: 'flex', flexDirection: 'column', gap: isMobile ? '4px' : '8px' }}>
                 <Title level={5} style={{
                     color: isDark ? '#e8e8e8' : '#1f1f1f',
                     margin: 0,
-                    fontSize: '15px',
+                    fontSize: isMobile ? '13px' : '15px',
                     lineHeight: '1.4',
-                    height: '42px',
+                    height: isMobile ? '36px' : '42px',
                     overflow: 'hidden',
                     display: '-webkit-box',
                     WebkitLineClamp: 2,
@@ -98,11 +102,11 @@ const FeaturedEventCard = ({ event }) => {
                     {event.name}
                 </Title>
 
-                <Text style={{ color: '#2ecc71', fontSize: '14px', fontWeight: 'bold' }}>
+                <Text style={{ color: '#2ecc71', fontSize: isMobile ? '12px' : '14px', fontWeight: 'bold' }}>
                     {t('common.from')} {formatCurrency(minPrice || (event.price || 0))}
                 </Text>
 
-                <div style={{ display: 'flex', alignItems: 'center', color: '#a0a0a0', fontSize: '13px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', color: '#a0a0a0', fontSize: isMobile ? '11px' : '13px' }}>
                     <CalendarOutlined style={{ marginRight: '6px' }} />
                     <span>{formatCustomDate(event.startTime, i18n.language)}</span>
                 </div>

@@ -28,4 +28,6 @@ public interface BookingService {
     void processVnPayPayment(Long bookingId);
 
     void processBookingMessage(BookingMessageDTO message);
+
+    List<BookingDTO> getPaidBookingsByEvent(Long eventId);
 }

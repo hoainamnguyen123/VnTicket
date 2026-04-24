@@ -16,6 +16,7 @@ import AllEvents from './pages/AllEvents';
 import Admin from './pages/Admin';
 import CreateEvent from './pages/CreateEvent';
 import Profile from './pages/Profile';
+import EventStats from './pages/EventStats';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
 import RefundPolicy from './pages/RefundPolicy';
@@ -82,6 +83,8 @@ function App() {
               <Route path="/events" element={<AllEvents />} />
               <Route path="/history" element={<History />} />
               <Route path="/admin" element={<Admin />} />
+              <Route path="/admin/event-stats/:id" element={<EventStats />} />
+              <Route path="/my-events/stats/:id" element={<EventStats />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/privacy-policy" element={<PrivacyPolicy />} />
               <Route path="/terms-of-service" element={<TermsOfService />} />

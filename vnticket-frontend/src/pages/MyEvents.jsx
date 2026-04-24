@@ -80,12 +80,8 @@ const MyEvents = () => {
     const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
     const [isEditModalVisible, setIsEditModalVisible] = useState(false);
     const [isEventDetailVisible, setIsEventDetailVisible] = useState(false);
-    const [isStatsModalVisible, setIsStatsModalVisible] = useState(false);
-    
     const [viewingEvent, setViewingEvent] = useState(null);
     const [editingEvent, setEditingEvent] = useState(null);
-    const [eventStats, setEventStats] = useState(null);
-    const [selectedEventName, setSelectedEventName] = useState('');
     const [activeTab, setActiveTab] = useState('APPROVED');
 
     const [form] = Form.useForm();
@@ -167,15 +163,8 @@ const MyEvents = () => {
         }
     };
 
-    const handleViewEventStats = async (record) => {
-        try {
-            const res = await axiosClient.get(`/bookings/statistics/my-event/${record.id}`);
-            setEventStats(res.data);
-            setSelectedEventName(record.name);
-            setIsStatsModalVisible(true);
-        } catch (error) {
-            message.error(t('myEvents.statsError', 'Không thể tải thống kê'));
-        }
+    const handleViewEventStats = (record) => {
+        navigate(`/my-events/stats/${record.id}`);
     };
 
     const handleViewEventDetail = (record) => {
@@ -469,62 +458,6 @@ const MyEvents = () => {
                 )}
             </Modal>
 
-            {/* Event Statistics Modal */}
-            <Modal
-                title={t('myEvents.statsTitle', { name: selectedEventName })}
-                open={isStatsModalVisible}
-                onCancel={() => setIsStatsModalVisible(false)}
-                footer={[
-                    <Button key="close" type="primary" onClick={() => setIsStatsModalVisible(false)}>
-                        {t('common.close', 'Đóng')}
-                    </Button>
-                ]}
-                width={800}
-            >
-                {eventStats ? (
-                    <Row gutter={[16, 16]}>
-                        <Col xs={24} sm={12}>
-                            <Card>
-                                <Statistic
-                                    title={t('myEvents.totalBooked', 'Số vé đã đặt')}
-                                    value={eventStats.totalTicketsBooked}
-                                />
-                            </Card>
-                        </Col>
-                        <Col xs={24} sm={12}>
-                            <Card>
-                                <Statistic
-                                    title={t('myEvents.totalPaid', 'Số vé đã thanh toán')}
-                                    value={eventStats.totalTicketsPaid}
-                                    valueStyle={{ color: '#3f8600' }}
-                                />
-                            </Card>
-                        </Col>
-                        <Col xs={24} sm={12}>
-                            <Card>
-                                <Statistic
-                                    title={t('myEvents.totalRevenue', 'Tổng doanh thu (Tạm tính)')}
-                                    value={eventStats.totalRevenue}
-                                    suffix="VNĐ"
-                                    valueStyle={{ color: '#cf1322' }}
-                                />
-                            </Card>
-                        </Col>
-                        <Col xs={24} sm={12}>
-                            <Card>
-                                <Statistic
-                                    title={t('myEvents.netRevenue', 'Thực nhận (Sau phí 2%)')}
-                                    value={eventStats.totalRevenue - (eventStats.totalRevenue * 0.02)}
-                                    suffix="VNĐ"
-                                    valueStyle={{ color: '#1890ff', fontWeight: 'bold' }}
-                                />
-                            </Card>
-                        </Col>
-                    </Row>
-                ) : (
-                    <p>{t('myEvents.loadingData', 'Đang tải dữ liệu...')}</p>
-                )}
-            </Modal>
         </div>
     );
 };

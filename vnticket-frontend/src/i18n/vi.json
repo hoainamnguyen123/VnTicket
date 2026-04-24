@@ -30,6 +30,7 @@
     "forYou": "Dành cho bạn",
     "notEnoughEvents": "Chưa có đủ sự kiện để gợi ý lúc này",
     "exploreMore": "Khám phá thêm hàng trăm sự kiện khác",
+    "exploreByLocation": "Khám phá theo địa điểm",
     "loadError": "Không thể tải danh sách sự kiện!"
   },
   "footer": {
@@ -320,6 +321,7 @@
     "time": "Thời Gian",
     "location": "Địa Điểm",
     "status": "Trạng Thái",
+    "action": "Thao tác",
     "slider": "Slider",
     "featured": "Nổi Bật",
     "approved": "Đã duyệt",

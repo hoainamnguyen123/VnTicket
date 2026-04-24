@@ -27,16 +27,17 @@ public class EventController {
     public ResponseEntity<ApiResponse<Page<EventDTO>>> getAllEvents(
             @RequestParam(required = false) String type,
             @RequestParam(required = false) String search,
+            @RequestParam(required = false) String location,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "id") String sortBy,
             @RequestParam(defaultValue = "DESC") String direction) {
 
-        log.info("Fetching events with type: {}, search: {}, page: {}, size: {}, sort: {}, dir: {}", 
-                type, search, page, size, sortBy, direction);
+        log.info("Fetching events with type: {}, search: {}, location: {}, page: {}, size: {}, sort: {}, dir: {}", 
+                type, search, location, page, size, sortBy, direction);
         Sort.Direction sortDir = Sort.Direction.fromString(direction.toUpperCase());
         Pageable pageable = PageRequest.of(page, size, Sort.by(sortDir, sortBy));
-        Page<EventDTO> events = eventService.getApprovedEvents(type, search, pageable);
+        Page<EventDTO> events = eventService.getApprovedEvents(type, search, location, pageable);
         return ResponseEntity.ok(ApiResponse.success("Fetched events", events));
     }
 

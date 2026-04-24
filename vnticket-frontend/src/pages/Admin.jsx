@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { Table, Button, Modal, Form, Input, Select, DatePicker, message, Space, Popconfirm, Row, Col, Card, Statistic, Tag, Typography, Image, Divider, Tabs, Badge, Checkbox } from 'antd';
+import { Table, Button, Modal, Form, Input, Select, DatePicker, message, Space, Popconfirm, Row, Col, Card, Statistic, Tag, Typography, Image, Divider, Tabs, Badge, Checkbox, Grid, Empty } from 'antd';
 import { EditOutlined, DeleteOutlined, PlusOutlined, MinusCircleOutlined, DollarOutlined, TagsOutlined, CheckCircleOutlined, BarChartOutlined, UserOutlined, EnvironmentOutlined, ClockCircleOutlined, ExclamationCircleOutlined, MailOutlined, PhoneOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { useTranslation } from 'react-i18next';
@@ -13,6 +13,8 @@ const { Option } = Select;
 const { TextArea } = Input;
 
 const Admin = () => {
+    const screens = Grid.useBreakpoint();
+    const isMobile = !screens.md;
     const { isDark } = useContext(ThemeContext);
     const { t } = useTranslation();
     const navigate = useNavigate();
@@ -23,9 +25,6 @@ const Admin = () => {
     const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(false);
     const [isModalVisible, setIsModalVisible] = useState(false);
-    const [isStatsModalVisible, setIsStatsModalVisible] = useState(false);
-    const [eventStats, setEventStats] = useState(null);
-    const [selectedEventName, setSelectedEventName] = useState('');
     const [editingEvent, setEditingEvent] = useState(null);
     const [form] = Form.useForm();
     const [isRejectModalVisible, setIsRejectModalVisible] = useState(false);
@@ -98,15 +97,8 @@ const Admin = () => {
         setPagination(newPagination);
     };
 
-    const handleViewEventStats = async (record) => {
-        try {
-            const res = await axiosClient.get(`/bookings/statistics/event/${record.id}`);
-            setEventStats(res.data);
-            setSelectedEventName(record.name);
-            setIsStatsModalVisible(true);
-        } catch (error) {
-            message.error(t('admin.loadStatsError'));
-        }
+    const handleViewEventStats = (record) => {
+        navigate(`/admin/event-stats/${record.id}`);
     };
 
     const handleAdd = () => {
@@ -267,12 +259,80 @@ const Admin = () => {
                 let text = status === 'APPROVED' ? t('admin.approved') : status === 'PENDING' ? t('admin.pending') : status === 'PENDING_EDIT' ? t('admin.pendingEdit', 'Chờ duyệt (Chỉnh sửa)') : t('admin.rejected');
                 return <Tag color={color}>{text}</Tag>;
             }
-        }
+        },
     ];
 
+    const renderEventList = (dataSource) => {
+        if (isMobile) {
+            return (
+                <Row gutter={[16, 16]}>
+                    {dataSource.map(event => (
+                        <Col xs={24} key={event.id}>
+                            <Card 
+                                size="small" 
+                                hoverable
+                                onClick={() => handleViewEventDetail(event)}
+                                actions={[
+                                    <EditOutlined key="edit" onClick={(e) => { e.stopPropagation(); handleEdit(event); }} />,
+                                    <BarChartOutlined key="stats" onClick={(e) => { e.stopPropagation(); handleViewEventStats(event); }} />,
+                                    <Popconfirm
+                                        key="delete"
+                                        title={t('admin.deleteConfirm')}
+                                        onConfirm={() => handleDelete(event.id)}
+                                    >
+                                        <DeleteOutlined style={{ color: '#ff4d4f' }} onClick={(e) => e.stopPropagation()} />
+                                    </Popconfirm>
+                                ]}
+                            >
+                                <div style={{ display: 'flex', gap: '12px' }}>
+                                    <Image 
+                                        src={event.imageUrl} 
+                                        width={80} 
+                                        height={80} 
+                                        style={{ objectFit: 'cover', borderRadius: 4 }} 
+                                        preview={false} 
+                                    />
+                                    <div style={{ flex: 1 }}>
+                                        <div style={{ fontWeight: 'bold', fontSize: '15px', marginBottom: '4px' }}>{event.name}</div>
+                                        <div style={{ fontSize: '12px', color: '#888' }}>
+                                            <ClockCircleOutlined /> {dayjs(event.startTime).format('DD/MM/YYYY HH:mm')}
+                                        </div>
+                                        <div style={{ fontSize: '12px', color: '#888', marginBottom: '8px' }}>
+                                            <EnvironmentOutlined /> {event.location?.split(',').slice(-1)[0]}
+                                        </div>
+                                        <Space wrap size={4}>
+                                            <Tag color={event.status === 'APPROVED' ? 'green' : (event.status === 'PENDING' ? 'gold' : 'red')} style={{ fontSize: '10px' }}>
+                                                {event.status === 'APPROVED' ? t('admin.approved') : event.status === 'PENDING' ? t('admin.pending') : t('admin.rejected')}
+                                            </Tag>
+                                            {event.isSlider && <Tag color="magenta" style={{ fontSize: '10px' }}>Slider</Tag>}
+                                            {event.isFeatured && <Tag color="geekblue" style={{ fontSize: '10px' }}>{t('admin.featured')}</Tag>}
+                                        </Space>
+                                    </div>
+                                </div>
+                            </Card>
+                        </Col>
+                    ))}
+                    {dataSource.length === 0 && <Col span={24}><Empty /></Col>}
+                </Row>
+            );
+        }
+
+        return (
+            <Table
+                columns={columns}
+                dataSource={dataSource}
+                rowKey="id"
+                loading={loading}
+                pagination={{ pageSize: 10 }}
+                scroll={{ x: 'max-content' }}
+                onRow={(record) => ({ onClick: () => handleViewEventDetail(record), style: { cursor: 'pointer' } })}
+            />
+        );
+    };
+
     return (
-        <div>
-            <Tabs defaultActiveKey="DASHBOARD" size="large" style={{ marginBottom: 24 }}>
+        <div style={{ padding: isMobile ? '0 10px' : 0 }}>
+            <Tabs defaultActiveKey="DASHBOARD" size={isMobile ? 'middle' : 'large'} style={{ marginBottom: 24 }}>
                 <Tabs.TabPane tab={<span><BarChartOutlined /> {t('admin.dashboard')}</span>} key="DASHBOARD">
                     {stats && (
                         <div style={{ marginBottom: 32, padding: '16px 0' }}>
@@ -333,12 +393,12 @@ const Admin = () => {
 
                             <Row gutter={[16, 16]} style={{ marginTop: 24 }}>
                                 <Col xs={24} lg={16}>
-                                    <Card title={t('admin.topRevenueEvents')} className="dashboard-card" bodyStyle={{ height: 350, padding: '20px 0' }} headStyle={{ borderBottom: isDark ? '1px solid #303030' : '1px solid #f0f0f0' }}>
+                                    <Card title={t('admin.topRevenueEvents')} className="dashboard-card" bodyStyle={{ height: isMobile ? 300 : 350, padding: '20px 0' }} headStyle={{ borderBottom: isDark ? '1px solid #303030' : '1px solid #f0f0f0' }}>
                                         <ResponsiveContainer width="100%" height="100%">
-                                            <BarChart data={eventRevenueData} layout="vertical" margin={{ top: 20, right: 30, left: 120, bottom: 20 }}>
+                                            <BarChart data={eventRevenueData} layout="vertical" margin={{ top: 20, right: 30, left: isMobile ? 60 : 120, bottom: 20 }}>
                                                 <CartesianGrid strokeDasharray="3 3" horizontal={false} />
                                                 <XAxis type="number" tickFormatter={(val) => `${val / 1000000}M`} />
-                                                <YAxis type="category" dataKey="name" tick={{ fontSize: 13 }} width={110} />
+                                                <YAxis type="category" dataKey="name" tick={{ fontSize: isMobile ? 10 : 13 }} width={isMobile ? 50 : 110} />
                                                 <RechartsTooltip formatter={(value) => `${value.toLocaleString()} VNĐ`} cursor={{ fill: 'transparent' }} contentStyle={{ backgroundColor: isDark ? '#1f1f1f' : '#fff', borderColor: isDark ? '#303030' : '#ccc', color: isDark ? '#e8e8e8' : '#000' }} itemStyle={{ color: isDark ? '#e8e8e8' : '#000' }} />
                                                 <Bar dataKey="revenue" fill="#1890ff" radius={[0, 4, 4, 0]} barSize={30}>
                                                     {eventRevenueData.map((entry, index) => (
@@ -382,15 +442,15 @@ const Admin = () => {
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: '16px' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                    <h2 style={{ margin: 0 }}>{t('admin.eventList')}</h2>
+                                    <h2 style={{ margin: 0, fontSize: isMobile ? '18px' : '24px' }}>{t('admin.eventList')}</h2>
                                     <Input.Search
                                         placeholder={t('admin.searchPlaceholder', 'Tìm tên, BTC, địa điểm...')}
                                         allowClear
                                         onChange={(e) => setSearchText(e.target.value)}
-                                        style={{ width: 300 }}
+                                        style={{ width: isMobile ? '100%' : 300 }}
                                     />
                                 </div>
-                                <Space size="large">
+                                <Space size={isMobile ? 'middle' : 'large'} wrap>
                                     <Checkbox 
                                         checked={showOnlySlider} 
                                         onChange={(e) => setShowOnlySlider(e.target.checked)}
@@ -418,17 +478,7 @@ const Admin = () => {
                                 {
                                     label: <span><CheckCircleOutlined /> {t('admin.approved')} ({displayApproved.length})</span>,
                                     key: 'APPROVED',
-                                    children: (
-                                        <Table
-                                            columns={columns}
-                                            dataSource={displayApproved}
-                                            rowKey="id"
-                                            loading={loading}
-                                            pagination={{ pageSize: 10 }}
-                                            scroll={{ x: 'max-content' }}
-                                            onRow={(record) => ({ onClick: () => handleViewEventDetail(record), style: { cursor: 'pointer' } })}
-                                        />
-                                    )
+                                    children: renderEventList(displayApproved)
                                 },
                                 {
                                     label: (
@@ -438,32 +488,12 @@ const Admin = () => {
                                         </span>
                                     ),
                                     key: 'PENDING',
-                                    children: (
-                                        <Table
-                                            columns={columns}
-                                            dataSource={displayPending}
-                                            rowKey="id"
-                                            loading={loading}
-                                            pagination={{ pageSize: 10 }}
-                                            scroll={{ x: 'max-content' }}
-                                            onRow={(record) => ({ onClick: () => handleViewEventDetail(record), style: { cursor: 'pointer' } })}
-                                        />
-                                    )
+                                    children: renderEventList(displayPending)
                                 },
                                 {
                                     label: <span><MinusCircleOutlined /> {t('admin.rejected')} ({displayRejected.length})</span>,
                                     key: 'REJECTED',
-                                    children: (
-                                        <Table
-                                            columns={columns}
-                                            dataSource={displayRejected}
-                                            rowKey="id"
-                                            loading={loading}
-                                            pagination={{ pageSize: 10 }}
-                                            scroll={{ x: 'max-content' }}
-                                            onRow={(record) => ({ onClick: () => handleViewEventDetail(record), style: { cursor: 'pointer' } })}
-                                        />
-                                    )
+                                    children: renderEventList(displayRejected)
                                 }
                             ]}
                         />
@@ -481,69 +511,13 @@ const Admin = () => {
                 isUser={false}
             />
 
-            <Modal
-                title={t('admin.eventStats', { name: selectedEventName })}
-                open={isStatsModalVisible}
-                onCancel={() => setIsStatsModalVisible(false)}
-                footer={[
-                    <Button key="close" type="primary" onClick={() => setIsStatsModalVisible(false)}>
-                        {t('common.close')}
-                    </Button>
-                ]}
-                width={800}
-            >
-                {eventStats ? (
-                    <Row gutter={[16, 16]}>
-                        <Col span={12}>
-                            <Card>
-                                <Statistic
-                                    title={t('admin.bookedTickets')}
-                                    value={eventStats.totalTicketsBooked}
-                                />
-                            </Card>
-                        </Col>
-                        <Col span={12}>
-                            <Card>
-                                <Statistic
-                                    title={t('admin.paidTickets')}
-                                    value={eventStats.totalTicketsPaid}
-                                    prefix={<CheckCircleOutlined />}
-                                    valueStyle={{ color: '#3f8600' }}
-                                />
-                            </Card>
-                        </Col>
-                        <Col span={12}>
-                            <Card>
-                                <Statistic
-                                    title={t('admin.totalBookings')}
-                                    value={eventStats.totalBookings}
-                                    prefix={<TagsOutlined />}
-                                />
-                            </Card>
-                        </Col>
-                        <Col span={12}>
-                            <Card>
-                                <Statistic
-                                    title={t('admin.totalRevenue')}
-                                    value={eventStats.totalRevenue}
-                                    suffix="VNĐ"
-                                    prefix={<DollarOutlined />}
-                                    valueStyle={{ color: '#cf1322' }}
-                                />
-                            </Card>
-                        </Col>
-                    </Row>
-                ) : (
-                    <p>{t('admin.loadingData')}</p>
-                )}
-            </Modal>
 
             <Modal
                 title={t('admin.eventDetails', { name: viewingEvent?.name || '' })}
                 open={isEventDetailVisible}
                 onCancel={() => setIsEventDetailVisible(false)}
-                width={1000}
-                style={{ top: 20 }}
+                width={isMobile ? '100%' : 1000}
+                style={{ top: isMobile ? 0 : 20 }}
                 footer={viewingEvent ? (
                     (viewingEvent.status === 'PENDING' || viewingEvent.status === 'PENDING_EDIT') ? [
                         <Button key="reject" type="primary" danger onClick={() => {
@@ -587,9 +561,9 @@ const Admin = () => {
                 ) : null}
             >
                 {viewingEvent && (
-                    <div style={{ padding: '20px 0' }}>
+                    <div style={{ padding: isMobile ? '10px 0' : '20px 0' }}>
                         <Row gutter={[32, 24]}>
-                            <Col span={10}>
+                            <Col xs={24} md={10}>
                                 <Image
                                     src={viewingEvent.imageUrl}
                                     alt={viewingEvent.name}
@@ -605,8 +579,8 @@ const Admin = () => {
                                                     <Image
                                                         key={idx}
                                                         src={img}
-                                                        width={100}
-                                                        height={70}
+                                                        width={isMobile ? 80 : 100}
+                                                        height={isMobile ? 60 : 70}
                                                         style={{ objectFit: 'cover', borderRadius: 4 }}
                                                         fallback="https://via.placeholder.com/100x70?text=Error"
                                                     />
@@ -616,8 +590,8 @@ const Admin = () => {
                                     </div>
                                 )}
                             </Col>
-                            <Col span={14}>
-                                <Typography.Title level={2}>{viewingEvent.name}</Typography.Title>
+                            <Col xs={24} md={14}>
+                                <Typography.Title level={isMobile ? 3 : 2}>{viewingEvent.name}</Typography.Title>
                                 <Space direction="vertical" size="small" style={{ width: '100%' }}>
                                     <Typography.Paragraph>
                                         <UserOutlined style={{ marginRight: 8, color: '#1890ff' }} />
@@ -644,17 +618,16 @@ const Admin = () => {
                                         <strong>{t('admin.time')}</strong> {dayjs(viewingEvent.startTime).format('HH:mm - DD/MM/YYYY')}
                                     </Typography.Paragraph>
                                 </Space>
-
                                 <Divider />
                                 <Typography.Title level={4}>{t('admin.detailedDesc')}</Typography.Title>
                                 <Typography.Paragraph style={{ whiteSpace: 'pre-line' }}>{viewingEvent.description}</Typography.Paragraph>
-
                                 <Divider />
                                 <Typography.Title level={4}>{t('admin.expectedPrices')}</Typography.Title>
                                 <Table
                                     dataSource={viewingEvent.ticketTypes || []}
                                     rowKey={(item, index) => item.id || index}
                                     pagination={false}
+                                    scroll={{ x: 'max-content' }}
                                     columns={[
                                         { title: t('admin.zone'), dataIndex: 'zoneName', key: 'zoneName', render: (text) => <strong>{text}</strong> },
                                         { title: t('admin.price'), dataIndex: 'price', key: 'price', render: (price) => <span style={{ color: '#cf1322', fontWeight: 'bold' }}>{price?.toLocaleString()} VNĐ</span> },

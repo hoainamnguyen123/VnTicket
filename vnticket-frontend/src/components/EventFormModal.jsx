@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Form, Input, Select, DatePicker, Row, Col, Space, Button, Alert, Switch } from 'antd';
+import { Modal, Form, Input, Select, DatePicker, Row, Col, Space, Button, Alert, Switch, Grid } from 'antd';
 import { MinusCircleOutlined, PlusOutlined } from '@ant-design/icons';
 import axios from 'axios';
 import ImageUploadInput from './ImageUploadInput';
@@ -8,6 +8,14 @@ const { Option } = Select;
 const { TextArea } = Input;
 
 const EventFormModal = ({ visible, onCancel, onOk, form, title, editingEvent, isUser }) => {
+    const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth < 768);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
     const [provinces, setProvinces] = useState([]);
     const [wards, setWards] = useState([]);
 
@@ -39,7 +47,28 @@ const EventFormModal = ({ visible, onCancel, onOk, form, title, editingEvent, is
             onCancel={onCancel}
             okText={isUser ? "Gửi Yêu Cầu" : "Lưu"}
             cancelText="Hủy"
-            width={800}
+            width={isMobile ? '95%' : 800}
+            style={{ top: isMobile ? 10 : 20 }}
+            bodyStyle={{ 
+                maxHeight: isMobile ? 'calc(100vh - 180px)' : '75vh', 
+                overflowY: 'auto',
+                paddingBottom: isMobile ? 80 : 0 
+            }}
+            maskClosable={false}
+            centered={isMobile ? false : true}
+            footer={[
+                <div key="footer-actions" style={{ 
+                    padding: isMobile ? '0 8px 24px' : '0',
+                    display: 'flex',
+                    justifyContent: 'flex-end',
+                    gap: '8px'
+                }}>
+                    <Button onClick={onCancel}>Hủy</Button>
+                    <Button type="primary" onClick={onOk}>
+                        {isUser ? "Gửi Yêu Cầu" : "Lưu"}
+                    </Button>
+                </div>
+            ]}
         >
             {isUser && !editingEvent && (
                 <Alert
@@ -57,8 +86,8 @@ const EventFormModal = ({ visible, onCancel, onOk, form, title, editingEvent, is
                 <Form.Item name="organizerName" label="Tên Ban Tổ Chức" rules={[{ required: true, message: 'Vui lòng nhập tên ban tổ chức!' }]}>
                     <Input placeholder="VD: Công ty TNHH Sự Kiện ABC" />
                 </Form.Item>
-                <Row gutter={16}>
-                    <Col span={12}>
+                <Row gutter={[16, 16]}>
+                    <Col xs={24} sm={12}>
                         <Form.Item name="type" label="Loại Sự Kiện" rules={[{ required: true, message: 'Vui lòng chọn hoặc nhập loại!' }]}>
                             <Select placeholder="Chọn loại sự kiện">
                                 <Option value="Âm nhạc">Âm nhạc</Option>
@@ -70,7 +99,7 @@ const EventFormModal = ({ visible, onCancel, onOk, form, title, editingEvent, is
                             </Select>
                         </Form.Item>
                     </Col>
-                    <Col span={12}>
+                    <Col xs={24} sm={12}>
                         <Form.Item name="startTime" label="Thời Gian" rules={[{ required: true, message: 'Vui lòng chọn thời gian!' }]}>
                             <DatePicker showTime format="YYYY-MM-DD HH:mm:ss" style={{ width: '100%' }} />
                         </Form.Item>
@@ -115,8 +144,8 @@ const EventFormModal = ({ visible, onCancel, onOk, form, title, editingEvent, is
                 </Form.List>
 
                 <h3>Địa Chỉ tổ chức sự kiện</h3>
-                <Row gutter={16}>
-                    <Col span={8}>
+                <Row gutter={[16, 16]}>
+                    <Col xs={24} sm={8}>
                         <Form.Item name="province" label="Tỉnh/Thành phố" rules={[{ required: true, message: 'Chọn Tỉnh/Thành!' }]}>
                             <Select
                                 showSearch
@@ -133,7 +162,7 @@ const EventFormModal = ({ visible, onCancel, onOk, form, title, editingEvent, is
                             </Select>
                         </Form.Item>
                     </Col>
-                    <Col span={8}>
+                    <Col xs={24} sm={8}>
                         <Form.Item name="ward" label="Phường/Xã" rules={[{ required: true, message: 'Chọn Phường/Xã!' }]}>
                             <Select
                                 showSearch
@@ -149,7 +178,7 @@ const EventFormModal = ({ visible, onCancel, onOk, form, title, editingEvent, is
                             </Select>
                         </Form.Item>
                     </Col>
-                    <Col span={8}>
+                    <Col xs={24} sm={8}>
                         <Form.Item name="detailAddress" label="Địa chỉ chi tiết" rules={[{ required: true, message: 'Nhập số nhà/tên đường!' }]}>
                             <Input placeholder="Số nhà, đường..." />
                         </Form.Item>
@@ -161,13 +190,13 @@ const EventFormModal = ({ visible, onCancel, onOk, form, title, editingEvent, is
                 </Form.Item>
 
                 {!isUser && (
-                    <Row gutter={16}>
-                        <Col span={12}>
+                    <Row gutter={[16, 16]}>
+                        <Col xs={24} sm={12}>
                             <Form.Item name="isSlider" label="Hiển thị trên Slider chính" valuePropName="checked">
                                 <Switch checkedChildren="Bật" unCheckedChildren="Tắt" />
                             </Form.Item>
                         </Col>
-                        <Col span={12}>
+                        <Col xs={24} sm={12}>
                             <Form.Item name="isFeatured" label="Đánh dấu Sự Kiện Nổi Bật" valuePropName="checked">
                                 <Switch checkedChildren="Bật" unCheckedChildren="Tắt" />
                             </Form.Item>
@@ -182,30 +211,51 @@ const EventFormModal = ({ visible, onCancel, onOk, form, title, editingEvent, is
                             {(fields, { add, remove }) => (
                                 <>
                                     {fields.map(({ key, name, ...restField }) => (
-                                        <Space key={key} style={{ display: 'flex', marginBottom: 8 }} align="baseline">
-                                            <Form.Item
-                                                {...restField}
-                                                name={[name, 'zoneName']}
-                                                rules={[{ required: true, message: 'Nhập tên' }]}
-                                            >
-                                                <Input placeholder="Khu vực (VD: VIP)" />
-                                            </Form.Item>
-                                            <Form.Item
-                                                {...restField}
-                                                name={[name, 'price']}
-                                                rules={[{ required: true, message: 'Nhập giá' }]}
-                                            >
-                                                <Input type="number" placeholder="Giá vé" />
-                                            </Form.Item>
-                                            <Form.Item
-                                                {...restField}
-                                                name={[name, 'totalQuantity']}
-                                                rules={[{ required: true, message: 'Nhập SL' }]}
-                                            >
-                                                <Input type="number" placeholder="Tổng số lượng" />
-                                            </Form.Item>
-                                            <MinusCircleOutlined onClick={() => remove(name)} style={{ color: 'red' }} />
-                                        </Space>
+                                        <div key={key} style={{ 
+                                            padding: isMobile ? '12px' : '0', 
+                                            background: isMobile ? '#f5f5f5' : 'transparent',
+                                            borderRadius: isMobile ? '8px' : '0',
+                                            marginBottom: 16
+                                        }}>
+                                            <Row gutter={[8, 8]} align="middle">
+                                                <Col xs={24} sm={8}>
+                                                    <Form.Item
+                                                        {...restField}
+                                                        name={[name, 'zoneName']}
+                                                        rules={[{ required: true, message: 'Nhập tên' }]}
+                                                        noStyle={!isMobile}
+                                                        label={isMobile ? "Tên khu vực" : ""}
+                                                    >
+                                                        <Input placeholder="Khu vực (VD: VIP)" />
+                                                    </Form.Item>
+                                                </Col>
+                                                <Col xs={11} sm={7}>
+                                                    <Form.Item
+                                                        {...restField}
+                                                        name={[name, 'price']}
+                                                        rules={[{ required: true, message: 'Nhập giá' }]}
+                                                        noStyle={!isMobile}
+                                                        label={isMobile ? "Giá vé" : ""}
+                                                    >
+                                                        <Input type="number" placeholder="Giá vé" />
+                                                    </Form.Item>
+                                                </Col>
+                                                <Col xs={11} sm={7}>
+                                                    <Form.Item
+                                                        {...restField}
+                                                        name={[name, 'totalQuantity']}
+                                                        rules={[{ required: true, message: 'Nhập SL' }]}
+                                                        noStyle={!isMobile}
+                                                        label={isMobile ? "Số lượng" : ""}
+                                                    >
+                                                        <Input type="number" placeholder="Tổng số lượng" />
+                                                    </Form.Item>
+                                                </Col>
+                                                <Col xs={2} sm={2} style={{ textAlign: 'right' }}>
+                                                    <MinusCircleOutlined onClick={() => remove(name)} style={{ color: 'red', fontSize: '20px' }} />
+                                                </Col>
+                                            </Row>
+                                        </div>
                                     ))}
                                     <Form.Item>
                                         <Button type="dashed" onClick={() => add()} block icon={<PlusOutlined />}>

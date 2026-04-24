@@ -8,7 +8,7 @@ import com.vnticket.entity.Event;
 import com.vnticket.enums.EventStatus;
 
 public interface EventService {
-    Page<EventDTO> getApprovedEvents(String type, String search, Pageable pageable);
+    Page<EventDTO> getApprovedEvents(String type, String search, String location, Pageable pageable);
 
     Page<EventDTO> getAdminAllEvents(String type, String search, Pageable pageable);
 

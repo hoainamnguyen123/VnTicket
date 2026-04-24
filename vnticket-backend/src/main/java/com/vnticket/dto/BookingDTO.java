@@ -18,6 +18,8 @@ public class BookingDTO {
     private Long id;
     private Long userId;
     private String username;
+    private String email;
+    private String phone;
     private Long eventId;
     private String eventName;
     private LocalDateTime eventStartTime;

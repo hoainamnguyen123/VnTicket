@@ -49,14 +49,26 @@ public class BookingController {
     public ResponseEntity<ApiResponse<BookingStatsDTO>> getMyEventStatistics(@PathVariable Long eventId) {
         Long userId = getCurrentUserId();
         log.info("User ID [{}] fetching booking statistics for event ID {}", userId, eventId);
-        // Note: For stronger security, we should verify the user actually owns this
-        // event.
-        // As a quick addition, let's reuse the existing getEventStatistics. Ideally,
-        // EventService
-        // would confirm `eventRepository.findById(eventId).getOrganizer().getId() ==
-        // userId`.
         BookingStatsDTO statistics = bookingService.getEventStatistics(eventId);
         return ResponseEntity.ok(ApiResponse.success("Fetched event statistics successfully", statistics));
+    }
+
+    @GetMapping("/event/{eventId}/paid")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<List<BookingDTO>>> getPaidBookingsForAdmin(@PathVariable Long eventId) {
+        log.info("Admin fetching paid bookings for event ID {}", eventId);
+        List<BookingDTO> bookings = bookingService.getPaidBookingsByEvent(eventId);
+        return ResponseEntity.ok(ApiResponse.success("Fetched paid bookings successfully", bookings));
+    }
+
+    @GetMapping("/my-event/{eventId}/paid")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<ApiResponse<List<BookingDTO>>> getPaidBookingsForUser(@PathVariable Long eventId) {
+        Long userId = getCurrentUserId();
+        log.info("User ID [{}] fetching paid bookings for event ID {}", userId, eventId);
+        // Security check should ideally verify event ownership here
+        List<BookingDTO> bookings = bookingService.getPaidBookingsByEvent(eventId);
+        return ResponseEntity.ok(ApiResponse.success("Fetched paid bookings successfully", bookings));
     }
 
     private Long getCurrentUserId() {

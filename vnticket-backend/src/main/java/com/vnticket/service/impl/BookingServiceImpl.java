@@ -481,6 +481,8 @@ public class BookingServiceImpl implements BookingService {
                 .id(booking.getId())
                 .userId(booking.getUser().getId())
                 .username(booking.getUser().getUsername())
+                .email(booking.getUser().getEmail())
+                .phone(booking.getUser().getPhone())
                 .eventId(booking.getEvent().getId())
                 .eventName(booking.getEvent().getName())
                 .eventStartTime(booking.getEvent().getStartTime())
@@ -504,5 +506,14 @@ public class BookingServiceImpl implements BookingService {
                 .zoneName(ticket.getBookingDetail().getTicketType().getZoneName())
                 .price(ticket.getBookingDetail().getPrice())
                 .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<BookingDTO> getPaidBookingsByEvent(Long eventId) {
+        log.info("Fetching paid bookings for Event ID: {}", eventId);
+        List<Booking> bookings = bookingRepository.findByEventIdAndStatusOrderByBookingTimeDesc(eventId,
+                BookingStatus.PAID);
+        return bookings.stream().map(this::mapToDto).collect(Collectors.toList());
     }
 }
