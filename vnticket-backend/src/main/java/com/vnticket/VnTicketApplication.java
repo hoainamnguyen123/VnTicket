@@ -8,12 +8,9 @@ import org.springframework.cache.annotation.EnableCaching;
 import jakarta.annotation.PostConstruct;
 import java.util.TimeZone;
 
-import org.springframework.scheduling.annotation.EnableAsync;
-
 @SpringBootApplication
 @EnableScheduling
 @EnableCaching
-@EnableAsync
 public class VnTicketApplication {
 
     @PostConstruct
@@ -26,20 +23,4 @@ public class VnTicketApplication {
         SpringApplication.run(VnTicketApplication.class, args);
     }
 
-    @org.springframework.context.annotation.Bean
-    public org.springframework.boot.CommandLineRunner updateOldUsers(com.vnticket.repository.UserRepository userRepository) {
-        return args -> {
-            System.out.println("--- START DB MIGRATION FOR EXISTING USERS ---");
-            java.util.List<com.vnticket.entity.User> users = userRepository.findAll();
-            int count = 0;
-            for (com.vnticket.entity.User user : users) {
-                if (user.getEmailVerified() == null || !user.getEmailVerified()) {
-                    user.setEmailVerified(true);
-                    userRepository.save(user);
-                    count++;
-                }
-            }
-            System.out.println("--- DB MIGRATION COMPLETED: Updated " + count + " users ---");
-        };
-    }
 }

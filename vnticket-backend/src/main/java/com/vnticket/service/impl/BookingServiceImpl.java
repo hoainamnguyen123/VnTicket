@@ -359,7 +359,15 @@ public class BookingServiceImpl implements BookingService {
         log.info("Mock payment successful: bookingId={}", bookingId);
 
         // Gửi email xác nhận vé (bất đồng bộ, không block response)
-        emailService.sendTicketConfirmationEmail(savedBooking);
+        // Đảm bảo chỉ gọi gửi email sau khi transaction đã thực sự COMMIT vào database
+        org.springframework.transaction.support.TransactionSynchronizationManager.registerSynchronization(
+            new org.springframework.transaction.support.TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    emailService.sendTicketConfirmationEmail(savedBooking);
+                }
+            }
+        );
 
         return mapToDto(savedBooking);
     }
@@ -384,7 +392,15 @@ public class BookingServiceImpl implements BookingService {
         log.info("VNPay payment confirmed: bookingId={}", bookingId);
 
         // Gửi email xác nhận vé (bất đồng bộ, không block response)
-        emailService.sendTicketConfirmationEmail(savedBooking);
+        // Đảm bảo chỉ gọi gửi email sau khi transaction đã thực sự COMMIT vào database
+        org.springframework.transaction.support.TransactionSynchronizationManager.registerSynchronization(
+            new org.springframework.transaction.support.TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    emailService.sendTicketConfirmationEmail(savedBooking);
+                }
+            }
+        );
     }
 
     // ──────────────────── Expired Bookings (Safety Net) ────────────────────
