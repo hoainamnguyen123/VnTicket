@@ -156,4 +156,19 @@ public class AuthController {
         authService.resetPassword(request);
         return ResponseEntity.ok(ApiResponse.success("Đổi mật khẩu thành công. Vui lòng đăng nhập lại.", null));
     }
+
+    @PostMapping("/send-verify-email")
+    public ResponseEntity<ApiResponse<Object>> sendVerifyEmail(@RequestBody java.util.Map<String, String> body) {
+        String email = body.get("email");
+        authService.sendEmailVerificationOtp(email);
+        return ResponseEntity.ok(ApiResponse.success("Mã OTP xác thực đã được gửi.", null));
+    }
+
+    @PostMapping("/verify-email")
+    public ResponseEntity<ApiResponse<Object>> verifyEmail(@RequestBody java.util.Map<String, String> body) {
+        String email = body.get("email");
+        String otp = body.get("otp");
+        authService.verifyEmail(email, otp);
+        return ResponseEntity.ok(ApiResponse.success("Email đã được xác thực thành công!", null));
+    }
 }

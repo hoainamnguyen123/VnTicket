@@ -99,12 +99,8 @@ const Profile = () => {
                             <Form.Item
                                 name="email"
                                 label={t('profile.emailLabel')}
-                                rules={[
-                                    { required: true, message: t('profile.emailRequired') },
-                                    { type: 'email', message: t('profile.emailInvalid') }
-                                ]}
                             >
-                                <Input placeholder={t('profile.emailPlaceholder')} />
+                                <Input disabled style={{ background: '#f5f5f5', cursor: 'not-allowed' }} suffix={<span style={{ fontSize: 11, color: '#999' }}>Không thể thay đổi</span>} />
                             </Form.Item>
                             <Form.Item
                                 name="phone"

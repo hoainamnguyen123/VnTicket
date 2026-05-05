@@ -70,11 +70,15 @@ public class AuthServiceImpl implements AuthService {
         String role = userDetails.getAuthorities().iterator().next().getAuthority();
 
         log.info("User {} authenticated successfully, assigned role: {}", userDetails.getUsername(), role);
-        return new JwtResponse(jwt,
-                userDetails.getId(),
-                userDetails.getUsername(),
-                userDetails.getEmail(),
-                role);
+        User dbUser = userRepository.findById(userDetails.getId()).orElseThrow();
+        return JwtResponse.builder()
+                .token(jwt)
+                .id(userDetails.getId())
+                .username(userDetails.getUsername())
+                .email(userDetails.getEmail())
+                .role(role)
+                .emailVerified(Boolean.TRUE.equals(dbUser.getEmailVerified()))
+                .build();
     }
 
     @Override
@@ -99,10 +103,43 @@ public class AuthServiceImpl implements AuthService {
                 .phone(signUpRequest.getPhone())
                 .password(encoder.encode(signUpRequest.getPassword()))
                 .role(Role.ROLE_USER)
+                .emailVerified(false)
                 .build();
 
         userRepository.save(user);
-        log.info("User {} saved successfully to database", user.getUsername());
+        log.info("User {} saved successfully, sending verification OTP", user.getUsername());
+
+        // Gửi OTP xác thực email ngay sau khi đăng ký
+        sendEmailVerificationOtp(signUpRequest.getEmail());
+    }
+
+    @Override
+    public void sendEmailVerificationOtp(String email) {
+        // Không cần user tồn tại (resend có thể gọi riêng)
+        String otp = String.format("%06d", new Random().nextInt(999999));
+        String key = "otp:email_verify:" + email;
+        redisTemplate.opsForValue().set(key, otp, 15, TimeUnit.MINUTES);
+        emailService.sendEmailVerificationOtp(email, otp);
+        log.info("Email verification OTP sent to {}", email);
+    }
+
+    @Override
+    @Transactional
+    public void verifyEmail(String email, String otp) {
+        String key = "otp:email_verify:" + email;
+        String saved = redisTemplate.opsForValue().get(key);
+        if (saved == null) {
+            throw new BadRequestException("Mã OTP đã hết hạn hoặc không tồn tại.");
+        }
+        if (!saved.equals(otp)) {
+            throw new BadRequestException("Mã OTP không chính xác.");
+        }
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new BadRequestException("Không tìm thấy tài khoản."));
+        user.setEmailVerified(true);
+        userRepository.save(user);
+        redisTemplate.delete(key);
+        log.info("Email verified successfully for {}", email);
     }
 
     @Override
@@ -163,6 +200,7 @@ public class AuthServiceImpl implements AuthService {
                                     .password(encoder.encode(UUID.randomUUID().toString()))
                                     .googleId(googleId)
                                     .role(Role.ROLE_USER)
+                                    .emailVerified(true) // Google đã xác thực email
                                     .build();
                             return userRepository.save(newUser);
                         }));
@@ -171,11 +209,14 @@ public class AuthServiceImpl implements AuthService {
         String jwt = jwtUtils.generateTokenFromUsername(user.getUsername());
 
         log.info("Google user {} authenticated successfully", user.getUsername());
-        return new JwtResponse(jwt,
-                user.getId(),
-                user.getUsername(),
-                user.getEmail(),
-                user.getRole().name());
+        return JwtResponse.builder()
+                .token(jwt)
+                .id(user.getId())
+                .username(user.getUsername())
+                .email(user.getEmail())
+                .role(user.getRole().name())
+                .emailVerified(Boolean.TRUE.equals(user.getEmailVerified()))
+                .build();
     }
 
     @Override

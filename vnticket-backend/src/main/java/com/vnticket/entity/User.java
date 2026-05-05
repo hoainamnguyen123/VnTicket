@@ -31,6 +31,10 @@ public class User {
 
     private String googleId;
 
+    @Column(name = "email_verified", columnDefinition = "boolean default false")
+    @Builder.Default
+    private Boolean emailVerified = false;
+
     @Enumerated(EnumType.STRING)
     @Column(length = 20)
     private Role role;

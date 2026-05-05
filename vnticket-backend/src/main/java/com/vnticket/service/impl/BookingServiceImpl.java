@@ -16,6 +16,7 @@ import com.vnticket.repository.EventRepository;
 import com.vnticket.repository.TicketTypeRepository;
 import com.vnticket.repository.UserRepository;
 import com.vnticket.service.BookingService;
+import com.vnticket.service.EmailService;
 import com.vnticket.service.TicketInventoryRedisService;
 import com.vnticket.rabbitmq.BookingProducer;
 import com.vnticket.dto.request.BookingMessageDTO;
@@ -48,6 +49,7 @@ public class BookingServiceImpl implements BookingService {
     private final UserRepository userRepository;
     private final TicketInventoryRedisService inventoryRedisService;
     private final BookingProducer bookingProducer;
+    private final EmailService emailService;
 
     @Value("${app.reservation.ttlMinutes:15}")
     private int reservationTtlMinutes;
@@ -58,7 +60,8 @@ public class BookingServiceImpl implements BookingService {
                               TicketTypeRepository ticketTypeRepository,
                               UserRepository userRepository,
                               TicketInventoryRedisService inventoryRedisService,
-                              BookingProducer bookingProducer) {
+                              BookingProducer bookingProducer,
+                              EmailService emailService) {
         this.bookingRepository = bookingRepository;
         this.bookingDetailRepository = bookingDetailRepository;
         this.eventRepository = eventRepository;
@@ -66,6 +69,7 @@ public class BookingServiceImpl implements BookingService {
         this.userRepository = userRepository;
         this.inventoryRedisService = inventoryRedisService;
         this.bookingProducer = bookingProducer;
+        this.emailService = emailService;
     }
 
     // ──────────────────── Statistics (unchanged) ────────────────────
@@ -166,6 +170,11 @@ public class BookingServiceImpl implements BookingService {
                     log.error("Booking failed: User not found with ID: {}", userId);
                     return new ResourceNotFoundException("User not found");
                 });
+
+        if (Boolean.FALSE.equals(user.getEmailVerified())) {
+            log.warn("Booking rejected: User {} has unverified email", userId);
+            throw new BadRequestException("Vui lòng xác thực email của bạn trước khi đặt vé.");
+        }
 
         Event event = eventRepository.findById(request.getEventId())
                 .orElseThrow(() -> {
@@ -348,6 +357,10 @@ public class BookingServiceImpl implements BookingService {
 
         Booking savedBooking = bookingRepository.save(booking);
         log.info("Mock payment successful: bookingId={}", bookingId);
+
+        // Gửi email xác nhận vé (bất đồng bộ, không block response)
+        emailService.sendTicketConfirmationEmail(savedBooking);
+
         return mapToDto(savedBooking);
     }
 
@@ -367,8 +380,11 @@ public class BookingServiceImpl implements BookingService {
         }
 
         confirmPayment(booking);
-        bookingRepository.save(booking);
+        Booking savedBooking = bookingRepository.save(booking);
         log.info("VNPay payment confirmed: bookingId={}", bookingId);
+
+        // Gửi email xác nhận vé (bất đồng bộ, không block response)
+        emailService.sendTicketConfirmationEmail(savedBooking);
     }
 
     // ──────────────────── Expired Bookings (Safety Net) ────────────────────

@@ -90,6 +90,17 @@ const PaymentReturn = () => {
                             </Button>,
                         ]}
                     >
+                        <div style={{ marginBottom: 16 }}>
+                            <div style={{ padding: '12px 16px', background: '#f6ffed', border: '1px solid #b7eb8f', borderRadius: '8px', display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                                <span style={{ fontSize: '20px' }}>🎟️</span>
+                                <div>
+                                    <div style={{ fontWeight: 600, color: '#389e0d', marginBottom: '4px' }}>Vé điện tử đã được gửi!</div>
+                                    <div style={{ color: '#595959', fontSize: '14px' }}>
+                                        Vui lòng kiểm tra email của bạn để nhận vé và mã QR. Nếu không thấy, hãy kiểm tra thư mục Spam.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                         <Descriptions 
                             column={1} 
                             bordered 

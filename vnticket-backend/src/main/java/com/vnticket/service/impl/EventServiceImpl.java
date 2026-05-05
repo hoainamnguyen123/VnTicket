@@ -59,7 +59,7 @@ public class EventServiceImpl implements EventService {
                 events = eventRepository.findByLocationContainingIgnoreCaseAndStatus(location,
                         com.vnticket.enums.EventStatus.APPROVED, pageable);
             }
-        } else if (type != null && !type.isEmpty()) { 
+        } else if (type != null && !type.isEmpty()) {
             events = eventRepository.findByTypeContainingIgnoreCaseAndStatus(type,
                     com.vnticket.enums.EventStatus.APPROVED, pageable);
         } else {

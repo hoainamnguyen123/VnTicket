@@ -17,6 +17,7 @@ public class JwtResponse {
     private String username;
     private String email;
     private String role;
+    private Boolean emailVerified;
 
     public JwtResponse(String token, Long id, String username, String email, String role) {
         this.token = token;
@@ -24,5 +25,6 @@ public class JwtResponse {
         this.username = username;
         this.email = email;
         this.role = role;
+        this.emailVerified = true; // legacy constructor — assume verified
     }
 }

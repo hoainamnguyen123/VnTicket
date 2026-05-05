@@ -1,7 +1,8 @@
 import React, { useContext } from 'react';
-import { Routes, Route } from 'react-router-dom';
-import { ConfigProvider, theme } from 'antd';
+import { Routes, Route, useNavigate } from 'react-router-dom';
+import { ConfigProvider, theme, Alert, Button } from 'antd';
 import { ThemeContext } from './context/ThemeContext';
+import { AuthContext } from './context/AuthContext';
 import Navbar from './components/Navbar';
 import AppFooter from './components/Footer';
 import BottomNav from './components/BottomNav';
@@ -23,11 +24,37 @@ import RefundPolicy from './pages/RefundPolicy';
 import FAQ from './pages/FAQ';
 import OperatingRules from './pages/OperatingRules';
 import PaymentReturn from './pages/PaymentReturn';
+import VerifyEmail from './pages/VerifyEmail';
 import VirtualQueue from './components/VirtualQueue';
 import { Layout, Grid } from 'antd';
 
 const { Content } = Layout;
 const { useBreakpoint } = Grid;
+
+// Tách Component Banner ra để dùng useNavigate
+const VerificationBanner = () => {
+  const { user } = useContext(AuthContext);
+  const navigate = useNavigate();
+  
+  if (user && user.emailVerified === false) {
+    return (
+      <Alert
+        message="Tài khoản chưa xác thực email!"
+        description="Bạn sẽ không thể đặt vé cho đến khi xác thực email thành công."
+        type="warning"
+        showIcon
+        banner
+        action={
+          <Button size="small" type="primary" onClick={() => navigate('/verify-email', { state: { email: user.email } })}>
+            Xác thực ngay
+          </Button>
+        }
+        style={{ position: 'sticky', top: '70px', zIndex: 999 }}
+      />
+    );
+  }
+  return null;
+};
 
 function App() {
   const { isDark } = useContext(ThemeContext);
@@ -52,6 +79,7 @@ function App() {
       }}>
         <ScrollToTop />
         <Navbar />
+        <VerificationBanner />
         
         {/* Lớp phòng chờ đè nén lên vạn vật (Flash Sale Guard) */}
         <VirtualQueue />
@@ -92,6 +120,7 @@ function App() {
               <Route path="/faq" element={<FAQ />} />
               <Route path="/operating-rules" element={<OperatingRules />} />
               <Route path="/payment-return" element={<PaymentReturn />} />
+              <Route path="/verify-email" element={<VerifyEmail />} />
             </Routes>
           </div>
         </Content>

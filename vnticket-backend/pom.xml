@@ -125,6 +125,18 @@
             <artifactId>bucket4j-core</artifactId>
             <version>8.3.0</version>
         </dependency>
+
+        <!-- ZXing - QR Code generation for ticket emails -->
+        <dependency>
+            <groupId>com.google.zxing</groupId>
+            <artifactId>core</artifactId>
+            <version>3.5.3</version>
+        </dependency>
+        <dependency>
+            <groupId>com.google.zxing</groupId>
+            <artifactId>javase</artifactId>
+            <version>3.5.3</version>
+        </dependency>
     </dependencies>
 
     <build>

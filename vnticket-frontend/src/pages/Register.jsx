@@ -79,7 +79,7 @@ const Register = () => {
             const { confirmPassword, ...registerData } = values;
             await axiosClient.post('/auth/register', registerData);
             message.success(t('register.success'));
-            navigate('/login');
+            navigate('/verify-email', { state: { email: registerData.email } });
         } catch (error) {
             let errorMsg = error.message;
             if (errorMsg) {

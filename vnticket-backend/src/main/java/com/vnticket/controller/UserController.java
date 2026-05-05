@@ -50,12 +50,8 @@ public class UserController {
     public ResponseEntity<ApiResponse<UserDTO>> updateProfile(@Valid @RequestBody UserProfileUpdateRequest request) {
         User user = getCurrentUser();
 
-        if (!user.getEmail().equals(request.getEmail()) && userRepository.existsByEmail(request.getEmail())) {
-            return ResponseEntity.badRequest().body(ApiResponse.error(400, "Error: Email is already in use!"));
-        }
-
+        // Email không được phép thay đổi — locked
         user.setFullName(request.getFullName());
-        user.setEmail(request.getEmail());
         user.setPhone(request.getPhone());
 
         userRepository.save(user);
