@@ -175,7 +175,8 @@ public class EmailServiceImpl implements EmailService {
                         Map<String, Object> attachment = new HashMap<>();
                         attachment.put("filename", cid + ".png");
                         attachment.put("content", Base64.getEncoder().encodeToString(qrBytes));
-                        // Resend uses cid mapping if the src is cid:filename or just uses filename
+                        // Bắt buộc phải có content_id để Resend link vào cid: trong thẻ img
+                        attachment.put("content_id", cid + ".png");
                         attachments.add(attachment);
                     }
 
