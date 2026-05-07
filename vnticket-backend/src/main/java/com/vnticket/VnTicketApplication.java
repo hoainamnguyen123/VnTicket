@@ -20,6 +20,8 @@ public class VnTicketApplication {
     }
 
     public static void main(String[] args) {
+        // Ép JVM sử dụng IPv4 để tránh lỗi rớt mạng (Timeout) khi phân giải IPv6 trên một số Cloud Provider (Render)
+        System.setProperty("java.net.preferIPv4Stack", "true");
         SpringApplication.run(VnTicketApplication.class, args);
     }
 
