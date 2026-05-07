@@ -36,53 +36,55 @@ public class EmailServiceImpl implements EmailService {
     private final BookingRepository bookingRepository;
     private final RestTemplate restTemplate = new RestTemplate();
 
-    @Value("${app.brevo.api-key:}")
-    private String brevoApiKey;
+    @Value("${app.resend.api-key:}")
+    private String resendApiKey;
 
-    @Value("${spring.mail.username:namtlhb68@gmail.com}")
+    @Value("${spring.mail.username:support@vnticket.io.vn}")
     private String fromEmail;
 
     @Value("${app.cors.allowed-origins:http://localhost:5173}")
     private String frontendUrl;
 
     // ─────────────────────────────────────────────────────
-    // Gửi qua Brevo HTTP API
+    // Gửi qua Resend HTTP API
     // ─────────────────────────────────────────────────────
 
-    private void sendEmailViaBrevo(String toEmail, String subject, String htmlContent) {
-        if (brevoApiKey == null || brevoApiKey.isBlank() || brevoApiKey.contains("xkeysib-...")) {
-            log.error("BREVO API KEY IS MISSING or INVALID! Cannot send email to {}", toEmail);
-            return;
+    private void sendEmailViaResend(String toEmail, String subject, String htmlContent, List<Map<String, Object>> attachments) {
+        if (resendApiKey == null || resendApiKey.isBlank() || resendApiKey.contains("re_")) {
+            // We assume valid keys start with re_
+            if (!resendApiKey.startsWith("re_")) {
+                log.error("RESEND API KEY IS MISSING or INVALID! Cannot send email to {}", toEmail);
+                return;
+            }
         }
 
         try {
-            String url = "https://api.brevo.com/v3/smtp/email";
+            String url = "https://api.resend.com/emails";
             HttpHeaders headers = new HttpHeaders();
-            headers.set("api-key", brevoApiKey);
+            headers.set("Authorization", "Bearer " + resendApiKey);
             headers.set("Content-Type", "application/json");
-            headers.set("Accept", "application/json");
 
             Map<String, Object> body = new HashMap<>();
             
-            Map<String, String> sender = new HashMap<>();
-            sender.put("name", "VNTicket");
-            sender.put("email", fromEmail);
-            body.put("sender", sender);
-
-            List<Map<String, String>> to = new ArrayList<>();
-            Map<String, String> recipient = new HashMap<>();
-            recipient.put("email", toEmail);
-            to.add(recipient);
+            // Resend format for sender: "Name <email@domain.com>"
+            body.put("from", "VNTicket <" + fromEmail + ">");
+            
+            List<String> to = new ArrayList<>();
+            to.add(toEmail);
             body.put("to", to);
 
             body.put("subject", subject);
-            body.put("htmlContent", htmlContent);
+            body.put("html", htmlContent);
+
+            if (attachments != null && !attachments.isEmpty()) {
+                body.put("attachments", attachments);
+            }
 
             HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
             ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
-            log.info("Email sent to {}, Brevo Status: {}", toEmail, response.getStatusCode());
+            log.info("Email sent to {}, Resend Status: {}", toEmail, response.getStatusCode());
         } catch (Exception e) {
-            log.error("Failed to send email via Brevo to {}: {}", toEmail, e.getMessage());
+            log.error("Failed to send email via Resend to {}: {}", toEmail, e.getMessage());
         }
     }
 
@@ -102,7 +104,7 @@ public class EmailServiceImpl implements EmailService {
                 "<p>This code will expire in 5 minutes.</p>" +
                 "<p>If you did not request this password reset, please ignore this email.</p>" +
                 "<br><p>Best regards,<br>The VNTicket Team</p></div>";
-        sendEmailViaBrevo(toEmail, subject, htmlContent);
+        sendEmailViaResend(toEmail, subject, htmlContent, null);
     }
 
     @Async
@@ -124,7 +126,7 @@ public class EmailServiceImpl implements EmailService {
             "    <p style=\"color:#999;font-size:12px;margin:0;\">Mã có hiệu lực trong <strong>15 phút</strong>. Không chia sẻ mã này cho bất kỳ ai.</p>" +
             "  </div>" +
             "</div>";
-        sendEmailViaBrevo(toEmail, subject, html);
+        sendEmailViaResend(toEmail, subject, html, null);
     }
 
     // ─────────────────────────────────────────────────────
@@ -155,6 +157,7 @@ public class EmailServiceImpl implements EmailService {
 
             // Build từng ticket card riêng biệt
             StringBuilder ticketCardsHtml = new StringBuilder();
+            List<Map<String, Object>> attachments = new ArrayList<>();
             int ticketIndex = 1;
             int totalTickets = 0;
 
@@ -166,16 +169,21 @@ public class EmailServiceImpl implements EmailService {
 
                 for (Ticket ticket : tickets) {
                     byte[] qrBytes = generateQrBytes(ticket.getTicketCode());
-                    String base64Qr = null;
+                    String cid = "qr_" + ticket.getTicketCode();
+                    
                     if (qrBytes != null) {
-                        base64Qr = "data:image/png;base64," + Base64.getEncoder().encodeToString(qrBytes);
+                        Map<String, Object> attachment = new HashMap<>();
+                        attachment.put("filename", cid + ".png");
+                        attachment.put("content", Base64.getEncoder().encodeToString(qrBytes));
+                        // Resend uses cid mapping if the src is cid:filename or just uses filename
+                        attachments.add(attachment);
                     }
 
                     ticketCardsHtml.append(buildTicketCard(
                             ticketIndex, ticket.getTicketCode(),
                             eventName, eventImageUrl, eventLocation, eventStartTime,
                             zoneName, price, fmt,
-                            base64Qr
+                            cid
                     ));
                     ticketIndex++;
                     totalTickets++;
@@ -186,7 +194,7 @@ public class EmailServiceImpl implements EmailService {
             String subject = "🎟️ VNTicket - Vé của bạn cho sự kiện: " + eventName;
             String htmlContent = buildEmailHtml(userName, eventName, ticketCardsHtml.toString(), totalTickets, totalFormatted, webUrl);
 
-            sendEmailViaBrevo(toEmail, subject, htmlContent);
+            sendEmailViaResend(toEmail, subject, htmlContent, attachments);
         } catch (Exception e) {
             log.error("Failed to prepare ticket confirmation email for booking ID {}", bookingRef.getId(), e);
         }
@@ -218,7 +226,7 @@ public class EmailServiceImpl implements EmailService {
                                    String eventName, String eventImageUrl,
                                    String eventLocation, String eventStartTime,
                                    String zoneName, BigDecimal price, NumberFormat fmt,
-                                   String base64Qr) {
+                                   String cid) {
 
         // Ảnh sự kiện + badge HỢP LỆ overlay
         String imgSection = "";
@@ -233,13 +241,13 @@ public class EmailServiceImpl implements EmailService {
                 "</div>";
         }
 
-        // QR section bằng base64 inline trực tiếp
+        // QR section bằng cid inline
         String qrSection = "";
-        if (base64Qr != null) {
+        if (cid != null) {
             qrSection =
                 "<div style=\"text-align:center; padding:20px 0 8px;\">" +
                 "  <div style=\"display:inline-block; background:#fff; border:1px solid #e8e8e8; border-radius:12px; padding:12px;\">" +
-                "    <img src=\"" + base64Qr + "\" width=\"160\" height=\"160\" alt=\"QR Code\" style=\"display:block;\"/>" +
+                "    <img src=\"cid:" + cid + ".png\" width=\"160\" height=\"160\" alt=\"QR Code\" style=\"display:block;\"/>" +
                 "  </div>" +
                 "  <div style=\"font-size:11px; color:#999; margin-top:8px;\">Quét mã QR tại cổng vào</div>" +
                 "</div>";

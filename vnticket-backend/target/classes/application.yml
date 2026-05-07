@@ -35,8 +35,8 @@ spring:
       max-request-size: 10MB
 
 app:
-  brevo:
-    api-key: "xkeysib-..." # Điền API Key của Brevo vào đây
+  resend:
+    api-key: "re_..." # Điền API Key của Resend vào đây
   jwt:
     secret: VNTicketSuperSecretKeyForJwtGenerationMustBeLongEnoughToBeSecureVNTicketSuperSecretKeyForJwtGenerationMustBeLongEnoughToBeSecure
     expirationMs: 86400000 # 5 minutes
