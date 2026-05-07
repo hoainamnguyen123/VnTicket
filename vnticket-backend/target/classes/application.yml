@@ -33,22 +33,10 @@ spring:
     multipart:
       max-file-size: 10MB
       max-request-size: 10MB
-  mail:
-    host: smtp.gmail.com
-    port: 587
-    username: "namtlhb68@gmail.com"
-    password: "brbwfekbyausmzcf"
-    properties:
-      mail:
-        smtp:
-          auth: true
-          starttls:
-            enable: true
-          connectiontimeout: 15000
-          timeout: 15000
-          writetimeout: 15000
 
 app:
+  brevo:
+    api-key: "xkeysib-..." # Điền API Key của Brevo vào đây
   jwt:
     secret: VNTicketSuperSecretKeyForJwtGenerationMustBeLongEnoughToBeSecureVNTicketSuperSecretKeyForJwtGenerationMustBeLongEnoughToBeSecure
     expirationMs: 86400000 # 5 minutes

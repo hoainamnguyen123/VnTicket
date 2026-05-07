@@ -9,16 +9,16 @@ import com.vnticket.entity.BookingDetail;
 import com.vnticket.entity.Ticket;
 import com.vnticket.repository.BookingRepository;
 import com.vnticket.service.EmailService;
-import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.ByteArrayResource;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestTemplate;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -26,23 +26,65 @@ import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
 import java.text.NumberFormat;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class EmailServiceImpl implements EmailService {
 
-    private final JavaMailSender mailSender;
     private final BookingRepository bookingRepository;
+    private final RestTemplate restTemplate = new RestTemplate();
 
-    @Value("${spring.mail.username:vnticket.support@gmail.com}")
+    @Value("${app.brevo.api-key:}")
+    private String brevoApiKey;
+
+    @Value("${spring.mail.username:namtlhb68@gmail.com}")
     private String fromEmail;
 
     @Value("${app.cors.allowed-origins:http://localhost:5173}")
     private String frontendUrl;
+
+    // ─────────────────────────────────────────────────────
+    // Gửi qua Brevo HTTP API
+    // ─────────────────────────────────────────────────────
+
+    private void sendEmailViaBrevo(String toEmail, String subject, String htmlContent) {
+        if (brevoApiKey == null || brevoApiKey.isBlank() || brevoApiKey.contains("xkeysib-...")) {
+            log.error("BREVO API KEY IS MISSING or INVALID! Cannot send email to {}", toEmail);
+            return;
+        }
+
+        try {
+            String url = "https://api.brevo.com/v3/smtp/email";
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("api-key", brevoApiKey);
+            headers.set("Content-Type", "application/json");
+            headers.set("Accept", "application/json");
+
+            Map<String, Object> body = new HashMap<>();
+            
+            Map<String, String> sender = new HashMap<>();
+            sender.put("name", "VNTicket");
+            sender.put("email", fromEmail);
+            body.put("sender", sender);
+
+            List<Map<String, String>> to = new ArrayList<>();
+            Map<String, String> recipient = new HashMap<>();
+            recipient.put("email", toEmail);
+            to.add(recipient);
+            body.put("to", to);
+
+            body.put("subject", subject);
+            body.put("htmlContent", htmlContent);
+
+            HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
+            ResponseEntity<String> response = restTemplate.postForEntity(url, request, String.class);
+            log.info("Email sent to {}, Brevo Status: {}", toEmail, response.getStatusCode());
+        } catch (Exception e) {
+            log.error("Failed to send email via Brevo to {}: {}", toEmail, e.getMessage());
+        }
+    }
 
     // ─────────────────────────────────────────────────────
     // OTP Email
@@ -51,65 +93,43 @@ public class EmailServiceImpl implements EmailService {
     @Async
     @Override
     public void sendOtpEmail(String toEmail, String otpCode) {
-        try {
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-            helper.setFrom(fromEmail, "VNTicket Support");
-            helper.setTo(toEmail);
-            helper.setSubject("VNTicket - Please verify your email for password reset");
-            String htmlContent = "<div style=\"font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;\">" +
-                    "<h2 style=\"color: #2e6c80;\">Password Reset Request</h2>" +
-                    "<p>We received a request to reset the password for your VNTicket account associated with this email address.</p>" +
-                    "<p>Your 6-digit OTP code is:</p>" +
-                    "<h1 style=\"letter-spacing: 5px; color: #4CAF50; background: #f4f4f4; padding: 10px; width: fit-content; border-radius: 5px;\">" + otpCode + "</h1>" +
-                    "<p>This code will expire in 5 minutes.</p>" +
-                    "<p>If you did not request this password reset, please ignore this email.</p>" +
-                    "<br><p>Best regards,<br>The VNTicket Team</p></div>";
-            helper.setText(htmlContent, true);
-            mailSender.send(message);
-            log.info("OTP email sent successfully to: {}", toEmail);
-        } catch (Exception e) {
-            log.error("Failed to send OTP email to: {}", toEmail, e);
-        }
+        String subject = "VNTicket - Please verify your email for password reset";
+        String htmlContent = "<div style=\"font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;\">" +
+                "<h2 style=\"color: #2e6c80;\">Password Reset Request</h2>" +
+                "<p>We received a request to reset the password for your VNTicket account associated with this email address.</p>" +
+                "<p>Your 6-digit OTP code is:</p>" +
+                "<h1 style=\"letter-spacing: 5px; color: #4CAF50; background: #f4f4f4; padding: 10px; width: fit-content; border-radius: 5px;\">" + otpCode + "</h1>" +
+                "<p>This code will expire in 5 minutes.</p>" +
+                "<p>If you did not request this password reset, please ignore this email.</p>" +
+                "<br><p>Best regards,<br>The VNTicket Team</p></div>";
+        sendEmailViaBrevo(toEmail, subject, htmlContent);
     }
 
     @Async
     @Override
     public void sendEmailVerificationOtp(String toEmail, String otpCode) {
-        try {
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
-            helper.setFrom(fromEmail, "VNTicket");
-            helper.setTo(toEmail);
-            helper.setSubject("VNTicket - Xác thực địa chỉ email của bạn");
-            String html =
-                "<div style=\"font-family:'Segoe UI',Arial,sans-serif;max-width:520px;margin:0 auto;\">" +
-                "  <div style=\"background:linear-gradient(135deg,#6c5ce7,#a29bfe);border-radius:12px 12px 0 0;padding:28px;text-align:center;\">" +
-                "    <div style=\"font-size:28px;\">✉️</div>" +
-                "    <h2 style=\"color:#fff;margin:10px 0 4px;font-size:20px;font-weight:700;\">Xác thực tài khoản VNTicket</h2>" +
-                "  </div>" +
-                "  <div style=\"background:#fff;border:1px solid #e8e8e8;border-top:none;border-radius:0 0 12px 12px;padding:28px;\">" +
-                "    <p style=\"color:#2d3436;font-size:15px;margin:0 0 12px;\">Chào mừng bạn đến với VNTicket! 🎉</p>" +
-                "    <p style=\"color:#636e72;font-size:14px;line-height:1.6;margin:0 0 20px;\">Mã xác thực của bạn là:</p>" +
-                "    <div style=\"background:#f8f7ff;border:2px dashed #6c5ce7;border-radius:10px;padding:16px;text-align:center;margin-bottom:20px;\">" +
-                "      <span style=\"font-size:32px;font-weight:800;letter-spacing:8px;color:#6c5ce7;\">" + otpCode + "</span>" +
-                "    </div>" +
-                "    <p style=\"color:#999;font-size:12px;margin:0;\">Mã có hiệu lực trong <strong>15 phút</strong>. Không chia sẻ mã này cho bất kỳ ai.</p>" +
-                "  </div>" +
-                "</div>";
-            helper.setText(html, true);
-            mailSender.send(message);
-            log.info("Email verification OTP sent to: {}", toEmail);
-        } catch (Exception e) {
-            log.error("Failed to send email verification OTP to: {}", toEmail, e);
-        }
+        String subject = "VNTicket - Xác thực địa chỉ email của bạn";
+        String html =
+            "<div style=\"font-family:'Segoe UI',Arial,sans-serif;max-width:520px;margin:0 auto;\">" +
+            "  <div style=\"background:linear-gradient(135deg,#6c5ce7,#a29bfe);border-radius:12px 12px 0 0;padding:28px;text-align:center;\">" +
+            "    <div style=\"font-size:28px;\">✉️</div>" +
+            "    <h2 style=\"color:#fff;margin:10px 0 4px;font-size:20px;font-weight:700;\">Xác thực tài khoản VNTicket</h2>" +
+            "  </div>" +
+            "  <div style=\"background:#fff;border:1px solid #e8e8e8;border-top:none;border-radius:0 0 12px 12px;padding:28px;\">" +
+            "    <p style=\"color:#2d3436;font-size:15px;margin:0 0 12px;\">Chào mừng bạn đến với VNTicket! 🎉</p>" +
+            "    <p style=\"color:#636e72;font-size:14px;line-height:1.6;margin:0 0 20px;\">Mã xác thực của bạn là:</p>" +
+            "    <div style=\"background:#f8f7ff;border:2px dashed #6c5ce7;border-radius:10px;padding:16px;text-align:center;margin-bottom:20px;\">" +
+            "      <span style=\"font-size:32px;font-weight:800;letter-spacing:8px;color:#6c5ce7;\">" + otpCode + "</span>" +
+            "    </div>" +
+            "    <p style=\"color:#999;font-size:12px;margin:0;\">Mã có hiệu lực trong <strong>15 phút</strong>. Không chia sẻ mã này cho bất kỳ ai.</p>" +
+            "  </div>" +
+            "</div>";
+        sendEmailViaBrevo(toEmail, subject, html);
     }
 
     // ─────────────────────────────────────────────────────
     // Ticket Confirmation Email
     // ─────────────────────────────────────────────────────
-
-    private record TicketQr(int index, byte[] qrBytes) {}
 
     @Async
     @Override
@@ -135,7 +155,6 @@ public class EmailServiceImpl implements EmailService {
 
             // Build từng ticket card riêng biệt
             StringBuilder ticketCardsHtml = new StringBuilder();
-            List<TicketQr> qrList = new ArrayList<>();
             int ticketIndex = 1;
             int totalTickets = 0;
 
@@ -147,14 +166,16 @@ public class EmailServiceImpl implements EmailService {
 
                 for (Ticket ticket : tickets) {
                     byte[] qrBytes = generateQrBytes(ticket.getTicketCode());
-                    String qrCid = "qr_" + ticketIndex;
-                    if (qrBytes != null) qrList.add(new TicketQr(ticketIndex, qrBytes));
+                    String base64Qr = null;
+                    if (qrBytes != null) {
+                        base64Qr = "data:image/png;base64," + Base64.getEncoder().encodeToString(qrBytes);
+                    }
 
                     ticketCardsHtml.append(buildTicketCard(
                             ticketIndex, ticket.getTicketCode(),
                             eventName, eventImageUrl, eventLocation, eventStartTime,
                             zoneName, price, fmt,
-                            qrBytes != null ? qrCid : null
+                            base64Qr
                     ));
                     ticketIndex++;
                     totalTickets++;
@@ -162,23 +183,12 @@ public class EmailServiceImpl implements EmailService {
             }
 
             String totalFormatted = fmt.format(booking.getTotalAmount()) + " ₫";
+            String subject = "🎟️ VNTicket - Vé của bạn cho sự kiện: " + eventName;
             String htmlContent = buildEmailHtml(userName, eventName, ticketCardsHtml.toString(), totalTickets, totalFormatted, webUrl);
 
-            MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper helper = new MimeMessageHelper(message, MimeMessageHelper.MULTIPART_MODE_RELATED, "UTF-8");
-            helper.setFrom(fromEmail, "VNTicket");
-            helper.setTo(toEmail);
-            helper.setSubject("🎟️ VNTicket - Vé của bạn cho sự kiện: " + eventName);
-            helper.setText(htmlContent, true);
-
-            for (TicketQr qr : qrList) {
-                helper.addInline("qr_" + qr.index(), new ByteArrayResource(qr.qrBytes()), "image/png");
-            }
-
-            mailSender.send(message);
-            log.info("Ticket confirmation email sent to {} for booking ID {}", toEmail, booking.getId());
+            sendEmailViaBrevo(toEmail, subject, htmlContent);
         } catch (Exception e) {
-            log.error("Failed to send ticket confirmation email for booking ID {}", bookingRef.getId(), e);
+            log.error("Failed to prepare ticket confirmation email for booking ID {}", bookingRef.getId(), e);
         }
     }
 
@@ -201,17 +211,16 @@ public class EmailServiceImpl implements EmailService {
     }
 
     // ─────────────────────────────────────────────────────
-    // Ticket Card — giống web: ảnh trên, thông tin giữa, QR + mã dưới
-    // Dùng <table> để tương thích tối đa với email client
+    // Ticket Card
     // ─────────────────────────────────────────────────────
 
     private String buildTicketCard(int index, String ticketCode,
                                    String eventName, String eventImageUrl,
                                    String eventLocation, String eventStartTime,
                                    String zoneName, BigDecimal price, NumberFormat fmt,
-                                   String qrCid) {
+                                   String base64Qr) {
 
-        // Ảnh sự kiện + badge HỢP LỆ overlay (dùng position relative trick bằng table)
+        // Ảnh sự kiện + badge HỢP LỆ overlay
         String imgSection = "";
         if (eventImageUrl != null && !eventImageUrl.isBlank()) {
             imgSection =
@@ -224,13 +233,13 @@ public class EmailServiceImpl implements EmailService {
                 "</div>";
         }
 
-        // QR section
+        // QR section bằng base64 inline trực tiếp
         String qrSection = "";
-        if (qrCid != null) {
+        if (base64Qr != null) {
             qrSection =
                 "<div style=\"text-align:center; padding:20px 0 8px;\">" +
                 "  <div style=\"display:inline-block; background:#fff; border:1px solid #e8e8e8; border-radius:12px; padding:12px;\">" +
-                "    <img src=\"cid:" + qrCid + "\" width=\"160\" height=\"160\" alt=\"QR Code\" style=\"display:block;\"/>" +
+                "    <img src=\"" + base64Qr + "\" width=\"160\" height=\"160\" alt=\"QR Code\" style=\"display:block;\"/>" +
                 "  </div>" +
                 "  <div style=\"font-size:11px; color:#999; margin-top:8px;\">Quét mã QR tại cổng vào</div>" +
                 "</div>";
@@ -248,41 +257,49 @@ public class EmailServiceImpl implements EmailService {
             "<div style=\"padding:20px 24px 0;\">" +
             "  <div style=\"font-size:17px; font-weight:700; color:#6c5ce7; margin-bottom:14px;\">" + eventName + "</div>" +
 
-            "  <div style=\"margin-bottom:8px;\">" +
-            "    <div style=\"font-size:11px; color:#999; margin-bottom:2px;\">Thời gian:</div>" +
-            "    <div style=\"font-size:14px; font-weight:600; color:#2d3436;\">lúc " + eventStartTime + "</div>" +
-            "  </div>" +
+            "  <table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"margin-bottom:12px;\">" +
+            "    <tr>" +
+            "      <td width=\"24\" valign=\"top\" style=\"font-size:14px; padding-top:2px;\">📍</td>" +
+            "      <td style=\"font-size:14px; color:#2d3436; line-height:1.5;\">" + eventLocation + "</td>" +
+            "    </tr>" +
+            "  </table>" +
 
-            "  <div style=\"margin-bottom:16px;\">" +
-            "    <div style=\"font-size:11px; color:#999; margin-bottom:2px;\">Địa điểm:</div>" +
-            "    <div style=\"font-size:14px; font-weight:600; color:#2d3436;\">" + eventLocation + "</div>" +
-            "  </div>" +
+            "  <table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\" style=\"margin-bottom:16px;\">" +
+            "    <tr>" +
+            "      <td width=\"24\" valign=\"top\" style=\"font-size:14px; padding-top:2px;\">🕒</td>" +
+            "      <td style=\"font-size:14px; color:#2d3436; font-weight:600;\">" + eventStartTime + "</td>" +
+            "    </tr>" +
+            "  </table>" +
             "</div>" +
 
-            // --- Đường kẻ đứt ---
-            "<div style=\"border-top:1.5px dashed #e0e0e0; margin:0 24px;\"></div>" +
-
-            // --- Phần 3: Khu vực + Giá vé (2 cột) ---
-            "<div style=\"padding:14px 24px; display:flex; justify-content:space-between;\">" +
-            "  <div style=\"text-align:center; flex:1;\">" +
-            "    <div style=\"font-size:11px; color:#999; margin-bottom:4px;\">Khu vực</div>" +
-            "    <div style=\"font-size:14px; font-weight:700; color:#2d3436;\">" + zoneName + "</div>" +
-            "  </div>" +
-            "  <div style=\"width:1px; background:#e8e8e8;\"></div>" +
-            "  <div style=\"text-align:center; flex:1;\">" +
-            "    <div style=\"font-size:11px; color:#999; margin-bottom:4px;\">Giá vé</div>" +
-            "    <div style=\"font-size:14px; font-weight:700; color:#e17055;\">" + fmt.format(price) + " đ</div>" +
-            "  </div>" +
+            // Đường nét đứt chia cắt (Die-cut line)
+            "<div style=\"position:relative; margin:10px 0;\">" +
+            "  <div style=\"border-top:2px dashed #dfe6e9; margin:0 24px;\"></div>" +
+            "  <div style=\"position:absolute; top:-10px; left:-10px; width:20px; height:20px; background:#f0f2f5; border-radius:50%;\"></div>" +
+            "  <div style=\"position:absolute; top:-10px; right:-10px; width:20px; height:20px; background:#f0f2f5; border-radius:50%;\"></div>" +
             "</div>" +
 
-            // --- Đường kẻ đứt ---
-            "<div style=\"border-top:1.5px dashed #e0e0e0; margin:0 24px;\"></div>" +
+            // --- Phần 3: Chi tiết vé ---
+            "<div style=\"padding:8px 24px 0;\">" +
+            "  <table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\">" +
+            "    <tr>" +
+            "      <td width=\"50%\" valign=\"top\">" +
+            "        <div style=\"font-size:11px; color:#999; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px;\">Loại vé</div>" +
+            "        <div style=\"font-size:15px; font-weight:600; color:#2d3436;\">" + zoneName + "</div>" +
+            "      </td>" +
+            "      <td width=\"50%\" valign=\"top\" style=\"text-align:right;\">" +
+            "        <div style=\"font-size:11px; color:#999; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:4px;\">Giá vé</div>" +
+            "        <div style=\"font-size:15px; font-weight:600; color:#00b894;\">" + fmt.format(price) + " ₫</div>" +
+            "      </td>" +
+            "    </tr>" +
+            "  </table>" +
+            "</div>" +
 
             // --- Phần 4: QR Code ---
             qrSection +
 
-            // --- Phần 5: Mã vé điện tử ---
-            "<div style=\"text-align:center; padding:0 24px 20px;\">" +
+            // Ticket Code dưới cùng
+            "<div style=\"background:#fafafa; border-top:1px solid #f0f0f0; text-align:center; padding:12px; margin-top:8px;\">" +
             "  <div style=\"font-size:11px; color:#999; margin-bottom:6px;\">Mã vé điện tử</div>" +
             "  <div style=\"font-family:'Courier New',monospace; font-size:16px; font-weight:700; " +
             "               color:#2d3436; letter-spacing:1.5px; word-break:break-all;\">" + ticketCode + "</div>" +

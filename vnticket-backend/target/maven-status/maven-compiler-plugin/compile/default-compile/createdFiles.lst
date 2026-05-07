@@ -6,6 +6,7 @@ com\vnticket\dto\request\ResetPasswordRequest.class
 com\vnticket\entity\TicketTransfer$TicketTransferBuilder.class
 com\vnticket\controller\TicketTransferController.class
 com\vnticket\enums\BookingStatus.class
+com\vnticket\service\impl\BookingServiceImpl$2.class
 com\vnticket\service\impl\EventServiceImpl.class
 com\vnticket\dto\BookingDTO.class
 com\vnticket\dto\TicketTypeDTO$TicketTypeDTOBuilder.class
@@ -93,6 +94,7 @@ com\vnticket\dto\response\BookingStatsDTO.class
 com\vnticket\service\impl\EmailServiceImpl.class
 com\vnticket\entity\Ticket$TicketBuilder.class
 com\vnticket\controller\PaymentController.class
+com\vnticket\service\impl\BookingServiceImpl$1.class
 com\vnticket\security\WebSecurityConfig.class
 com\vnticket\dto\TicketTypeDTO.class
 com\vnticket\exception\BadRequestException.class
