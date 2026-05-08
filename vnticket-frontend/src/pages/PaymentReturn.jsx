@@ -75,25 +75,31 @@ const PaymentReturn = () => {
 
     return (
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh', padding: isMobile ? '10px' : '20px' }}>
-            <Card style={{ width: '100%', maxWidth: 600, boxShadow: '0 4px 12px rgba(0,0,0,0.1)', borderRadius: '12px' }}>
+            <Card 
+                style={{ width: '100%', maxWidth: 600, boxShadow: '0 4px 12px rgba(0,0,0,0.1)', borderRadius: '12px' }}
+                styles={{ body: { padding: isMobile ? '16px 12px' : '24px' } }}
+            >
                 {paymentResult?.success ? (
                     <Result
+                        style={{ padding: isMobile ? '16px 0' : '48px 32px' }}
                         icon={<CheckCircleOutlined style={{ color: '#52c41a' }} />}
                         title={t('payment.success')}
                         subTitle={t('payment.successSub', { id: paymentResult.bookingId })}
-                        extra={[
-                            <Button type="primary" key="history" onClick={() => navigate('/history?tab=PAID')}>
-                                {t('payment.viewMyTickets')}
-                            </Button>,
-                            <Button key="home" onClick={() => navigate('/')}>
-                                {t('payment.goHome')}
-                            </Button>,
-                        ]}
+                        extra={
+                            <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: '10px', justifyContent: 'center' }}>
+                                <Button type="primary" key="history" onClick={() => navigate('/history?tab=PAID')} style={{ width: isMobile ? '100%' : 'auto' }}>
+                                    {t('payment.viewMyTickets')}
+                                </Button>
+                                <Button key="home" onClick={() => navigate('/')} style={{ width: isMobile ? '100%' : 'auto' }}>
+                                    {t('payment.goHome')}
+                                </Button>
+                            </div>
+                        }
                     >
-                        <div style={{ marginBottom: 16 }}>
-                            <div style={{ padding: '12px 16px', background: '#f6ffed', border: '1px solid #b7eb8f', borderRadius: '8px', display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                                <span style={{ fontSize: '20px' }}>🎟️</span>
-                                <div>
+                        <div style={{ marginBottom: 16, width: '100%' }}>
+                            <div style={{ padding: isMobile ? '8px 10px' : '12px 16px', background: '#f6ffed', border: '1px solid #b7eb8f', borderRadius: '8px', display: 'flex', alignItems: 'flex-start', gap: isMobile ? '8px' : '12px', width: '100%' }}>
+                                <span style={{ fontSize: '20px', flexShrink: 0 }}>🎟️</span>
+                                <div style={{ textAlign: 'left', flex: 1 }}>
                                     <div style={{ fontWeight: 600, color: '#389e0d', marginBottom: '4px' }}>Vé điện tử đã được gửi!</div>
                                     <div style={{ color: '#595959', fontSize: '14px' }}>
                                         Vui lòng kiểm tra email của bạn để nhận vé và mã QR. Nếu không thấy, hãy kiểm tra thư mục Spam.
@@ -103,10 +109,12 @@ const PaymentReturn = () => {
                         </div>
                         <Descriptions 
                             column={1} 
-                            bordered 
+                            bordered={!isMobile}
                             size="small" 
-                            layout={screens.xs ? 'vertical' : 'horizontal'}
-                            style={{ marginTop: '16px' }}
+                            layout={isMobile ? "vertical" : "horizontal"}
+                            style={{ marginTop: '16px', textAlign: 'left', width: '100%' }}
+                            labelStyle={isMobile ? { paddingBottom: '4px', color: '#8c8c8c' } : { whiteSpace: 'nowrap' }}
+                            contentStyle={isMobile ? { paddingBottom: '16px', wordBreak: 'break-all' } : {}}
                         >
                             <Descriptions.Item label={t('payment.orderId')}>#{paymentResult.bookingId}</Descriptions.Item>
                             <Descriptions.Item label={t('payment.amount')}>{formatCurrency(paymentResult.amount)}</Descriptions.Item>
@@ -116,17 +124,20 @@ const PaymentReturn = () => {
                     </Result>
                 ) : (
                     <Result
+                        style={{ padding: isMobile ? '16px 0' : '48px 32px' }}
                         icon={<CloseCircleOutlined style={{ color: '#ff4d4f' }} />}
                         title={t('payment.failed')}
                         subTitle={error || t('payment.failedSub', { id: paymentResult?.bookingId })}
-                        extra={[
-                            <Button type="primary" key="history" onClick={() => navigate('/history?tab=PENDING')}>
-                                {t('payment.retryFromHistory')}
-                            </Button>,
-                            <Button key="home" onClick={() => navigate('/')}>
-                                {t('payment.goHome')}
-                            </Button>,
-                        ]}
+                        extra={
+                            <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: '10px', justifyContent: 'center' }}>
+                                <Button type="primary" key="history" onClick={() => navigate('/history?tab=PENDING')} style={{ width: isMobile ? '100%' : 'auto' }}>
+                                    {t('payment.retryFromHistory')}
+                                </Button>
+                                <Button key="home" onClick={() => navigate('/')} style={{ width: isMobile ? '100%' : 'auto' }}>
+                                    {t('payment.goHome')}
+                                </Button>
+                            </div>
+                        }
                     />
                 )}
             </Card>

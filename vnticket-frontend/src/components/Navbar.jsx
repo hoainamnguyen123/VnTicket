@@ -1,11 +1,10 @@
 import React, { useContext, useState, useEffect } from 'react';
-import { Layout, Menu, Button, Dropdown, Form, message, Drawer, Grid, Badge } from 'antd';
+import { Layout, Menu, Button, Dropdown, message, Drawer, Grid, Badge } from 'antd';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { ThemeContext } from '../context/ThemeContext';
 import { UserOutlined, LogoutOutlined, HistoryOutlined, PlusOutlined, MenuOutlined, TagsOutlined, CalendarOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
-import EventFormModal from './EventFormModal';
 import LanguageSwitcher from './LanguageSwitcher';
 import DarkModeToggle from './DarkModeToggle';
 import axiosClient from '../api/axiosClient';
@@ -20,9 +19,7 @@ const Navbar = () => {
     const location = useLocation();
     const { t } = useTranslation();
 
-    const [isEventModalVisible, setIsEventModalVisible] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-    const [eventForm] = Form.useForm();
     const [pendingCount, setPendingCount] = useState(0);
     const [userRejectedCount, setUserRejectedCount] = useState(0);
     const screens = useBreakpoint();
@@ -51,11 +48,11 @@ const Navbar = () => {
             icon: <CalendarOutlined />,
             label: (
                 <Badge count={userRejectedCount} offset={[10, 0]} size="small">
-                    {t('profile.myEvents', 'Sự kiện của tôi')}
+                    {t('organizerHub.title', 'Trung tâm Ban Tổ Chức')}
                     <span style={{ paddingRight: 10 }}></span>
                 </Badge>
             ),
-            onClick: () => navigate('/profile', { state: { activeTab: '3' } }),
+            onClick: () => navigate('/organizer'),
         },
         {
             type: 'divider',
@@ -114,35 +111,6 @@ const Navbar = () => {
         }
     }, [user]);
 
-    const handleCreateEvent = async () => {
-        try {
-            const values = await eventForm.validateFields();
-            const combinedLocation = [values.detailAddress, values.ward, values.province].filter(Boolean).join(', ');
-            const eventData = {
-                ...values,
-                location: combinedLocation,
-                startTime: values.startTime.format('YYYY-MM-DDTHH:mm:ss'),
-                additionalImages: values.additionalImages?.map(item => item?.url || item) || [],
-                ticketTypes: values.ticketTypes || []
-            };
-
-            delete eventData.province;
-            delete eventData.ward;
-            delete eventData.detailAddress;
-
-            await axiosClient.post('/events/my', eventData);
-            message.success(t('navbar.createEventSuccess'));
-            setIsEventModalVisible(false);
-            eventForm.resetFields();
-            if (location.pathname !== '/profile') {
-                navigate('/profile');
-            } else {
-                window.location.reload();
-            }
-        } catch (error) {
-            if (!error.errorFields) message.error(error.response?.data?.message || t('navbar.createEventError'));
-        }
-    };
 
     return (
         <Header style={{
@@ -245,17 +213,17 @@ const Navbar = () => {
                     <div className="auth-actions" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <DarkModeToggle />
                         <LanguageSwitcher />
+                        <Button
+                            type="primary"
+                            shape="round"
+                            icon={<PlusOutlined />}
+                            onClick={() => navigate('/organizer')}
+                            style={{ padding: '0 24px', fontWeight: 500, boxShadow: '0 4px 10px rgba(24, 144, 255, 0.3)' }}
+                        >
+                            {t('navbar.areYouOrganizer')}
+                        </Button>
                         {user ? (
                             <>
-                                <Button
-                                    type="primary"
-                                    shape="round"
-                                    icon={<PlusOutlined />}
-                                    onClick={() => navigate('/create-event')}
-                                    style={{ padding: '0 24px', fontWeight: 500, boxShadow: '0 4px 10px rgba(24, 144, 255, 0.3)' }}
-                                >
-                                    {t('navbar.createEvent')}
-                                </Button>
                                 <Dropdown menu={{ items: userMenuItems }} placement="bottomRight" trigger={['click']}>
                                     <Button
                                         type="text"
@@ -344,6 +312,9 @@ const Navbar = () => {
                     <Menu.Item key="/" icon={<UserOutlined />}>
                         <Link to="/">{t('navbar.home')}</Link>
                     </Menu.Item>
+                    <Menu.Item key="/organizer" icon={<PlusOutlined />}>
+                        <Link to="/organizer">{t('navbar.areYouOrganizer')}</Link>
+                    </Menu.Item>
                     {user && (
                         <>
                             <Menu.Item key="/history" icon={<TagsOutlined />}>
@@ -377,15 +348,7 @@ const Navbar = () => {
             </Drawer>
 
 
-            <EventFormModal
-                visible={isEventModalVisible}
-                onCancel={() => setIsEventModalVisible(false)}
-                onOk={handleCreateEvent}
-                form={eventForm}
-                title={t('navbar.createEventTitle')}
-                editingEvent={false}
-                isUser={true}
-            />
+
         </Header>
     );
 };

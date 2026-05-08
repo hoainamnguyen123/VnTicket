@@ -64,11 +64,19 @@ const AllEvents = () => {
         }
     };
 
+    const getPageTitle = () => {
+        if (eventType && location) return `Sự kiện ${eventType} tại ${location}`;
+        if (eventType) return `Sự kiện ${eventType}`;
+        if (location) return `Sự kiện tại ${location}`;
+        if (searchTerm) return `Kết quả tìm kiếm: "${searchTerm}"`;
+        return t('allEvents.title');
+    };
+
     return (
         <div style={{ padding: isMobile ? '0 16px' : 0 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '20px', marginBottom: '30px' }}>
                 <Title level={2} style={{ margin: 0 }}>
-                    <CalendarOutlined style={{ color: '#1890ff', marginRight: '8px' }} /> {t('allEvents.title')}
+                    <CalendarOutlined style={{ color: '#1890ff', marginRight: '8px' }} /> {getPageTitle()}
                 </Title>
 
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '15px', flex: '1 1 auto', justifyContent: 'flex-end' }}>

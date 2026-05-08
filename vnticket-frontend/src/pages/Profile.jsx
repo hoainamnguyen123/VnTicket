@@ -3,7 +3,6 @@ import { Tabs, Typography, Card, Descriptions, Button, Form, Input, message, Spi
 import { EditOutlined, SaveOutlined, CloseOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import History from './History';
-import MyEvents from './MyEvents';
 import { AuthContext } from '../context/AuthContext';
 import { Navigate, useLocation } from 'react-router-dom';
 import axiosClient from '../api/axiosClient';
@@ -146,11 +145,6 @@ const Profile = () => {
             key: '2',
             label: t('profile.bookingHistory'),
             children: <History />,
-        },
-        {
-            key: '3',
-            label: t('profile.myEvents'),
-            children: <MyEvents />,
         },
     ];
 

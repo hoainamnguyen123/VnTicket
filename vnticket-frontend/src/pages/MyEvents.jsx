@@ -357,15 +357,6 @@ const MyEvents = () => {
                 gap: isMobile ? '12px' : 0
             }}>
                 <h2 style={{ margin: 0, fontSize: isMobile ? '20px' : '24px' }}>{t('myEvents.title', 'Danh sách sự kiện của bạn')}</h2>
-                <Button 
-                    type="primary" 
-                    icon={<PlusOutlined />} 
-                    onClick={() => navigate('/create-event')}
-                    block={isMobile}
-                    size={isMobile ? 'middle' : 'large'}
-                >
-                    {t('myEvents.createEvent', 'Tạo Sự Kiện Mới')}
-                </Button>
             </div>
 
             <Tabs

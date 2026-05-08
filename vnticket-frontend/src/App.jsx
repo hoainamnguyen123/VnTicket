@@ -25,6 +25,7 @@ import FAQ from './pages/FAQ';
 import OperatingRules from './pages/OperatingRules';
 import PaymentReturn from './pages/PaymentReturn';
 import VerifyEmail from './pages/VerifyEmail';
+import OrganizerHub from './pages/OrganizerHub';
 import VirtualQueue from './components/VirtualQueue';
 import { Layout, Grid } from 'antd';
 
@@ -112,6 +113,7 @@ function App() {
               <Route path="/history" element={<History />} />
               <Route path="/admin" element={<Admin />} />
               <Route path="/admin/event-stats/:id" element={<EventStats />} />
+              <Route path="/organizer" element={<OrganizerHub />} />
               <Route path="/my-events/stats/:id" element={<EventStats />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/privacy-policy" element={<PrivacyPolicy />} />
