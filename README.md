@@ -41,7 +41,7 @@
               │  └──────────┘  └──────────┘  └────────────┘  └─────────┘  │
               │                                                            │
               │  ┌────────────────┐  ┌────────────────┐                    │
-              │  │   Cloudinary   │  │ Brevo Email API│                    │
+              │  │   Cloudinary   │  │ Resend Email  │                    │
               │  │ (Image Upload) │  │   (QR Ticket)  │                    │
               │  └────────────────┘  └────────────────┘                    │
               └────────────────────────────────────────────────────────────┘
@@ -63,7 +63,7 @@
 | **Redis (Jedis)** | — | Quản lý tồn kho real-time (Atomic Counter + ZSET) |
 | **RabbitMQ** | — | Message Queue xử lý đặt vé bất đồng bộ |
 | **VNPay SDK** | 2.1.0 | Cổng thanh toán trực tuyến (HMAC-SHA512) |
-| **Brevo HTTP API** | — | Gửi email xác nhận vé kèm QR Code |
+| **Resend** | — | Gửi email xác nhận vé kèm QR Code |
 | **Cloudinary** | 1.36.0 | Upload & quản lý hình ảnh sự kiện |
 | **ZXing** | 3.5.3 | Sinh mã QR Code cho vé điện tử |
 | **Bucket4j** | 8.3.0 | Rate Limiting bảo vệ API |
@@ -91,7 +91,7 @@
 | **Render** | Deploy Backend (Docker) + Frontend (Static) |
 | **Aiven** | Managed PostgreSQL, Redis, RabbitMQ (Cloud) |
 | **Cloudinary** | CDN hình ảnh |
-| **Brevo** | Email transactional |
+| **Resend** | Email transactional |
 
 ---
 
@@ -325,7 +325,7 @@ Trong môi trường **Production**, cấu hình qua biến môi trường (xem 
 | `GOOGLE_CLIENT_ID` | Google OAuth2 Client ID |
 | `VNPAY_TMN_CODE` / `VNPAY_HASH_SECRET` | Thông tin merchant VNPay |
 | `VNPAY_RETURN_URL` | URL redirect sau thanh toán |
-| `RESEND_API_KEY` | API key Brevo (Email) |
+| `RESEND_API_KEY` | API key Resend (Email) |
 | `CLOUDINARY_CLOUD_NAME` / `CLOUDINARY_API_KEY` / `CLOUDINARY_API_SECRET` | Cloudinary credentials |
 | `CORS_ALLOWED_ORIGINS` | Domain frontend được phép gọi API |
 
