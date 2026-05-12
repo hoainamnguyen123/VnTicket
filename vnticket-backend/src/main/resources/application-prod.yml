@@ -10,8 +10,10 @@ spring:
     password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
     hikari:
-      maximum-pool-size: 5
-      minimum-idle: 2
+      maximum-pool-size: 10        # Tăng từ 5 → 10 (Neon free cho phép ~20 connections)
+      minimum-idle: 3              # Tăng từ 2 → 3
+      connection-timeout: 5000     # Fail nhanh 5s thay vì chờ 30s mặc định
+      max-lifetime: 600000         # 10 phút — phù hợp với Neon free (có idle timeout)
   data:
     redis:
       host: ${REDIS_HOST}
@@ -22,9 +24,9 @@ spring:
         enabled: ${REDIS_SSL:true}
       jedis:
         pool:
-          max-active: 5
-          max-idle: 3
-          min-idle: 1
+          max-active: 10           # Tăng từ 5 → 10
+          max-idle: 5              # Tăng từ 3 → 5
+          min-idle: 2              # Tăng từ 1 → 2
   rabbitmq:
     host: ${RABBITMQ_HOST}
     port: ${RABBITMQ_PORT:5671}

@@ -2,9 +2,12 @@ package com.vnticket.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
+import org.springframework.data.redis.core.script.RedisScript;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -21,6 +24,17 @@ public class TicketInventoryRedisService {
 
     private static final String STOCK_PREFIX = "ticket_stock:";
     private static final String RESERVATIONS_KEY = "reservations";
+
+    private static final String LUA_DECREMENT_SCRIPT =
+            "local stock = tonumber(redis.call('GET', KEYS[1]) or '0') " +
+            "if stock >= tonumber(ARGV[1]) then " +
+            "  return redis.call('DECRBY', KEYS[1], ARGV[1]) " +
+            "else " +
+            "  return -1 " +
+            "end";
+
+    private final RedisScript<Long> decrementScript =
+            new DefaultRedisScript<>(LUA_DECREMENT_SCRIPT, Long.class);
 
     private final StringRedisTemplate redisTemplate;
 
@@ -40,20 +54,27 @@ public class TicketInventoryRedisService {
     }
 
     /**
-     * Trừ vé atomic. Nếu kết quả < 0 → rollback ngay và return false.
+     * Trừ vé bằng Lua Script — đảm bảo check + decrement nguyên tử (atomic).
+     * Stock sẽ KHÔNG BAO GIỜ bị âm, tránh từ chối oan các request hợp lệ.
+     *
+     * @return true nếu trừ thành công, false nếu không đủ vé
      */
     public boolean decrementStock(Long ticketTypeId, int quantity) {
         String key = STOCK_PREFIX + ticketTypeId;
-        Long result = redisTemplate.opsForValue().decrement(key, quantity);
+        Long result = redisTemplate.execute(
+                decrementScript,
+                List.of(key),                     // KEYS[1] = "ticket_stock:{id}"
+                String.valueOf(quantity)           // ARGV[1] = số lượng cần trừ
+        );
 
         if (result == null || result < 0) {
-            // Rollback: khôi phục lại số vé đã trừ
-            redisTemplate.opsForValue().increment(key, quantity);
-            log.warn("Decrement failed for ticketTypeId={}: not enough stock (result={})", ticketTypeId, result);
+            log.warn("Lua decrementStock REJECTED: ticketTypeId={}, requested={} (not enough stock)",
+                    ticketTypeId, quantity);
             return false;
         }
 
-        log.debug("Decremented stock for ticketTypeId={} by {}, remaining={}", ticketTypeId, quantity, result);
+        log.debug("Lua decrementStock OK: ticketTypeId={}, decremented by {}, remaining={}",
+                ticketTypeId, quantity, result);
         return true;
     }
 

@@ -8,6 +8,17 @@ import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Service;
 import org.slf4j.MDC;
 
+/**
+ * Consumer xử lý booking message từ queue chính.
+ *
+ * QUAN TRỌNG: Không catch Exception bọc ngoài!
+ * Nếu processBookingMessage() throw exception → message bị REJECT
+ * → RabbitMQ tự động chuyển vào Dead Letter Queue (booking_queue_dlq)
+ * → DLQConsumer sẽ hoàn stock Redis + log lỗi.
+ *
+ * Trước đây: catch Exception → nuốt lỗi → message biến mất → mất vé "trong không khí"
+ * Bây giờ:   throw ra → RabbitMQ chuyển DLQ → DLQConsumer hoàn vé → không mất stock
+ */
 @Slf4j
 @Service
 public class BookingConsumer {
@@ -25,16 +36,17 @@ public class BookingConsumer {
         } else {
             MDC.put("traceId", "RABBIT-WQ");
         }
-        
+
         try {
-            log.info("Consumed booking message from RabbitMQ for user ID {} and event ID {}", message.getUserId(), message.getEventId());
+            log.info("Consumed booking message for user ID {} and event ID {}",
+                    message.getUserId(), message.getEventId());
             bookingService.processBookingMessage(message);
-            log.info("Successfully processed consumed message for user ID {} and event ID {}", message.getUserId(), message.getEventId());
-        } catch (Exception e) {
-            log.error("Failed to process consumed message from RabbitMQ on background worker", e);
-            // Handling dead letters or compensating transactions can be added here
+            log.info("Successfully processed booking for user ID {} and event ID {}",
+                    message.getUserId(), message.getEventId());
         } finally {
             MDC.remove("traceId");
         }
+        // Không catch Exception → exception throw ra ngoài
+        // → RabbitMQ reject message → chuyển vào DLQ tự động
     }
 }

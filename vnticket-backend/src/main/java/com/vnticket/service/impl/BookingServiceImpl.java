@@ -147,7 +147,7 @@ public class BookingServiceImpl implements BookingService {
     // ──────────────────── Book Ticket (Redis-powered) ────────────────────
 
     @Override
-    @Transactional
+    @Transactional(readOnly = true) // Chỉ đọc DB (validate), không ghi — việc ghi do Consumer làm
     @CacheEvict(value = "eventDetail", key = "#request.eventId")
     public BookingDTO bookTicket(Long userId, BookingRequest request) {
         log.info("Starting ticket booking: userId={}, eventId={}, ticketTypeId={}, quantity={}",
