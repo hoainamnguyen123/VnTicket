@@ -33,6 +33,7 @@ D:\VNTicket\vnticket-backend\src\main\java\com\vnticket\entity\BookingDetail.jav
 D:\VNTicket\vnticket-backend\src\main\java\com\vnticket\service\EventService.java
 D:\VNTicket\vnticket-backend\src\main\java\com\vnticket\dto\response\BookingStatsDTO.java
 D:\VNTicket\vnticket-backend\src\main\java\com\vnticket\service\CloudinaryService.java
+D:\VNTicket\vnticket-backend\src\main\java\com\vnticket\rabbitmq\DLQConsumer.java
 D:\VNTicket\vnticket-backend\src\main\java\com\vnticket\filter\RateLimitFilter.java
 D:\VNTicket\vnticket-backend\src\main\java\com\vnticket\repository\TicketTypeRepository.java
 D:\VNTicket\vnticket-backend\src\main\java\com\vnticket\dto\response\ApiResponse.java

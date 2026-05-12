@@ -5,6 +5,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.data.redis.core.script.RedisScript;
 import org.springframework.stereotype.Service;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 
 import java.util.Collections;
 import java.util.List;
@@ -59,6 +60,7 @@ public class TicketInventoryRedisService {
      *
      * @return true nếu trừ thành công, false nếu không đủ vé
      */
+    @CircuitBreaker(name = "redisInventory", fallbackMethod = "decrementStockFallback")
     public boolean decrementStock(Long ticketTypeId, int quantity) {
         String key = STOCK_PREFIX + ticketTypeId;
         Long result = redisTemplate.execute(
@@ -79,12 +81,32 @@ public class TicketInventoryRedisService {
     }
 
     /**
+     * Fallback method cho decrementStock khi Circuit Breaker mở (Redis không khả dụng).
+     * Trả về false để từ chối booking nhanh chóng thay vì chờ timeout.
+     */
+    public boolean decrementStockFallback(Long ticketTypeId, int quantity, Exception e) {
+        log.error("Circuit Breaker OPEN: Redis unavailable for decrementStock. ticketTypeId={}, quantity={}", 
+                  ticketTypeId, quantity, e);
+        return false;
+    }
+
+    /**
      * Hoàn vé (tăng stock) khi hủy hoặc hết hạn reservation.
      */
+    @CircuitBreaker(name = "redisInventory", fallbackMethod = "incrementStockFallback")
     public void incrementStock(Long ticketTypeId, int quantity) {
         String key = STOCK_PREFIX + ticketTypeId;
         Long result = redisTemplate.opsForValue().increment(key, quantity);
         log.debug("Incremented stock for ticketTypeId={} by {}, new stock={}", ticketTypeId, quantity, result);
+    }
+
+    /**
+     * Fallback method cho incrementStock khi Circuit Breaker mở.
+     */
+    public void incrementStockFallback(Long ticketTypeId, int quantity, Exception e) {
+        log.error("Circuit Breaker OPEN: Redis unavailable for incrementStock. ticketTypeId={}, quantity={}", 
+                  ticketTypeId, quantity, e);
+        // Có thể cần lưu log lại db/file riêng để admin xử lý hoàn vé thủ công sau
     }
 
     /**

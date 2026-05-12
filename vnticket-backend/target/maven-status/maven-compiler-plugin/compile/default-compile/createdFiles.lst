@@ -69,6 +69,7 @@ com\vnticket\controller\ImageUploadController.class
 com\vnticket\config\RedisConfig.class
 com\vnticket\dto\request\BookingRequest.class
 com\vnticket\dto\BookingDTO$BookingDTOBuilder.class
+com\vnticket\rabbitmq\DLQConsumer.class
 com\vnticket\config\VnPayConfig.class
 com\vnticket\security\services\UserDetailsImpl.class
 com\vnticket\repository\TicketTypeRepository.class

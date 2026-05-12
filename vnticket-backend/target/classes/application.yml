@@ -9,15 +9,19 @@ spring:
     username: postgres
     password: 123456
     driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 15        # Số connection DB tối đa (mặc định Spring = 10)
+      minimum-idle: 5              # Giữ sẵn 5 connection, không phải tạo mới mỗi lần
+      connection-timeout: 5000     # 5 giây — fail nhanh thay vì chờ 30s mặc định
   data:
     redis:
       host: localhost
       port: 6379
       jedis:
         pool:
-          max-active: 10
-          max-idle: 5
-          min-idle: 1
+          max-active: 15           # Tăng từ 10 → 15 (số Redis connection đồng thời)
+          max-idle: 8              # Tăng từ 5 → 8 (giữ sẵn chờ dùng)
+          min-idle: 2              # Tăng từ 1 → 2
   rabbitmq:
     host: localhost
     port: 5672
@@ -60,3 +64,14 @@ cloudinary:
   cloud-name: "dilx7nhbv"
   api-key: "342651966745924"
   api-secret: "cC3wjZ9ZtdQKTqL1eVrnxVJiphI"
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      redisInventory:
+        registerHealthIndicator: true
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 30s
+        permittedNumberOfCallsInHalfOpenState: 3
+        minimumNumberOfCalls: 5

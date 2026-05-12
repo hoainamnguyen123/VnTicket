@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.math.BigDecimal;
 
 @Slf4j
 @RestController
@@ -80,6 +81,36 @@ public class PaymentController {
         String paymentUrl = vnPayService.createPaymentUrl(bookingId, booking.getTotalAmount(), orderInfo, ipAddress);
 
         return ResponseEntity.ok(ApiResponse.success("Payment URL created", paymentUrl));
+    }
+
+    /**
+     * Checkout trực tiếp cho vé miễn phí (0 VND)
+     * Không cần qua cổng thanh toán VNPay
+     */
+    @PostMapping("/free-checkout")
+    public ResponseEntity<ApiResponse<Void>> freeCheckout(@RequestParam("bookingId") Long bookingId) {
+        Long userId = getCurrentUserId();
+        log.info("User ID [{}] requesting free checkout for Booking ID: {}", userId, bookingId);
+
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new ResourceNotFoundException("Booking not found"));
+
+        if (!booking.getUser().getId().equals(userId)) {
+            throw new BadRequestException("You can only checkout your own bookings");
+        }
+
+        if (booking.getStatus() != BookingStatus.PENDING) {
+            throw new BadRequestException("Booking is not in PENDING state");
+        }
+
+        if (booking.getTotalAmount().compareTo(BigDecimal.ZERO) > 0) {
+            throw new BadRequestException("This booking is not free. Please proceed to payment.");
+        }
+
+        // Tái sử dụng logic mockPayBooking (Xác nhận vé, hoàn tất đơn, gửi email)
+        bookingService.mockPayBooking(bookingId, userId);
+
+        return ResponseEntity.ok(ApiResponse.success("Free checkout completed", null));
     }
 
     /**

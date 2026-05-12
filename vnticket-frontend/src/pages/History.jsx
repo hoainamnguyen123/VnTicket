@@ -208,9 +208,9 @@ const BookingCard = ({ booking, onPay, onViewTickets, onCancel, onExpire, onTran
                                 size="small"
                                 icon={<WalletOutlined />}
                                 style={{ background: 'linear-gradient(135deg, #1890ff, #722ed1)', borderColor: 'transparent' }}
-                                onClick={() => onPay(booking.id)}
+                                onClick={() => onPay(booking)}
                             >
-                                {t('history.pay')}
+                                {booking.totalAmount === 0 ? t('history.getFreeTicket', 'Nhận vé miễn phí') : t('history.pay')}
                             </Button>
                         ) : (
                             <Tag color="error" style={{ display: 'flex', alignItems: 'center' }}>Đã quá hạn</Tag>
@@ -410,8 +410,25 @@ const History = () => {
         });
     };
 
-    const openPaymentModal = (bookingId) => {
-        setSelectedBookingId(bookingId);
+    const handleFreeCheckout = async (bookingId) => {
+        setPaymentLoading(true);
+        try {
+            await axiosClient.post(`/payment/free-checkout?bookingId=${bookingId}`);
+            message.success(t('history.freeCheckoutSuccess', 'Nhận vé miễn phí thành công!'));
+            fetchBookings(true);
+        } catch (error) {
+            message.error(error.message || t('history.freeCheckoutError', 'Có lỗi xảy ra khi nhận vé'));
+        } finally {
+            setPaymentLoading(false);
+        }
+    };
+
+    const openPaymentModal = (booking) => {
+        if (booking.totalAmount === 0) {
+            handleFreeCheckout(booking.id);
+            return;
+        }
+        setSelectedBookingId(booking.id);
         setSelectedMethod(null);
         setPaymentModalVisible(true);
     };
@@ -519,9 +536,9 @@ const History = () => {
                                     type="primary"
                                     icon={<WalletOutlined />}
                                     style={{ background: 'linear-gradient(135deg, #1890ff, #722ed1)', borderColor: 'transparent' }}
-                                    onClick={() => openPaymentModal(record.id)}
+                                    onClick={() => openPaymentModal(record)}
                                 >
-                                    {t('history.pay')}
+                                    {record.totalAmount === 0 ? t('history.getFreeTicket', 'Nhận vé miễn phí') : t('history.pay')}
                                 </Button>
                             )}
                             <Button
