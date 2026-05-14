@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { Table, Typography, Tag, Button, Modal, message, Skeleton, Card, Tabs, Input, Alert } from 'antd';
+import { Table, Typography, Tag, Button, Modal, message, Skeleton, Card, Tabs, Input, Alert, Spin } from 'antd';
 import { ExclamationCircleOutlined, SyncOutlined, WalletOutlined, CreditCardOutlined, EyeOutlined, CloseCircleOutlined, SwapOutlined, GiftOutlined, MailOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import axiosClient from '../api/axiosClient';
@@ -308,7 +308,7 @@ const History = () => {
                 try {
                     await axiosClient.put(`/bookings/${bookingId}/cancel`);
                     message.success(t('history.cancelSuccess'));
-                    fetchBookings();
+                    await fetchBookings();
                 } catch (error) {
                     message.error(error.message || t('history.cancelFailed'));
                 }
@@ -399,8 +399,8 @@ const History = () => {
                     message.success(t('ticketTransfer.transferSuccessDetail', { email: transferEmail }));
                     setTransferEmailVisible(false);
                     setTransferTargetTicket(null);
-                    fetchBookings(true);
-                    fetchTransferHistory();
+                    await fetchBookings(true);
+                    await fetchTransferHistory();
                 } catch (error) {
                     message.error(error.message || t('ticketTransfer.transferError'));
                 } finally {
@@ -415,7 +415,7 @@ const History = () => {
         try {
             await axiosClient.post(`/payment/free-checkout?bookingId=${bookingId}`);
             message.success(t('history.freeCheckoutSuccess', 'Nhận vé miễn phí thành công!'));
-            fetchBookings(true);
+            await fetchBookings(true);
         } catch (error) {
             message.error(error.message || t('history.freeCheckoutError', 'Có lỗi xảy ra khi nhận vé'));
         } finally {
@@ -747,6 +747,7 @@ const History = () => {
 
     return (
         <div style={{ padding: isMobile ? '0 16px' : 0 }}>
+            <Spin fullscreen spinning={paymentLoading || transferLoading} size="large" tip="Đang xử lý giao dịch..." />
             {contextHolder}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                 <Title level={isMobile ? 4 : 2} style={{ margin: 0 }}>{t('history.title')}</Title>

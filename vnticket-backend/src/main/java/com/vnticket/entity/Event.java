@@ -9,7 +9,9 @@ import java.util.List;
 
 @Entity
 @Table(name = "events", indexes = {
-    @Index(name = "idx_event_status", columnList = "status")
+    @Index(name = "idx_event_status", columnList = "status"),
+    @Index(name = "idx_status_location", columnList = "status, location"),
+    @Index(name = "idx_status_type", columnList = "status, type")
 })
 @Getter
 @Setter
@@ -44,6 +46,7 @@ public class Event {
     private String organizerName;
 
     @OneToMany(mappedBy = "event", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OrderBy("price ASC")
     private List<TicketType> ticketTypes;
 
     @Enumerated(EnumType.STRING)

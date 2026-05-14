@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Form, Input, Select, DatePicker, Row, Col, Space, Button, Alert, Card, Typography, Divider, Checkbox, message, Modal } from 'antd';
+import { Form, Input, Select, DatePicker, Row, Col, Space, Button, Alert, Card, Typography, Divider, Checkbox, message, Modal, Spin } from 'antd';
 import { MinusCircleOutlined, PlusOutlined, InfoCircleOutlined, PictureOutlined, EnvironmentOutlined, TagsOutlined, CheckCircleOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -80,6 +80,7 @@ const CreateEvent = () => {
 
     return (
         <div style={{ maxWidth: 1000, margin: '0 auto', padding: '20px 0' }}>
+            <Spin fullscreen spinning={submitting} size="large" tip="Đang khởi tạo sự kiện, vui lòng chờ..." />
             <div style={{ textAlign: 'center', marginBottom: 30 }}>
                 <Title level={2}>{t('createEventPage.title')}</Title>
                 <Text type="secondary">{t('createEventPage.subtitle')}</Text>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Row, Col, Typography, Card, Button, InputNumber, Divider, Table, Tag, message, Skeleton, Modal, Switch, Image, Alert, Grid } from 'antd';
+import { Row, Col, Typography, Card, Button, InputNumber, Divider, Table, Tag, message, Skeleton, Modal, Switch, Image, Alert, Grid, Tooltip, Spin } from 'antd';
 import { useParams, useNavigate } from 'react-router-dom';
 import { CalendarOutlined, EnvironmentOutlined, CheckCircleOutlined, ExclamationCircleOutlined, UserOutlined, ArrowRightOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
@@ -151,23 +151,33 @@ const EventDetail = () => {
 
     const isEnded = event ? new Date(event.startTime) <= new Date() : false;
 
+    const renderTicketStatus = (qty) => {
+        if (qty <= 0) return <Tag color="red" style={{ borderRadius: '4px', margin: 0 }}>{t('common.soldOut', 'Hết vé')}</Tag>;
+        if (qty <= 50) return <Tag color="warning" style={{ borderRadius: '4px', margin: 0 }}>{t('common.almostSoldOut', 'Sắp hết vé')}</Tag>;
+        return <Tag color="green" style={{ borderRadius: '4px', margin: 0 }}>{t('common.available', 'Còn vé')}</Tag>;
+    };
+
     const columns = [
         { title: t('eventDetail.zone'), dataIndex: 'zoneName', key: 'zoneName', render: text => <strong style={{ color: '#1890ff' }}>{text}</strong> },
         { title: t('eventDetail.ticketPrice'), dataIndex: 'price', key: 'price', render: price => <strong>{formatCurrency(price)}</strong> },
         {
-            title: t('eventDetail.remaining'), dataIndex: 'remainingQuantity', key: 'remainingQuantity', render: qty => (
-                <Tag color={qty > 0 ? 'green' : 'red'}>{qty > 0 ? `${qty} ${t('common.tickets')}` : t('common.soldOut')}</Tag>
+            title: t('eventDetail.status', 'Trạng thái'), dataIndex: 'remainingQuantity', key: 'remainingQuantity', render: qty => (
+                renderTicketStatus(qty)
             )
         },
         {
             title: t('eventDetail.select'),
             key: 'action',
             render: (_, record) => (
-                <Switch
-                    checked={selectedTicket?.id === record.id}
-                    onChange={(checked) => setSelectedTicket(checked ? record : null)}
-                    disabled={record.remainingQuantity <= 0 || isEnded}
-                />
+                <Tooltip title={isEnded ? t('eventDetail.eventEndedMsg', 'Sự kiện đã kết thúc') : ''} placement="top">
+                    <span style={{ display: 'inline-block' }}>
+                        <Switch
+                            checked={selectedTicket?.id === record.id}
+                            onChange={(checked) => setSelectedTicket(checked ? record : null)}
+                            disabled={record.remainingQuantity <= 0 || isEnded}
+                        />
+                    </span>
+                </Tooltip>
             ),
         },
     ];
@@ -229,17 +239,19 @@ const EventDetail = () => {
                                 </Text>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                                     <Text strong style={{ color: '#f5222d', fontSize: '15px' }}>{formatCurrency(record.price)}</Text>
-                                    <Tag color={record.remainingQuantity > 0 ? 'green' : 'red'} style={{ borderRadius: '4px', margin: 0, fontSize: '11px' }}>
-                                        {record.remainingQuantity > 0 ? `${record.remainingQuantity} ${t('common.tickets')}` : t('common.soldOut')}
-                                    </Tag>
+                                    {renderTicketStatus(record.remainingQuantity)}
                                 </div>
                             </div>
                             <div onClick={(e) => e.stopPropagation()}>
-                                <Switch
-                                    checked={selectedTicket?.id === record.id}
-                                    onChange={(checked) => setSelectedTicket(checked ? record : null)}
-                                    disabled={record.remainingQuantity <= 0 || isEnded}
-                                />
+                                <Tooltip title={isEnded ? t('eventDetail.eventEndedMsg', 'Sự kiện đã kết thúc') : ''} placement="top">
+                                    <span style={{ display: 'inline-block' }}>
+                                        <Switch
+                                            checked={selectedTicket?.id === record.id}
+                                            onChange={(checked) => setSelectedTicket(checked ? record : null)}
+                                            disabled={record.remainingQuantity <= 0 || isEnded}
+                                        />
+                                    </span>
+                                </Tooltip>
                             </div>
                         </div>
                     ))}
@@ -276,22 +288,27 @@ const EventDetail = () => {
                 />
             )}
 
-            <Button
-                type="primary"
-                size="large"
-                block
-                style={{ marginTop: '20px', height: '50px', fontSize: '16px', borderRadius: '8px', fontWeight: 600, background: 'linear-gradient(135deg, #1890ff, #722ed1)', border: 'none' }}
-                onClick={showConfirmModal}
-                loading={bookingMutation.isPending}
-                disabled={!selectedTicket || isEnded}
-            >
-                {isEnded ? t('eventDetail.eventEndedBtn', 'SỰ KIỆN ĐÃ DIỄN RA') : t('eventDetail.bookNow')}
-            </Button>
+            <Tooltip title={isEnded ? t('eventDetail.eventEndedMsg', 'Sự kiện đã kết thúc') : ''} placement="top">
+                <span style={{ display: 'block', marginTop: '20px' }}>
+                    <Button
+                        type="primary"
+                        size="large"
+                        block
+                        style={{ height: '50px', fontSize: '16px', borderRadius: '8px', fontWeight: 600, background: 'linear-gradient(135deg, #1890ff, #722ed1)', border: 'none' }}
+                        onClick={showConfirmModal}
+                        loading={bookingMutation.isPending}
+                        disabled={!selectedTicket || isEnded}
+                    >
+                        {isEnded ? t('eventDetail.eventEndedBtn', 'SỰ KIỆN ĐÃ DIỄN RA') : t('eventDetail.bookNow')}
+                    </Button>
+                </span>
+            </Tooltip>
         </Card>
     );
 
     return (
         <div className="event-detail-page">
+            <Spin fullscreen spinning={bookingMutation.isPending} size="large" tip="Đang xử lý đặt vé, vui lòng không làm mới trang..." />
             <Row gutter={[32, 32]}>
                 <Col xs={24} md={12} style={{ padding: isMobile ? 0 : undefined }}>
                     <Image.PreviewGroup>
@@ -535,11 +552,15 @@ const EventDetail = () => {
                         {event.ticketTypes?.length > 0 ? formatCurrency(Math.min(...event.ticketTypes.map(t => t.price))) : '0 ₫'}
                     </Text>
                 </div>
-                <Button type="primary" size="large" style={{ borderRadius: '8px', padding: '0 32px', fontWeight: 600 }} onClick={() => {
-                    document.getElementById('booking-card')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }}>
-                    {t('common.buyNow', 'Mua vé ngay')}
-                </Button>
+                <Tooltip title={isEnded ? t('eventDetail.eventEndedMsg', 'Sự kiện đã kết thúc') : ''} placement="top">
+                    <span style={{ display: 'inline-block' }}>
+                        <Button type="primary" size="large" style={{ borderRadius: '8px', padding: '0 32px', fontWeight: 600 }} onClick={() => {
+                            if (!isEnded) document.getElementById('booking-card')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }} disabled={isEnded}>
+                            {t('common.buyNow', 'Mua vé ngay')}
+                        </Button>
+                    </span>
+                </Tooltip>
             </div>
         </div>
     );

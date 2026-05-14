@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { Table, Button, Modal, Form, Input, InputNumber, Select, DatePicker, message, Space, Popconfirm, Row, Col, Card, Statistic, Tag, Typography, Image, Divider, Tabs, Badge, Checkbox, Grid, Empty, Tooltip } from 'antd';
+import { Table, Button, Modal, Form, Input, InputNumber, Select, DatePicker, message, Space, Popconfirm, Row, Col, Card, Statistic, Tag, Typography, Image, Divider, Tabs, Badge, Checkbox, Grid, Empty, Tooltip, Spin } from 'antd';
 import { EditOutlined, DeleteOutlined, PlusOutlined, MinusCircleOutlined, DollarOutlined, TagsOutlined, CheckCircleOutlined, BarChartOutlined, UserOutlined, EnvironmentOutlined, ClockCircleOutlined, ExclamationCircleOutlined, MailOutlined, PhoneOutlined, SaveOutlined, TagOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { useTranslation } from 'react-i18next';
@@ -32,6 +32,7 @@ const Admin = () => {
     const [searchText, setSearchText] = useState('');
     const [showOnlySlider, setShowOnlySlider] = useState(false);
     const [showOnlyFeatured, setShowOnlyFeatured] = useState(false);
+    const [savingEvent, setSavingEvent] = useState(false);
 
     const [pagination, setPagination] = useState({ current: 1, pageSize: 10, total: 0 });
 
@@ -177,6 +178,7 @@ const Admin = () => {
 
     const handleOk = async () => {
         try {
+            setSavingEvent(true);
             const values = await form.validateFields();
             const combinedLocation = [values.detailAddress, values.ward, values.province].filter(Boolean).join(', ');
             const payload = {
@@ -203,8 +205,13 @@ const Admin = () => {
             setIsModalVisible(false);
             fetchEvents();
         } catch (error) {
-            if (error.errorFields) return;
+            if (error.errorFields) {
+                setSavingEvent(false);
+                return;
+            }
             message.error(editingEvent ? t('admin.editError') : t('admin.addError'));
+        } finally {
+            setSavingEvent(false);
         }
     };
 
@@ -414,6 +421,7 @@ const Admin = () => {
 
     return (
         <div style={{ padding: isMobile ? '0 10px' : 0 }}>
+            <Spin fullscreen spinning={savingEvent} size="large" tip="Đang lưu thông tin sự kiện..." />
             <Tabs defaultActiveKey="DASHBOARD" size={isMobile ? 'middle' : 'large'} style={{ marginBottom: 24 }}>
                 <Tabs.TabPane tab={<span><BarChartOutlined /> {t('admin.dashboard')}</span>} key="DASHBOARD">
                     {stats && (

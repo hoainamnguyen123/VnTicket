@@ -46,6 +46,7 @@ public class EventServiceImpl implements EventService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = "events", key = "{'approved', #type, #search, #location, #pageable.pageNumber, #pageable.pageSize}")
     public Page<EventDTO> getApprovedEvents(String type, String search, String location, Pageable pageable) {
         log.debug("Executing getApprovedEvents with type: {}, search: {}, location: {}", type, search, location);
         Page<Event> events;
@@ -72,6 +73,7 @@ public class EventServiceImpl implements EventService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(value = "events", key = "{'admin', #type, #search, #pageable.pageNumber, #pageable.pageSize}")
     public Page<EventDTO> getAdminAllEvents(String type, String search, Pageable pageable) {
         log.debug("Executing getAdminAllEvents with type: {}, search: {}", type, search);
         Page<Event> events;

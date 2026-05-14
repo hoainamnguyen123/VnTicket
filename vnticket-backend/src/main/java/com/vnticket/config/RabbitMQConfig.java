@@ -8,18 +8,6 @@ import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-/**
- * Cấu hình RabbitMQ với Dead Letter Queue (DLQ).
- *
- * Luồng message:
- *   Producer → booking_exchange → booking_queue → Consumer xử lý
- *                                      │
- *                                 Nếu Consumer THROW exception
- *                                      │
- *                                      ▼
- *                  booking_exchange_dlq → booking_queue_dlq → DLQConsumer xử lý
- *                                                              (hoàn stock Redis + log)
- */
 @Configuration
 public class RabbitMQConfig {
 
@@ -62,10 +50,6 @@ public class RabbitMQConfig {
 
     // ═══════════════════ Dead Letter Queue Beans ═══════════════════
 
-    /**
-     * Queue chứa message thất bại.
-     * DLQConsumer sẽ lắng nghe queue này để hoàn lại stock vào Redis.
-     */
     @Bean
     public Queue deadLetterQueue() {
         return QueueBuilder.durable(DLQ_QUEUE).build();
@@ -82,8 +66,6 @@ public class RabbitMQConfig {
                 .to(deadLetterExchange())
                 .with(DLQ_ROUTING_KEY);
     }
-
-    // ═══════════════════ Serialization ═══════════════════
 
     @Bean
     public MessageConverter jsonMessageConverter() {
