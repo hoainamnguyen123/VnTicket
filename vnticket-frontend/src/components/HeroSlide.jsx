@@ -69,78 +69,92 @@ const HeroSlide = ({ event }) => {
                     <div style={{
                         position: 'absolute',
                         top: 0, left: 0, right: 0, bottom: 0,
-                        background: 'linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.4) 60%, rgba(0,0,0,0.1) 100%)',
+                        background: 'linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.2) 40%, transparent 100%)',
                         pointerEvents: 'none'
                     }} />
 
-                    {/* Event Content */}
+                    {/* Event Content - Compact Bottom Bar */}
                     <div style={{
                         position: 'absolute',
-                        bottom: '8%',
-                        left: '5%',
-                        right: '5%',
+                        bottom: '0',
+                        left: '0',
+                        right: '0',
                         color: 'white',
+                        padding: '15px 30px',
+                        background: 'linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0.7) 50%, rgba(0,0,0,0) 100%)',
+                        backdropFilter: 'blur(4px)',
                         display: 'flex',
-                        flexDirection: 'column',
-                        gap: '12px',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        gap: '20px',
                         zIndex: 10
                     }}>
-                        <div>
-                            <Tag
-                                color={event.type === 'CONCERT' || event.type === 'Âm Nhạc' ? '#eb2f96' : '#1890ff'}
-                                style={{ fontSize: '14px', padding: '4px 12px', borderRadius: '100px', fontWeight: 'bold', border: 'none' }}
-                            >
-                                {event.type}
-                            </Tag>
-                        </div>
-
-                        <Title level={1} style={{
-                            color: 'white',
-                            margin: 0,
-                            fontSize: 'clamp(28px, 4vw, 48px)',
-                            textShadow: '0 4px 12px rgba(0,0,0,0.6)',
-                            lineHeight: '1.2'
-                        }}>
-                            {event.name}
-                        </Title>
-
                         <div style={{
                             display: 'flex',
-                            gap: '20px',
-                            flexWrap: 'wrap',
-                            fontSize: 'clamp(14px, 2vw, 16px)',
-                            opacity: 0.9,
-                            fontWeight: '500'
+                            flexDirection: 'column',
+                            gap: '6px',
+                            flex: 1,
+                            minWidth: 0 // Allows text truncation to work
                         }}>
-                            <span style={{ display: 'flex', alignItems: 'center' }}>
-                                <CalendarOutlined style={{ marginRight: '8px', color: '#1890ff', fontSize: '18px' }} />
-                                {formatCustomDate(event.startTime)}
-                            </span>
-                            <span style={{ display: 'flex', alignItems: 'center' }}>
-                                <EnvironmentOutlined style={{ marginRight: '8px', color: '#1890ff', fontSize: '18px' }} />
-                                <span style={{
-                                    maxWidth: '400px',
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <Tag
+                                    color={event.type === 'CONCERT' || event.type === 'Âm Nhạc' ? '#eb2f96' : '#1890ff'}
+                                    style={{ fontSize: '11px', padding: '1px 8px', borderRadius: '4px', fontWeight: 'bold', border: 'none', margin: 0 }}
+                                >
+                                    {event.type}
+                                </Tag>
+                                <Title level={3} style={{
+                                    color: 'white',
+                                    margin: 0,
+                                    fontSize: 'clamp(16px, 1.8vw, 22px)',
+                                    textShadow: '0 2px 4px rgba(0,0,0,0.8)',
+                                    lineHeight: '1.2',
                                     whiteSpace: 'nowrap',
                                     overflow: 'hidden',
-                                    textOverflow: 'ellipsis',
-                                    display: 'inline-block'
+                                    textOverflow: 'ellipsis'
                                 }}>
-                                    {event.location}
+                                    {event.name}
+                                </Title>
+                            </div>
+
+                            <div style={{
+                                display: 'flex',
+                                gap: '20px',
+                                flexWrap: 'wrap',
+                                fontSize: 'clamp(12px, 1.3vw, 14px)',
+                                opacity: 0.85,
+                                fontWeight: '500'
+                            }}>
+                                <span style={{ display: 'flex', alignItems: 'center' }}>
+                                    <CalendarOutlined style={{ marginRight: '6px', color: '#1890ff', fontSize: '14px' }} />
+                                    {formatCustomDate(event.startTime)}
                                 </span>
-                            </span>
+                                <span style={{ display: 'flex', alignItems: 'center' }}>
+                                    <EnvironmentOutlined style={{ marginRight: '6px', color: '#1890ff', fontSize: '14px' }} />
+                                    <span style={{
+                                        maxWidth: '350px',
+                                        whiteSpace: 'nowrap',
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                        display: 'inline-block'
+                                    }}>
+                                        {event.location}
+                                    </span>
+                                </span>
+                            </div>
                         </div>
 
-                        <div style={{ marginTop: '20px' }}>
+                        <div style={{ flexShrink: 0 }}>
                             <Button
                                 type="primary"
-                                size="large"
+                                size="middle"
                                 style={{
-                                    padding: '0 40px',
-                                    height: '52px',
-                                    fontSize: '16px',
+                                    padding: '0 24px',
+                                    height: '40px',
+                                    fontSize: '14px',
                                     fontWeight: 'bold',
-                                    borderRadius: '100px',
-                                    boxShadow: '0 4px 15px rgba(24, 144, 255, 0.4)'
+                                    borderRadius: '8px',
+                                    boxShadow: '0 4px 10px rgba(24, 144, 255, 0.3)'
                                 }}
                                 onClick={(e) => {
                                     e.stopPropagation();
