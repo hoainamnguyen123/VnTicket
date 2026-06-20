@@ -1,10 +1,12 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { HomeOutlined, SearchOutlined, HistoryOutlined, UserOutlined } from '@ant-design/icons';
+import { DashboardOutlined, HomeOutlined, SearchOutlined, HistoryOutlined, UserOutlined } from '@ant-design/icons';
 import { Grid } from 'antd';
 import { useTranslation } from 'react-i18next';
 import { useContext } from 'react';
 import { ThemeContext } from '../context/ThemeContext';
+import { AuthContext } from '../context/AuthContext';
+import { getRoleNavigation } from '../utils/navigationPolicy';
 
 const { useBreakpoint } = Grid;
 
@@ -14,6 +16,8 @@ const BottomNav = () => {
     const screens = useBreakpoint();
     const { t } = useTranslation();
     const { isDark } = useContext(ThemeContext);
+    const { user } = useContext(AuthContext);
+    const roleNavigation = getRoleNavigation(user);
 
     // Chỉ hiển thị trên mobile
     if (screens.md) return null;
@@ -30,9 +34,11 @@ const BottomNav = () => {
             label: t('home.searchPlaceholder', 'Tìm kiếm').split(' ')[0], // Get first word
         },
         {
-            key: '/history',
-            icon: <HistoryOutlined />,
-            label: t('navbar.myTickets', 'Vé của tôi'),
+            key: user ? roleNavigation.primaryDestination : '/login',
+            icon: roleNavigation.isAdmin ? <DashboardOutlined /> : <HistoryOutlined />,
+            label: roleNavigation.isAdmin
+                ? t('navbar.systemManagement', 'Quản trị')
+                : t('navbar.myTickets', 'Vé của tôi'),
         },
         {
             key: '/profile',

@@ -18,6 +18,11 @@ const EventFormModal = ({ visible, onCancel, onOk, form, title, editingEvent, is
 
     const [provinces, setProvinces] = useState([]);
     const [wards, setWards] = useState([]);
+    const submitLabel = isUser
+        ? 'Gửi yêu cầu'
+        : editingEvent
+            ? 'Lưu thay đổi'
+            : 'Tạo và xuất bản';
 
     useEffect(() => {
         if (visible) {
@@ -45,7 +50,7 @@ const EventFormModal = ({ visible, onCancel, onOk, form, title, editingEvent, is
             open={visible}
             onOk={onOk}
             onCancel={onCancel}
-            okText={isUser ? "Gửi Yêu Cầu" : "Lưu"}
+            okText={submitLabel}
             cancelText="Hủy"
             width={isMobile ? '95%' : 800}
             style={{ top: isMobile ? 10 : 20 }}
@@ -65,7 +70,7 @@ const EventFormModal = ({ visible, onCancel, onOk, form, title, editingEvent, is
                 }}>
                     <Button onClick={onCancel}>Hủy</Button>
                     <Button type="primary" onClick={onOk}>
-                        {isUser ? "Gửi Yêu Cầu" : "Lưu"}
+                        {submitLabel}
                     </Button>
                 </div>
             ]}
@@ -75,6 +80,15 @@ const EventFormModal = ({ visible, onCancel, onOk, form, title, editingEvent, is
                     message="Lưu ý về phí nền tảng"
                     description="Chúng tôi sẽ thu 2% phí (hoa hồng) trên tổng doanh thu bán vé của biểu mẫu sự kiện này."
                     type="warning"
+                    showIcon
+                    style={{ marginBottom: 16 }}
+                />
+            )}
+            {!isUser && !editingEvent && (
+                <Alert
+                    message="Xuất bản trực tiếp"
+                    description="Sự kiện do quản trị viên tạo sẽ được duyệt và hiển thị ngay sau khi lưu."
+                    type="success"
                     showIcon
                     style={{ marginBottom: 16 }}
                 />

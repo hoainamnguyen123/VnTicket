@@ -6,6 +6,8 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import axiosClient from '../api/axiosClient';
 import EventFormModal from '../components/EventFormModal';
+import AdminDashboardOverview from '../components/AdminDashboardOverview';
+import { saveAdminEvent } from '../api/adminEventApi';
 import { ThemeContext } from '../context/ThemeContext';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
@@ -22,6 +24,7 @@ const Admin = () => {
     const [eventRevenueData, setEventRevenueData] = useState([]);
     const [eventTypeData, setEventTypeData] = useState([]);
     const [activeTab, setActiveTab] = useState('APPROVED');
+    const [adminSection, setAdminSection] = useState('DASHBOARD');
     const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(false);
     const [isModalVisible, setIsModalVisible] = useState(false);
@@ -103,7 +106,14 @@ const Admin = () => {
     };
 
     const handleAdd = () => {
-        navigate('/create-event');
+        setEditingEvent(null);
+        form.resetFields();
+        form.setFieldsValue({
+            isSlider: false,
+            isFeatured: false,
+            ticketTypes: [{ zoneName: '', price: 0, totalQuantity: 100 }],
+        });
+        setIsModalVisible(true);
     };
 
     const handleEdit = (record) => {
@@ -187,16 +197,13 @@ const Admin = () => {
             delete payload.ward;
             delete payload.detailAddress;
 
-            console.log("Dữ liệu gửi lên API Admin:", payload);
-
-            if (editingEvent) {
-                await axiosClient.put(`/admin/events/${editingEvent.id}`, payload);
-                message.success(t('admin.editSuccess'));
-            } else {
-                await axiosClient.post('/admin/events', payload);
-                message.success(t('admin.addSuccess'));
-            }
+            await saveAdminEvent({
+                eventId: editingEvent?.id,
+                payload,
+            });
+            message.success(editingEvent ? t('admin.editSuccess') : t('admin.addSuccess'));
             setIsModalVisible(false);
+            form.resetFields();
             fetchEvents();
         } catch (error) {
             if (error.errorFields) {
@@ -416,10 +423,27 @@ const Admin = () => {
     return (
         <div style={{ padding: isMobile ? '0 10px' : 0 }}>
             <Spin fullscreen spinning={savingEvent} size="large" tip="Đang lưu thông tin sự kiện..." />
-            <Tabs defaultActiveKey="DASHBOARD" size={isMobile ? 'middle' : 'large'} style={{ marginBottom: 24 }}>
+            <Tabs
+                activeKey={adminSection}
+                onChange={setAdminSection}
+                size={isMobile ? 'middle' : 'large'}
+                style={{ marginBottom: 24 }}
+            >
                 <Tabs.TabPane tab={<span><BarChartOutlined /> {t('admin.dashboard')}</span>} key="DASHBOARD">
                     {stats && (
                         <div style={{ marginBottom: 32, padding: '16px 0' }}>
+                            <AdminDashboardOverview
+                                stats={stats}
+                                pendingCount={displayPending.length}
+                                approvedCount={displayApproved.length}
+                                rejectedCount={displayRejected.length}
+                                onCreateEvent={handleAdd}
+                                onOpenPending={() => {
+                                    setAdminSection('EVENTS');
+                                    setActiveTab('PENDING');
+                                }}
+                            />
+                            {false && (
                             <Row gutter={[16, 16]}>
                                 <Col xs={24} sm={12} md={6}>
                                     <Card className="dashboard-card" bodyStyle={{ padding: '24px' }}>
@@ -474,8 +498,9 @@ const Admin = () => {
                                     </Card>
                                 </Col>
                             </Row>
+                            )}
 
-                            <Row gutter={[16, 16]} style={{ marginTop: 24 }}>
+                            <Row gutter={[16, 16]} style={{ marginTop: 20 }}>
                                 <Col xs={24} lg={16}>
                                     <Card title={t('admin.topRevenueEvents')} className="dashboard-card" bodyStyle={{ height: isMobile ? 300 : 350, padding: '20px 0' }} headStyle={{ borderBottom: isDark ? '1px solid #303030' : '1px solid #f0f0f0' }}>
                                         <ResponsiveContainer width="100%" height="100%">

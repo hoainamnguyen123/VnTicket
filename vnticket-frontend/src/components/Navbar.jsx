@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next';
 import LanguageSwitcher from './LanguageSwitcher';
 import DarkModeToggle from './DarkModeToggle';
 import axiosClient from '../api/axiosClient';
+import { getRoleNavigation } from '../utils/navigationPolicy';
 
 const { Header } = Layout;
 const { useBreakpoint } = Grid;
@@ -18,6 +19,7 @@ const Navbar = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const { t } = useTranslation();
+    const roleNavigation = getRoleNavigation(user);
 
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [pendingCount, setPendingCount] = useState(0);
@@ -37,13 +39,13 @@ const Navbar = () => {
             label: t('navbar.profile'),
             onClick: () => navigate('/profile'),
         },
-        {
+        roleNavigation.showMyTickets && {
             key: 'my-tickets',
             icon: <TagsOutlined />,
             label: t('navbar.myTickets'),
             onClick: () => navigate('/history'),
         },
-        {
+        roleNavigation.showOrganizer && {
             key: 'my-events',
             icon: <CalendarOutlined />,
             label: (
@@ -53,6 +55,12 @@ const Navbar = () => {
                 </Badge>
             ),
             onClick: () => navigate('/organizer'),
+        },
+        roleNavigation.isAdmin && {
+            key: 'admin',
+            icon: <CalendarOutlined />,
+            label: t('navbar.systemManagement'),
+            onClick: () => navigate('/admin'),
         },
         {
             type: 'divider',
@@ -64,7 +72,7 @@ const Navbar = () => {
             danger: true,
             onClick: handleLogout,
         },
-    ];
+    ].filter(Boolean);
 
     useEffect(() => {
         if (user) {
@@ -193,7 +201,7 @@ const Navbar = () => {
                         <Menu.Item key="/" style={{ padding: '0 20px' }}>
                             <Link to="/">{t('navbar.home')}</Link>
                         </Menu.Item>
-                        {user && (
+                        {roleNavigation.showMyTickets && (
                             <Menu.Item key="/history" style={{ padding: '0 20px' }}>
                                 <Link to="/history">🎟️ {t('navbar.myTickets')}</Link>
                             </Menu.Item>
@@ -213,15 +221,17 @@ const Navbar = () => {
                     <div className="auth-actions" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <DarkModeToggle />
                         <LanguageSwitcher />
-                        <Button
-                            type="primary"
-                            shape="round"
-                            icon={<PlusOutlined />}
-                            onClick={() => navigate('/organizer')}
-                            style={{ padding: '0 24px', fontWeight: 500, boxShadow: '0 4px 10px rgba(24, 144, 255, 0.3)' }}
-                        >
-                            {t('navbar.areYouOrganizer')}
-                        </Button>
+                        {roleNavigation.showOrganizer && (
+                            <Button
+                                type="primary"
+                                shape="round"
+                                icon={<PlusOutlined />}
+                                onClick={() => navigate('/organizer')}
+                                style={{ padding: '0 24px', fontWeight: 500, boxShadow: '0 4px 10px rgba(24, 144, 255, 0.3)' }}
+                            >
+                                {t('navbar.areYouOrganizer')}
+                            </Button>
+                        )}
                         {user ? (
                             <>
                                 <Dropdown menu={{ items: userMenuItems }} placement="bottomRight" trigger={['click']}>
@@ -312,14 +322,18 @@ const Navbar = () => {
                     <Menu.Item key="/" icon={<UserOutlined />}>
                         <Link to="/">{t('navbar.home')}</Link>
                     </Menu.Item>
-                    <Menu.Item key="/organizer" icon={<PlusOutlined />}>
-                        <Link to="/organizer">{t('navbar.areYouOrganizer')}</Link>
-                    </Menu.Item>
+                    {roleNavigation.showOrganizer && (
+                        <Menu.Item key="/organizer" icon={<PlusOutlined />}>
+                            <Link to="/organizer">{t('navbar.areYouOrganizer')}</Link>
+                        </Menu.Item>
+                    )}
                     {user && (
                         <>
-                            <Menu.Item key="/history" icon={<TagsOutlined />}>
-                                <Link to="/history">{t('navbar.myTickets')}</Link>
-                            </Menu.Item>
+                            {roleNavigation.showMyTickets && (
+                                <Menu.Item key="/history" icon={<TagsOutlined />}>
+                                    <Link to="/history">{t('navbar.myTickets')}</Link>
+                                </Menu.Item>
+                            )}
                             <Menu.Item key="/profile" icon={<UserOutlined />}>
                                 <Link to="/profile">{t('navbar.profile')}</Link>
                             </Menu.Item>
