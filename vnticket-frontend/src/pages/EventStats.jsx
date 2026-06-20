@@ -61,7 +61,7 @@ const fetchEventStats = async (eventId, isAdmin) => {
 
   return {
     stats: statsResponse.data,
-    orders: (ordersResponse.data || []).filter((order) => order.totalAmount > 0),
+    orders: ordersResponse.data || [],
     eventDetail: eventResponse.data,
   };
 };
