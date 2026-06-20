@@ -1,6 +1,6 @@
 import React, { useCallback, useContext, useEffect, useState } from 'react';
 import { Table, Button, Modal, Form, Input, InputNumber, Select, DatePicker, message, Space, Popconfirm, Row, Col, Card, Statistic, Tag, Typography, Image, Divider, Tabs, Badge, Checkbox, Grid, Empty, Tooltip, Spin } from 'antd';
-import { EditOutlined, DeleteOutlined, PlusOutlined, MinusCircleOutlined, DollarOutlined, TagsOutlined, CheckCircleOutlined, BarChartOutlined, UserOutlined, EnvironmentOutlined, ClockCircleOutlined, ExclamationCircleOutlined, MailOutlined, PhoneOutlined, SaveOutlined, TagOutlined } from '@ant-design/icons';
+import { EditOutlined, DeleteOutlined, PlusOutlined, MinusCircleOutlined, TagsOutlined, CheckCircleOutlined, BarChartOutlined, UserOutlined, EnvironmentOutlined, ClockCircleOutlined, ExclamationCircleOutlined, MailOutlined, PhoneOutlined, SaveOutlined, TagOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
@@ -443,63 +443,6 @@ const Admin = () => {
                                     setActiveTab('PENDING');
                                 }}
                             />
-                            {false && (
-                            <Row gutter={[16, 16]}>
-                                <Col xs={24} sm={12} md={6}>
-                                    <Card className="dashboard-card" bodyStyle={{ padding: '24px' }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                            <div>
-                                                <Typography.Text type="secondary" style={{ fontSize: '16px' }}>{t('admin.totalBookings')}</Typography.Text>
-                                                <Typography.Title level={2} style={{ margin: 0 }}>{stats.totalBookings}</Typography.Title>
-                                            </div>
-                                            <div className="stat-icon-wrapper" style={{ background: isDark ? 'transparent' : '#e6f4ff', color: '#1890ff' }}>
-                                                <TagsOutlined />
-                                            </div>
-                                        </div>
-                                    </Card>
-                                </Col>
-                                <Col xs={24} sm={12} md={6}>
-                                    <Card className="dashboard-card" bodyStyle={{ padding: '24px' }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                            <div>
-                                                <Typography.Text type="secondary" style={{ fontSize: '16px' }}>{t('admin.bookedTickets')}</Typography.Text>
-                                                <Typography.Title level={2} style={{ margin: 0 }}>{stats.totalTicketsBooked}</Typography.Title>
-                                            </div>
-                                            <div className="stat-icon-wrapper" style={{ background: isDark ? 'transparent' : '#fff0f6', color: '#eb2f96' }}>
-                                                <UserOutlined />
-                                            </div>
-                                        </div>
-                                    </Card>
-                                </Col>
-                                <Col xs={24} sm={12} md={6}>
-                                    <Card className="dashboard-card" bodyStyle={{ padding: '24px' }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                            <div>
-                                                <Typography.Text type="secondary" style={{ fontSize: '16px' }}>{t('admin.paidTickets')}</Typography.Text>
-                                                <Typography.Title level={2} style={{ margin: 0, color: '#52c41a' }}>{stats.totalTicketsPaid}</Typography.Title>
-                                            </div>
-                                            <div className="stat-icon-wrapper" style={{ background: isDark ? 'transparent' : '#f6ffed', color: '#52c41a' }}>
-                                                <CheckCircleOutlined />
-                                            </div>
-                                        </div>
-                                    </Card>
-                                </Col>
-                                <Col xs={24} sm={12} md={6}>
-                                    <Card className="dashboard-card" bodyStyle={{ padding: '24px' }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                            <div>
-                                                <Typography.Text type="secondary" style={{ fontSize: '16px' }}>{t('admin.totalRevenue')}</Typography.Text>
-                                                <Typography.Title level={3} style={{ margin: 0, color: '#f5222d' }}>{stats.totalRevenue?.toLocaleString()} ₫</Typography.Title>
-                                            </div>
-                                            <div className="stat-icon-wrapper" style={{ background: isDark ? 'transparent' : '#fff1f0', color: '#f5222d' }}>
-                                                <DollarOutlined />
-                                            </div>
-                                        </div>
-                                    </Card>
-                                </Col>
-                            </Row>
-                            )}
-
                             <Row gutter={[16, 16]} style={{ marginTop: 20 }}>
                                 <Col xs={24} lg={16}>
                                     <Card title={t('admin.topRevenueEvents')} className="dashboard-card" bodyStyle={{ height: isMobile ? 300 : 350, padding: '20px 0' }} headStyle={{ borderBottom: isDark ? '1px solid #303030' : '1px solid #f0f0f0' }}>

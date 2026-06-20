@@ -53,4 +53,21 @@ describe('AdminDashboardOverview', () => {
     expect(onCreateEvent).toHaveBeenCalledOnce();
     expect(onOpenPending).toHaveBeenCalledOnce();
   });
+
+  it('handles an empty system without invalid percentages', () => {
+    render(
+      <AdminDashboardOverview
+        stats={null}
+        pendingCount={0}
+        approvedCount={0}
+        rejectedCount={0}
+        onCreateEvent={() => {}}
+        onOpenPending={() => {}}
+      />,
+    );
+
+    expect(screen.getByText('0 sự kiện chờ duyệt')).toBeInTheDocument();
+    expect(screen.getAllByText('0%').length).toBeGreaterThan(0);
+    expect(screen.getByText('0 ₫')).toBeInTheDocument();
+  });
 });

@@ -8,6 +8,7 @@ import axiosClient from '../api/axiosClient';
 import { AuthContext } from '../context/AuthContext';
 import { ThemeContext } from '../context/ThemeContext';
 import ImageUploadInput from '../components/ImageUploadInput';
+import { saveAdminEvent } from '../api/adminEventApi';
 
 const { Option } = Select;
 const { TextArea } = Input;
@@ -68,9 +69,15 @@ const CreateEvent = () => {
             delete eventData.ward;
             delete eventData.detailAddress;
 
-            await axiosClient.post('/events/my', eventData);
-            message.success(t('navbar.createEventSuccess') || 'Yêu cầu tạo sự kiện của bạn đã được gửi thành công.');
-            navigate('/profile');
+            if (user?.role === 'ROLE_ADMIN') {
+                await saveAdminEvent({ payload: eventData });
+                message.success(t('admin.addSuccess', 'Tạo và xuất bản sự kiện thành công'));
+                navigate('/admin');
+            } else {
+                await axiosClient.post('/events/my', eventData);
+                message.success(t('navbar.createEventSuccess') || 'Yêu cầu tạo sự kiện của bạn đã được gửi thành công.');
+                navigate('/profile');
+            }
         } catch (error) {
             message.error(error.response?.data?.message || t('navbar.createEventError') || 'Có lỗi xảy ra khi tạo sự kiện.');
         } finally {
