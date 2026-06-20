@@ -11,7 +11,9 @@ describe('downloadBlob', () => {
     const revokeObjectURL = vi.fn();
     const click = vi.fn();
     const remove = vi.fn();
-    const appendChild = vi.spyOn(document.body, 'appendChild');
+    const appendChild = vi
+      .spyOn(document.body, 'appendChild')
+      .mockImplementation((node) => node);
     vi.stubGlobal('URL', { createObjectURL, revokeObjectURL });
     vi.spyOn(document, 'createElement').mockReturnValue({
       click,
