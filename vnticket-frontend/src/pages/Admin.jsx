@@ -1,6 +1,6 @@
 import React, { useCallback, useContext, useEffect, useState } from 'react';
-import { Table, Button, Modal, Form, Input, InputNumber, Select, DatePicker, message, Space, Popconfirm, Row, Col, Card, Statistic, Tag, Typography, Image, Divider, Tabs, Badge, Checkbox, Grid, Empty, Tooltip, Spin } from 'antd';
-import { EditOutlined, DeleteOutlined, PlusOutlined, MinusCircleOutlined, TagsOutlined, CheckCircleOutlined, BarChartOutlined, UserOutlined, EnvironmentOutlined, ClockCircleOutlined, ExclamationCircleOutlined, MailOutlined, PhoneOutlined, SaveOutlined, TagOutlined } from '@ant-design/icons';
+import { Table, Button, Modal, Form, Input, InputNumber, Select, message, Space, Popconfirm, Row, Col, Card, Tag, Typography, Image, Tabs, Badge, Checkbox, Grid, Empty, Tooltip, Spin, Descriptions, Pagination } from 'antd';
+import { EditOutlined, DeleteOutlined, PlusOutlined, MinusCircleOutlined, TagsOutlined, CheckCircleOutlined, BarChartOutlined, EnvironmentOutlined, ClockCircleOutlined, ExclamationCircleOutlined, SaveOutlined, TagOutlined, EyeOutlined, PictureOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
@@ -24,6 +24,7 @@ const Admin = () => {
     const [eventRevenueData, setEventRevenueData] = useState([]);
     const [eventTypeData, setEventTypeData] = useState([]);
     const [activeTab, setActiveTab] = useState('APPROVED');
+    const [eventPage, setEventPage] = useState(1);
     const [adminSection, setAdminSection] = useState('DASHBOARD');
     const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(false);
@@ -152,9 +153,11 @@ const Admin = () => {
 
     const [isEventDetailVisible, setIsEventDetailVisible] = useState(false);
     const [viewingEvent, setViewingEvent] = useState(null);
+    const [detailTab, setDetailTab] = useState('overview');
 
     const handleViewEventDetail = (record) => {
         setViewingEvent(record);
+        setDetailTab('overview');
         setIsEventDetailVisible(true);
     };
 
@@ -314,109 +317,112 @@ const Admin = () => {
     const displayApproved = filteredEvents.filter(e => e.status === 'APPROVED');
     const displayRejected = filteredEvents.filter(e => e.status === 'REJECTED');
 
-    const columns = [
-        { title: t('admin.id'), dataIndex: 'id', key: 'id', width: 60 },
-        {
-            title: t('admin.eventName'),
-            dataIndex: 'name',
-            key: 'name',
-            render: (text, record) => (
-                <div>
-                    <div style={{ fontWeight: '500' }}>{text}</div>
-                    <Space size="small" style={{ marginTop: 4 }}>
-                        {record.isSlider && <Tag color="magenta">{t('admin.slider')}</Tag>}
-                        {record.isFeatured && <Tag color="geekblue">{t('admin.featured')}</Tag>}
-                    </Space>
-                </div>
-            )
-        },
-        { title: t('admin.type'), dataIndex: 'type', key: 'type', width: 100 },
-        {
-            title: t('admin.time'),
-            dataIndex: 'startTime',
-            key: 'startTime',
-            render: (text) => dayjs(text).format('DD/MM/YYYY HH:mm'),
-            width: 150
-        },
-        { title: t('admin.location'), dataIndex: 'location', key: 'location', width: 200 },
-        {
-            title: t('admin.status'),
-            dataIndex: 'status',
-            key: 'status',
-            width: 120,
-            render: (status) => {
-                let color = status === 'APPROVED' ? 'green' : (status === 'PENDING' ? 'gold' : (status === 'PENDING_EDIT' ? 'orange' : 'red'));
-                let text = status === 'APPROVED' ? t('admin.approved') : status === 'PENDING' ? t('admin.pending') : status === 'PENDING_EDIT' ? t('admin.pendingEdit', 'Chờ duyệt (Chỉnh sửa)') : t('admin.rejected');
-                return <Tag color={color}>{text}</Tag>;
-            }
-        },
-    ];
+    const getStatusMeta = (status) => {
+        if (status === 'APPROVED') return { color: 'green', text: t('admin.approved') };
+        if (status === 'PENDING_EDIT') return { color: 'orange', text: t('admin.pendingEdit', 'Chờ duyệt chỉnh sửa') };
+        if (status === 'PENDING') return { color: 'gold', text: t('admin.pending') };
+        return { color: 'red', text: t('admin.rejected') };
+    };
 
     const renderEventList = (dataSource) => {
-        if (isMobile) {
-            return (
-                <Row gutter={[16, 16]}>
-                    {dataSource.map(event => (
-                        <Col xs={24} key={event.id}>
-                            <Card 
-                                size="small" 
-                                hoverable
-                                onClick={() => handleViewEventDetail(event)}
-                                actions={[
-                                    <EditOutlined key="edit" onClick={(e) => { e.stopPropagation(); handleEdit(event); }} />,
-                                    <BarChartOutlined key="stats" onClick={(e) => { e.stopPropagation(); handleViewEventStats(event); }} />,
-                                    <Popconfirm
-                                        key="delete"
-                                        title={t('admin.deleteConfirm')}
-                                        onConfirm={() => handleDelete(event.id)}
-                                    >
-                                        <DeleteOutlined style={{ color: '#ff4d4f' }} onClick={(e) => e.stopPropagation()} />
-                                    </Popconfirm>
-                                ]}
-                            >
-                                <div style={{ display: 'flex', gap: '12px' }}>
-                                    <Image 
-                                        src={event.imageUrl} 
-                                        width={80} 
-                                        height={80} 
-                                        style={{ objectFit: 'cover', borderRadius: 4 }} 
-                                        preview={false} 
-                                    />
-                                    <div style={{ flex: 1 }}>
-                                        <div style={{ fontWeight: 'bold', fontSize: '15px', marginBottom: '4px' }}>{event.name}</div>
-                                        <div style={{ fontSize: '12px', color: '#888' }}>
-                                            <ClockCircleOutlined /> {dayjs(event.startTime).format('DD/MM/YYYY HH:mm')}
-                                        </div>
-                                        <div style={{ fontSize: '12px', color: '#888', marginBottom: '8px' }}>
-                                            <EnvironmentOutlined /> {event.location?.split(',').slice(-1)[0]}
-                                        </div>
-                                        <Space wrap size={4}>
-                                            <Tag color={event.status === 'APPROVED' ? 'green' : (event.status === 'PENDING' ? 'gold' : 'red')} style={{ fontSize: '10px' }}>
-                                                {event.status === 'APPROVED' ? t('admin.approved') : event.status === 'PENDING' ? t('admin.pending') : t('admin.rejected')}
-                                            </Tag>
-                                            {event.isSlider && <Tag color="magenta" style={{ fontSize: '10px' }}>Slider</Tag>}
-                                            {event.isFeatured && <Tag color="geekblue" style={{ fontSize: '10px' }}>{t('admin.featured')}</Tag>}
-                                        </Space>
-                                    </div>
-                                </div>
-                            </Card>
-                        </Col>
-                    ))}
-                    {dataSource.length === 0 && <Col span={24}><Empty /></Col>}
-                </Row>
-            );
-        }
-
+        const pageSize = 12;
+        const pageItems = dataSource.slice((eventPage - 1) * pageSize, eventPage * pageSize);
         return (
-            <Table
-                columns={columns}
-                dataSource={dataSource}
-                rowKey="id"
-                loading={loading}
-                pagination={{ pageSize: 10 }}
-                scroll={{ x: 'max-content' }}
-                onRow={(record) => ({ onClick: () => handleViewEventDetail(record), style: { cursor: 'pointer' } })}
-            />
+        <Spin spinning={loading}>
+            {dataSource.length === 0 ? (
+                <Empty description="Không có sự kiện phù hợp" style={{ padding: '48px 0' }} />
+            ) : (
+                <>
+                <Row gutter={[18, 18]}>
+                    {pageItems.map((event) => {
+                        const status = getStatusMeta(event.status);
+                        const sold = (event.ticketTypes || []).reduce(
+                            (total, ticket) => total + Math.max(0, ticket.totalQuantity - (ticket.remainingQuantity ?? ticket.totalQuantity)),
+                            0,
+                        );
+                        return (
+                            <Col xs={24} sm={12} xl={8} xxl={6} key={event.id}>
+                                <Card
+                                    hoverable
+                                    onClick={() => handleViewEventDetail(event)}
+                                    cover={(
+                                        <div style={{ height: 180, position: 'relative', overflow: 'hidden' }}>
+                                            <img
+                                                src={event.imageUrl || 'https://via.placeholder.com/600x340?text=VNTicket'}
+                                                alt={event.name}
+                                                loading="lazy"
+                                                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                            />
+                                            <div style={{
+                                                position: 'absolute',
+                                                inset: 0,
+                                                background: 'linear-gradient(180deg, transparent 48%, rgba(0,0,0,.68) 100%)',
+                                            }} />
+                                            <Tag color={status.color} style={{ position: 'absolute', top: 12, left: 12, margin: 0 }}>
+                                                {status.text}
+                                            </Tag>
+                                            <span style={{
+                                                position: 'absolute',
+                                                right: 12,
+                                                bottom: 10,
+                                                color: '#fff',
+                                                fontWeight: 700,
+                                                fontSize: 12,
+                                            }}>
+                                                #{event.id}
+                                            </span>
+                                        </div>
+                                    )}
+                                    styles={{ body: { padding: 16 } }}
+                                    style={{ borderRadius: 16, overflow: 'hidden', height: '100%' }}
+                                >
+                                    <Space orientation="vertical" size={9} style={{ width: '100%' }}>
+                                        <Typography.Title level={5} ellipsis={{ rows: 2 }} style={{ margin: 0, minHeight: 48 }}>
+                                            {event.name}
+                                        </Typography.Title>
+                                        <Typography.Text type="secondary" ellipsis>
+                                            <ClockCircleOutlined /> {dayjs(event.startTime).format('HH:mm · DD/MM/YYYY')}
+                                        </Typography.Text>
+                                        <Typography.Text type="secondary" ellipsis>
+                                            <EnvironmentOutlined /> {event.location || 'Chưa cập nhật địa điểm'}
+                                        </Typography.Text>
+                                        <Space wrap size={[4, 4]}>
+                                            <Tag color="blue">{event.type || 'Khác'}</Tag>
+                                            {event.isSlider && <Tag color="magenta">Slider</Tag>}
+                                            {event.isFeatured && <Tag color="geekblue">{t('admin.featured')}</Tag>}
+                                        </Space>
+                                        <div style={{
+                                            display: 'flex',
+                                            justifyContent: 'space-between',
+                                            alignItems: 'center',
+                                            borderTop: `1px solid ${isDark ? '#303030' : '#f0f0f0'}`,
+                                            paddingTop: 12,
+                                        }}>
+                                            <Typography.Text type="secondary">{sold} vé đã bán</Typography.Text>
+                                            <Button type="link" icon={<EyeOutlined />} style={{ padding: 0 }}>
+                                                Quản lý
+                                            </Button>
+                                        </div>
+                                    </Space>
+                                </Card>
+                            </Col>
+                        );
+                    })}
+                </Row>
+                {dataSource.length > pageSize && (
+                    <div style={{ display: 'flex', justifyContent: 'center', marginTop: 24 }}>
+                        <Pagination
+                            current={eventPage}
+                            pageSize={pageSize}
+                            total={dataSource.length}
+                            showSizeChanger={false}
+                            onChange={setEventPage}
+                        />
+                    </div>
+                )}
+                </>
+            )}
+        </Spin>
         );
     };
 
@@ -498,20 +504,29 @@ const Admin = () => {
                                     <Input.Search
                                         placeholder={t('admin.searchPlaceholder', 'Tìm tên, BTC, địa điểm...')}
                                         allowClear
-                                        onChange={(e) => setSearchText(e.target.value)}
+                                        onChange={(e) => {
+                                            setSearchText(e.target.value);
+                                            setEventPage(1);
+                                        }}
                                         style={{ width: isMobile ? '100%' : 300 }}
                                     />
                                 </div>
                                 <Space size={isMobile ? 'middle' : 'large'} wrap>
                                     <Checkbox 
                                         checked={showOnlySlider} 
-                                        onChange={(e) => setShowOnlySlider(e.target.checked)}
+                                        onChange={(e) => {
+                                            setShowOnlySlider(e.target.checked);
+                                            setEventPage(1);
+                                        }}
                                     >
                                         <Tag color="magenta" style={{ cursor: 'pointer', margin: 0 }}>Slider</Tag>
                                     </Checkbox>
                                     <Checkbox 
                                         checked={showOnlyFeatured} 
-                                        onChange={(e) => setShowOnlyFeatured(e.target.checked)}
+                                        onChange={(e) => {
+                                            setShowOnlyFeatured(e.target.checked);
+                                            setEventPage(1);
+                                        }}
                                     >
                                         <Tag color="geekblue" style={{ cursor: 'pointer', margin: 0 }}>{t('admin.featured', 'Nổi bật')}</Tag>
                                     </Checkbox>
@@ -524,7 +539,10 @@ const Admin = () => {
 
                         <Tabs
                             activeKey={activeTab}
-                            onChange={setActiveTab}
+                            onChange={(key) => {
+                                setActiveTab(key);
+                                setEventPage(1);
+                            }}
                             type="card"
                             items={[
                                 {
@@ -565,138 +583,161 @@ const Admin = () => {
 
 
             <Modal
-                title={t('admin.eventDetails', { name: viewingEvent?.name || '' })}
+                title={viewingEvent ? (
+                    <Space>
+                        <img
+                            src={viewingEvent.imageUrl || 'https://via.placeholder.com/80x54?text=VN'}
+                            alt=""
+                            style={{ width: 56, height: 40, borderRadius: 8, objectFit: 'cover' }}
+                        />
+                        <div>
+                            <Typography.Text strong style={{ display: 'block', maxWidth: isMobile ? 220 : 600 }} ellipsis>
+                                {viewingEvent.name}
+                            </Typography.Text>
+                            <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+                                Quản lý sự kiện #{viewingEvent.id}
+                            </Typography.Text>
+                        </div>
+                    </Space>
+                ) : null}
                 open={isEventDetailVisible}
                 onCancel={() => setIsEventDetailVisible(false)}
-                width={isMobile ? '100%' : 1000}
+                width={isMobile ? '100%' : 1080}
                 style={{ top: isMobile ? 0 : 20 }}
-                footer={viewingEvent ? (
-                    (viewingEvent.status === 'PENDING' || viewingEvent.status === 'PENDING_EDIT') ? [
-                        <Button key="reject" type="primary" danger onClick={() => {
-                            setRejectionReasonText('');
-                            setIsRejectModalVisible(true);
-                        }}>
-                            {t('admin.reject')}
-                        </Button>,
-                        <Button key="approve" type="primary" style={{ backgroundColor: '#52c41a', borderColor: '#52c41a' }} onClick={() => {
-                            handleUpdateStatus(viewingEvent.id, 'APPROVED');
-                            setIsEventDetailVisible(false);
-                        }}>
-                            {t('admin.approve')}
-                        </Button>
-                    ] : [
-                        <Button
-                            key="stats"
-                            icon={<BarChartOutlined />}
-                            onClick={() => { handleViewEventStats(viewingEvent); setIsEventDetailVisible(false); }}
-                        >
-                            {t('admin.viewStats')}
-                        </Button>,
-                        <Button
-                            key="manage-tickets"
-                            type="default"
-                            icon={<TagOutlined />}
-                            onClick={() => handleManageTickets(viewingEvent)}
-                            style={{ borderColor: '#722ed1', color: '#722ed1' }}
-                        >
-                            {t('admin.manageTickets', 'Quản lý Loại Vé')}
-                        </Button>,
-                        <Button
-                            key="edit"
-                            type="primary"
-                            icon={<EditOutlined />}
-                            onClick={() => handleEdit(viewingEvent)}
-                        >
-                            {t('admin.edit')}
-                        </Button>,
-                        <Popconfirm
-                            key="delete"
-                            title={t('admin.deleteConfirm')}
-                            onConfirm={() => handleDelete(viewingEvent.id)}
-                            okText={t('admin.yes')}
-                            cancelText={t('admin.no')}
-                        >
-                            <Button type="primary" danger icon={<DeleteOutlined />}>{t('admin.delete')}</Button>
-                        </Popconfirm>
-                    ]
-                ) : null}
+                footer={null}
             >
                 {viewingEvent && (
-                    <div style={{ padding: isMobile ? '10px 0' : '20px 0' }}>
-                        <Row gutter={[32, 24]}>
-                            <Col xs={24} md={10}>
-                                <Image
-                                    src={viewingEvent.imageUrl}
-                                    alt={viewingEvent.name}
-                                    style={{ width: '100%', borderRadius: 8, objectFit: 'cover' }}
-                                    fallback="https://via.placeholder.com/400x300?text=No+Image"
-                                />
-                                {viewingEvent.additionalImages?.length > 0 && (
-                                    <div style={{ marginTop: 16 }}>
-                                        <Typography.Title level={5}>{t('admin.relatedImages')}</Typography.Title>
-                                        <Image.PreviewGroup>
-                                            <Space size="small" wrap>
-                                                {viewingEvent.additionalImages.map((img, idx) => (
-                                                    <Image
-                                                        key={idx}
-                                                        src={img}
-                                                        width={isMobile ? 80 : 100}
-                                                        height={isMobile ? 60 : 70}
-                                                        style={{ objectFit: 'cover', borderRadius: 4 }}
-                                                        fallback="https://via.placeholder.com/100x70?text=Error"
-                                                    />
-                                                ))}
-                                            </Space>
-                                        </Image.PreviewGroup>
-                                    </div>
+                    <div>
+                        <Card size="small" style={{ marginBottom: 16, borderRadius: 12 }} styles={{ body: { padding: 12 } }}>
+                            <Space wrap size={[8, 8]}>
+                                <Button type={detailTab === 'overview' ? 'primary' : 'default'} icon={<EyeOutlined />} onClick={() => setDetailTab('overview')}>
+                                    Chi tiết
+                                </Button>
+                                <Button icon={<EditOutlined />} onClick={() => handleEdit(viewingEvent)}>
+                                    {t('admin.edit')}
+                                </Button>
+                                <Button icon={<TagOutlined />} onClick={() => handleManageTickets(viewingEvent)} style={{ borderColor: '#722ed1', color: '#722ed1' }}>
+                                    Loại vé
+                                </Button>
+                                <Button icon={<BarChartOutlined />} onClick={() => {
+                                    handleViewEventStats(viewingEvent);
+                                    setIsEventDetailVisible(false);
+                                }}>
+                                    Thống kê
+                                </Button>
+                                {(viewingEvent.status === 'PENDING' || viewingEvent.status === 'PENDING_EDIT') && (
+                                    <>
+                                        <Button type="primary" style={{ background: '#52c41a' }} onClick={() => {
+                                            handleUpdateStatus(viewingEvent.id, 'APPROVED');
+                                            setIsEventDetailVisible(false);
+                                        }}>
+                                            {t('admin.approve')}
+                                        </Button>
+                                        <Button danger onClick={() => {
+                                            setRejectionReasonText('');
+                                            setIsRejectModalVisible(true);
+                                        }}>
+                                            {t('admin.reject')}
+                                        </Button>
+                                    </>
                                 )}
-                            </Col>
-                            <Col xs={24} md={14}>
-                                <Typography.Title level={isMobile ? 3 : 2}>{viewingEvent.name}</Typography.Title>
-                                <Space direction="vertical" size="small" style={{ width: '100%' }}>
-                                    <Typography.Paragraph>
-                                        <UserOutlined style={{ marginRight: 8, color: '#1890ff' }} />
-                                        <strong>{t('admin.organizer')}</strong> {viewingEvent.organizerName || t('admin.notUpdated')}
-                                    </Typography.Paragraph>
-                                    <Typography.Paragraph>
-                                        <MailOutlined style={{ marginRight: 8, color: '#1890ff' }} />
-                                        <strong>{t('admin.organizerEmail')}</strong> {viewingEvent.organizerEmail || t('admin.notUpdated')}
-                                    </Typography.Paragraph>
-                                    <Typography.Paragraph>
-                                        <PhoneOutlined style={{ marginRight: 8, color: '#1890ff' }} />
-                                        <strong>{t('admin.organizerPhone')}</strong> {viewingEvent.organizerPhone || t('admin.notUpdated')}
-                                    </Typography.Paragraph>
-                                    <Typography.Paragraph>
-                                        <TagsOutlined style={{ marginRight: 8, color: '#1890ff' }} />
-                                        <strong>{t('admin.category')}</strong> <Tag color="blue">{viewingEvent.type}</Tag>
-                                    </Typography.Paragraph>
-                                    <Typography.Paragraph>
-                                        <EnvironmentOutlined style={{ marginRight: 8, color: '#1890ff' }} />
-                                        <strong>{t('admin.location')}</strong> {viewingEvent.location}
-                                    </Typography.Paragraph>
-                                    <Typography.Paragraph>
-                                        <ClockCircleOutlined style={{ marginRight: 8, color: '#1890ff' }} />
-                                        <strong>{t('admin.time')}</strong> {dayjs(viewingEvent.startTime).format('HH:mm - DD/MM/YYYY')}
-                                    </Typography.Paragraph>
-                                </Space>
-                                <Divider />
-                                <Typography.Title level={4}>{t('admin.detailedDesc')}</Typography.Title>
-                                <Typography.Paragraph style={{ whiteSpace: 'pre-line' }}>{viewingEvent.description}</Typography.Paragraph>
-                                <Divider />
-                                <Typography.Title level={4}>{t('admin.expectedPrices')}</Typography.Title>
-                                <Table
-                                    dataSource={viewingEvent.ticketTypes || []}
-                                    rowKey={(item, index) => item.id || index}
-                                    pagination={false}
-                                    scroll={{ x: 'max-content' }}
-                                    columns={[
-                                        { title: t('admin.zone'), dataIndex: 'zoneName', key: 'zoneName', render: (text) => <strong>{text}</strong> },
-                                        { title: t('admin.price'), dataIndex: 'price', key: 'price', render: (price) => <span style={{ color: '#cf1322', fontWeight: 'bold' }}>{price?.toLocaleString()} VNĐ</span> },
-                                        { title: t('admin.quantity'), dataIndex: 'totalQuantity', key: 'totalQuantity' }
-                                    ]}
-                                />
-                            </Col>
-                        </Row>
+                                <Popconfirm
+                                    title={t('admin.deleteConfirm')}
+                                    onConfirm={() => handleDelete(viewingEvent.id)}
+                                    okText={t('admin.yes')}
+                                    cancelText={t('admin.no')}
+                                >
+                                    <Button danger icon={<DeleteOutlined />}>{t('admin.delete')}</Button>
+                                </Popconfirm>
+                            </Space>
+                        </Card>
+
+                        <Tabs
+                            activeKey={detailTab}
+                            onChange={setDetailTab}
+                            items={[
+                                {
+                                    key: 'overview',
+                                    label: <span><EyeOutlined /> Tổng quan</span>,
+                                    children: (
+                                        <Row gutter={[24, 20]}>
+                                            <Col xs={24} md={9}>
+                                                <Image
+                                                    src={viewingEvent.imageUrl}
+                                                    alt={viewingEvent.name}
+                                                    style={{ width: '100%', maxHeight: 330, borderRadius: 12, objectFit: 'cover' }}
+                                                    fallback="https://via.placeholder.com/600x340?text=No+Image"
+                                                />
+                                            </Col>
+                                            <Col xs={24} md={15}>
+                                                <Space wrap style={{ marginBottom: 14 }}>
+                                                    <Tag color={getStatusMeta(viewingEvent.status).color}>{getStatusMeta(viewingEvent.status).text}</Tag>
+                                                    <Tag color="blue">{viewingEvent.type}</Tag>
+                                                    {viewingEvent.isSlider && <Tag color="magenta">Slider</Tag>}
+                                                    {viewingEvent.isFeatured && <Tag color="geekblue">{t('admin.featured')}</Tag>}
+                                                </Space>
+                                                <Descriptions
+                                                    column={isMobile ? 1 : 2}
+                                                    size="small"
+                                                    bordered
+                                                    items={[
+                                                        { key: 'organizer', label: 'Ban tổ chức', children: viewingEvent.organizerName || t('admin.notUpdated') },
+                                                        { key: 'time', label: 'Thời gian', children: dayjs(viewingEvent.startTime).format('HH:mm · DD/MM/YYYY') },
+                                                        { key: 'email', label: 'Email', children: viewingEvent.organizerEmail || t('admin.notUpdated') },
+                                                        { key: 'phone', label: 'Điện thoại', children: viewingEvent.organizerPhone || t('admin.notUpdated') },
+                                                        { key: 'location', label: 'Địa điểm', span: 2, children: viewingEvent.location || t('admin.notUpdated') },
+                                                    ]}
+                                                />
+                                            </Col>
+                                        </Row>
+                                    ),
+                                },
+                                {
+                                    key: 'description',
+                                    label: <span><TagsOutlined /> Nội dung</span>,
+                                    children: (
+                                        <Typography.Paragraph style={{ whiteSpace: 'pre-line', fontSize: 15, lineHeight: 1.8 }}>
+                                            {viewingEvent.description || 'Chưa có mô tả chi tiết.'}
+                                        </Typography.Paragraph>
+                                    ),
+                                },
+                                {
+                                    key: 'tickets',
+                                    label: <span><TagOutlined /> Loại vé ({viewingEvent.ticketTypes?.length || 0})</span>,
+                                    children: (
+                                        <Table
+                                            dataSource={viewingEvent.ticketTypes || []}
+                                            rowKey={(item, index) => item.id || index}
+                                            pagination={false}
+                                            scroll={{ x: 'max-content' }}
+                                            columns={[
+                                                { title: t('admin.zone'), dataIndex: 'zoneName', key: 'zoneName', render: (text) => <strong>{text}</strong> },
+                                                { title: t('admin.price'), dataIndex: 'price', key: 'price', render: (price) => <span style={{ color: '#cf1322', fontWeight: 700 }}>{price?.toLocaleString()} VNĐ</span> },
+                                                { title: t('admin.quantity'), dataIndex: 'totalQuantity', key: 'totalQuantity' },
+                                                { title: 'Còn lại', dataIndex: 'remainingQuantity', key: 'remainingQuantity', render: (value) => <Tag color={value > 0 ? 'green' : 'red'}>{value ?? 0}</Tag> },
+                                            ]}
+                                        />
+                                    ),
+                                },
+                                {
+                                    key: 'images',
+                                    label: <span><PictureOutlined /> Hình ảnh</span>,
+                                    children: (
+                                        <Image.PreviewGroup>
+                                            <Row gutter={[12, 12]}>
+                                                {[viewingEvent.imageUrl, ...(viewingEvent.additionalImages || [])]
+                                                    .filter(Boolean)
+                                                    .map((image, index) => (
+                                                        <Col xs={12} sm={8} md={6} key={`${image}-${index}`}>
+                                                            <Image src={image} style={{ width: '100%', height: 130, objectFit: 'cover', borderRadius: 10 }} />
+                                                        </Col>
+                                                    ))}
+                                            </Row>
+                                        </Image.PreviewGroup>
+                                    ),
+                                },
+                            ]}
+                        />
                     </div>
                 )}
             </Modal>
