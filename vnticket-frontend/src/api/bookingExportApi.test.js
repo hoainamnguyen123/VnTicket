@@ -55,4 +55,14 @@ describe('exportEventBookings', () => {
 
     expect(axiosClient.get).not.toHaveBeenCalled();
   });
+
+  it('rejects a missing event ID without calling the API', async () => {
+    await expect(exportEventBookings({
+      eventId: null,
+      format: 'pdf',
+      isAdmin: false,
+    })).rejects.toThrow('Event ID is required');
+
+    expect(axiosClient.get).not.toHaveBeenCalled();
+  });
 });

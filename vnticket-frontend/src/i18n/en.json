@@ -319,6 +319,11 @@
     "netRevenue": "Net Revenue (After 2% platform fee)",
     "loadingData": "Loading data..."
   },
+  "eventStats": {
+    "exportPdf": "Export PDF",
+    "exportExcel": "Export Excel",
+    "exportError": "Unable to export the report. Please try again."
+  },
   "admin": {
     "dashboard": "Dashboard Overview",
     "systemOverview": "System Overview",

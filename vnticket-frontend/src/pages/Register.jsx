@@ -1,4 +1,4 @@
-import React, { useState, useContext, useEffect, useRef } from 'react';
+import React, { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { Form, Input, Button, Card, Typography, message, Divider } from 'antd';
 import { UserOutlined, LockOutlined, MailOutlined, PhoneOutlined, IdcardOutlined } from '@ant-design/icons';
 import { useNavigate, Link } from 'react-router-dom';
@@ -19,6 +19,23 @@ const Register = () => {
     const navigate = useNavigate();
     const googleBtnRef = useRef(null);
     const { t, i18n } = useTranslation();
+
+    const handleGoogleCallback = useCallback(async (response) => {
+        setLoading(true);
+        try {
+            const res = await axiosClient.post('/auth/google', {
+                idToken: response.credential,
+            });
+            const { token, ...userData } = res.data;
+            login(userData, token);
+            message.success(t('register.googleSuccess'));
+            navigate('/');
+        } catch (error) {
+            message.error(error.message || t('register.googleFailed'));
+        } finally {
+            setLoading(false);
+        }
+    }, [login, navigate, t]);
 
     useEffect(() => {
         const initGoogle = () => {
@@ -54,29 +71,13 @@ const Register = () => {
 
         // Đảm bảo form luôn trống khi truy cập
         form.resetFields();
-    }, [form, i18n.language, isDark]);
-
-    const handleGoogleCallback = async (response) => {
-        setLoading(true);
-        try {
-            const res = await axiosClient.post('/auth/google', {
-                idToken: response.credential,
-            });
-            const { token, ...userData } = res.data;
-            login(userData, token);
-            message.success(t('register.googleSuccess'));
-            navigate('/');
-        } catch (error) {
-            message.error(error.message || t('register.googleFailed'));
-        } finally {
-            setLoading(false);
-        }
-    };
+    }, [form, handleGoogleCallback, i18n.language, isDark]);
 
     const onFinish = async (values) => {
         setLoading(true);
         try {
-            const { confirmPassword, ...registerData } = values;
+            const registerData = { ...values };
+            delete registerData.confirmPassword;
             await axiosClient.post('/auth/register', registerData);
             message.success(t('register.success'));
             navigate('/verify-email', { state: { email: registerData.email } });

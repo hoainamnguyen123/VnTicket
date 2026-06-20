@@ -15,11 +15,12 @@ describe('downloadBlob', () => {
       .spyOn(document.body, 'appendChild')
       .mockImplementation((node) => node);
     vi.stubGlobal('URL', { createObjectURL, revokeObjectURL });
-    vi.spyOn(document, 'createElement').mockReturnValue({
+    const anchor = {
       click,
       remove,
       style: {},
-    });
+    };
+    vi.spyOn(document, 'createElement').mockReturnValue(anchor);
 
     downloadBlob(new Blob(['report']), 'Summer / Festival 2026', 'pdf');
 
@@ -28,5 +29,24 @@ describe('downloadBlob', () => {
     expect(click).toHaveBeenCalledOnce();
     expect(remove).toHaveBeenCalledOnce();
     expect(revokeObjectURL).toHaveBeenCalledWith('blob:report');
+    expect(anchor.download).toBe('bookings-summer-festival-2026.pdf');
+  });
+
+  it('uses fallback names and custom extensions safely', () => {
+    vi.stubGlobal('URL', {
+      createObjectURL: vi.fn(() => 'blob:report'),
+      revokeObjectURL: vi.fn(),
+    });
+    const anchor = {
+      click: vi.fn(),
+      remove: vi.fn(),
+      style: {},
+    };
+    vi.spyOn(document.body, 'appendChild').mockImplementation((node) => node);
+    vi.spyOn(document, 'createElement').mockReturnValue(anchor);
+
+    downloadBlob(new Blob(['report']), '', 'csv');
+
+    expect(anchor.download).toBe('bookings-event-report.csv');
   });
 });

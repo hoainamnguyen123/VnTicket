@@ -1,6 +1,6 @@
-import React, { useContext } from 'react';
+import { lazy, Suspense, useContext } from 'react';
 import { Routes, Route, useNavigate } from 'react-router-dom';
-import { ConfigProvider, theme, Alert, Button } from 'antd';
+import { Alert, Button, ConfigProvider, Grid, Layout, Spin, theme } from 'antd';
 import { ThemeContext } from './context/ThemeContext';
 import { AuthContext } from './context/AuthContext';
 import Navbar from './components/Navbar';
@@ -8,29 +8,34 @@ import AppFooter from './components/Footer';
 import BottomNav from './components/BottomNav';
 import ScrollToTop from './components/ScrollToTop';
 import Home from './pages/Home';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import ForgotPassword from './pages/ForgotPassword';
-import EventDetail from './pages/EventDetail';
-import History from './pages/History';
-import AllEvents from './pages/AllEvents';
-import Admin from './pages/Admin';
-import CreateEvent from './pages/CreateEvent';
-import Profile from './pages/Profile';
-import EventStats from './pages/EventStats';
-import PrivacyPolicy from './pages/PrivacyPolicy';
-import TermsOfService from './pages/TermsOfService';
-import RefundPolicy from './pages/RefundPolicy';
-import FAQ from './pages/FAQ';
-import OperatingRules from './pages/OperatingRules';
-import PaymentReturn from './pages/PaymentReturn';
-import VerifyEmail from './pages/VerifyEmail';
-import OrganizerHub from './pages/OrganizerHub';
 import VirtualQueue from './components/VirtualQueue';
-import { Layout, Grid } from 'antd';
 
 const { Content } = Layout;
-const { useBreakpoint } = Grid;
+
+const Login = lazy(() => import('./pages/Login'));
+const Register = lazy(() => import('./pages/Register'));
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
+const EventDetail = lazy(() => import('./pages/EventDetail'));
+const History = lazy(() => import('./pages/History'));
+const AllEvents = lazy(() => import('./pages/AllEvents'));
+const Admin = lazy(() => import('./pages/Admin'));
+const CreateEvent = lazy(() => import('./pages/CreateEvent'));
+const Profile = lazy(() => import('./pages/Profile'));
+const EventStats = lazy(() => import('./pages/EventStats'));
+const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
+const TermsOfService = lazy(() => import('./pages/TermsOfService'));
+const RefundPolicy = lazy(() => import('./pages/RefundPolicy'));
+const FAQ = lazy(() => import('./pages/FAQ'));
+const OperatingRules = lazy(() => import('./pages/OperatingRules'));
+const PaymentReturn = lazy(() => import('./pages/PaymentReturn'));
+const VerifyEmail = lazy(() => import('./pages/VerifyEmail'));
+const OrganizerHub = lazy(() => import('./pages/OrganizerHub'));
+
+const RouteFallback = () => (
+  <div style={{ display: 'grid', placeItems: 'center', minHeight: 360 }}>
+    <Spin size="large" tip="Đang tải trang..." />
+  </div>
+);
 
 // Tách Component Banner ra để dùng useNavigate
 const VerificationBanner = () => {
@@ -102,28 +107,30 @@ function App() {
             color: isDark ? 'rgba(255,255,255,0.85)' : 'rgba(0,0,0,0.85)',
             transition: 'all 0.3s ease',
           }}>
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/forgot-password" element={<ForgotPassword />} />
-              <Route path="/create-event" element={<CreateEvent />} />
-              <Route path="/event/:id" element={<EventDetail />} />
-              <Route path="/events" element={<AllEvents />} />
-              <Route path="/history" element={<History />} />
-              <Route path="/admin" element={<Admin />} />
-              <Route path="/admin/event-stats/:id" element={<EventStats />} />
-              <Route path="/organizer" element={<OrganizerHub />} />
-              <Route path="/my-events/stats/:id" element={<EventStats />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-              <Route path="/terms-of-service" element={<TermsOfService />} />
-              <Route path="/refund-policy" element={<RefundPolicy />} />
-              <Route path="/faq" element={<FAQ />} />
-              <Route path="/operating-rules" element={<OperatingRules />} />
-              <Route path="/payment-return" element={<PaymentReturn />} />
-              <Route path="/verify-email" element={<VerifyEmail />} />
-            </Routes>
+            <Suspense fallback={<RouteFallback />}>
+              <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/create-event" element={<CreateEvent />} />
+                <Route path="/event/:id" element={<EventDetail />} />
+                <Route path="/events" element={<AllEvents />} />
+                <Route path="/history" element={<History />} />
+                <Route path="/admin" element={<Admin />} />
+                <Route path="/admin/event-stats/:id" element={<EventStats />} />
+                <Route path="/organizer" element={<OrganizerHub />} />
+                <Route path="/my-events/stats/:id" element={<EventStats />} />
+                <Route path="/profile" element={<Profile />} />
+                <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                <Route path="/terms-of-service" element={<TermsOfService />} />
+                <Route path="/refund-policy" element={<RefundPolicy />} />
+                <Route path="/faq" element={<FAQ />} />
+                <Route path="/operating-rules" element={<OperatingRules />} />
+                <Route path="/payment-return" element={<PaymentReturn />} />
+                <Route path="/verify-email" element={<VerifyEmail />} />
+              </Routes>
+            </Suspense>
           </div>
         </Content>
 

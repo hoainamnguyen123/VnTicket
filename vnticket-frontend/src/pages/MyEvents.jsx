@@ -1,16 +1,14 @@
-import React, { useState, useEffect, useContext } from 'react';
-import { Table, Button, Modal, Form, Input, InputNumber, DatePicker, message, Space, Upload, Tag, Statistic, Row, Col, Card, Typography, Image, Divider, Tabs, Badge, Alert, Grid, Empty, Tooltip } from 'antd';
-import { PlusOutlined, UploadOutlined, EditOutlined, BarChartOutlined, UserOutlined, EnvironmentOutlined, ClockCircleOutlined, MailOutlined, PhoneOutlined, TagsOutlined, CheckCircleOutlined, ExclamationCircleOutlined, CloseCircleOutlined, SaveOutlined, TagOutlined, DeleteOutlined } from '@ant-design/icons';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { Alert, Badge, Button, Card, Col, Divider, Empty, Form, Grid, Image, Input, InputNumber, message, Modal, Row, Space, Table, Tabs, Tag, Tooltip, Typography } from 'antd';
+import { BarChartOutlined, CheckCircleOutlined, ClockCircleOutlined, CloseCircleOutlined, DeleteOutlined, EditOutlined, EnvironmentOutlined, ExclamationCircleOutlined, PlusOutlined, SaveOutlined, TagOutlined, TagsOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import axiosClient from '../api/axiosClient';
 import { useNavigate } from 'react-router-dom';
 import EventFormModal from '../components/EventFormModal';
-import { AuthContext } from '../context/AuthContext';
 import { formatDate } from '../utils/formatters';
 import dayjs from 'dayjs';
 
-const { TextArea } = Input;
-const { Text, Title: TypographyTitle } = Typography;
+const { Text } = Typography;
 
 const MobileEventCard = ({ event, onClick, onEdit, onStats, t }) => {
     const statusColor = event.status === 'APPROVED' ? 'green' : (event.status === 'PENDING' ? 'gold' : (event.status === 'PENDING_EDIT' ? 'orange' : 'red'));
@@ -72,10 +70,6 @@ const MyEvents = () => {
     const screens = Grid.useBreakpoint();
     const isMobile = !screens.md;
     const [events, setEvents] = useState([]);
-    const [approvedEvents, setApprovedEvents] = useState([]);
-    const [pendingEvents, setPendingEvents] = useState([]);
-    const [rejectedEvents, setRejectedEvents] = useState([]);
-    
     const [loading, setLoading] = useState(false);
     const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
     const [isEditModalVisible, setIsEditModalVisible] = useState(false);
@@ -85,9 +79,20 @@ const MyEvents = () => {
     const [activeTab, setActiveTab] = useState('APPROVED');
 
     const [form] = Form.useForm();
-    const { user } = useContext(AuthContext);
     const { t } = useTranslation();
     const navigate = useNavigate();
+    const approvedEvents = useMemo(
+        () => events.filter(event => event.status === 'APPROVED'),
+        [events],
+    );
+    const pendingEvents = useMemo(
+        () => events.filter(event => event.status === 'PENDING' || event.status === 'PENDING_EDIT'),
+        [events],
+    );
+    const rejectedEvents = useMemo(
+        () => events.filter(event => event.status === 'REJECTED'),
+        [events],
+    );
 
     // Ticket type management state
     const [isTicketModalVisible, setIsTicketModalVisible] = useState(false);
@@ -95,27 +100,23 @@ const MyEvents = () => {
     const [ticketModalEvent, setTicketModalEvent] = useState(null);
     const [ticketSaving, setTicketSaving] = useState(false);
 
-    useEffect(() => {
-        fetchMyEvents();
-    }, []);
-
-    const fetchMyEvents = async () => {
+    const fetchMyEvents = useCallback(async () => {
         setLoading(true);
         try {
             const response = await axiosClient.get('/events/my?page=0&size=1000');
             const allEvents = response.data.content || [];
             allEvents.sort((a, b) => b.id - a.id);
-            
             setEvents(allEvents);
-            setApprovedEvents(allEvents.filter(e => e.status === 'APPROVED'));
-            setPendingEvents(allEvents.filter(e => e.status === 'PENDING' || e.status === 'PENDING_EDIT'));
-            setRejectedEvents(allEvents.filter(e => e.status === 'REJECTED'));
-        } catch (error) {
+        } catch {
             message.error(t('myEvents.loadError', 'Lỗi khi tải danh sách sự kiện'));
         } finally {
             setLoading(false);
         }
-    };
+    }, [t]);
+
+    useEffect(() => {
+        fetchMyEvents();
+    }, [fetchMyEvents]);
 
     const handleCreateEvent = async () => {
         try {
@@ -186,7 +187,7 @@ const MyEvents = () => {
             setViewingEvent(null);
             fetchMyEvents();
             window.dispatchEvent(new CustomEvent('user-event-read'));
-        } catch (error) {
+        } catch {
             message.error(t('myEvents.deleteError', 'Lỗi khi xóa sự kiện'));
         }
     };

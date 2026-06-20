@@ -46,7 +46,7 @@ const ElectronicTicketModal = ({ visible, onClose, tickets, onTicketTransferred 
             onOk: async () => {
                 setTransferLoading(true);
                 try {
-                    const response = await axiosClient.post('/tickets/transfer', {
+                    await axiosClient.post('/tickets/transfer', {
                         ticketId: selectedTicket.id,
                         recipientEmail: recipientEmail,
                     });

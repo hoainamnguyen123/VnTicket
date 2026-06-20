@@ -10,8 +10,6 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import ElectronicTicketModal from '../components/ElectronicTicketModal';
 
 const { Title, Text } = Typography;
-const { confirm } = Modal;
-
 /* ── Hook: theo dõi kích thước màn hình ── */
 const useIsMobile = (breakpoint = 768) => {
     const [isMobile, setIsMobile] = useState(window.innerWidth < breakpoint);
@@ -322,7 +320,7 @@ const History = () => {
             setTickets(response.data);
             setViewedBookingId(bookingId);
             setIsModalVisible(true);
-        } catch (error) {
+        } catch {
             message.error(t('history.loadTicketsError'));
         }
     };
@@ -361,7 +359,7 @@ const History = () => {
                 setTransferableTickets(validTickets);
                 setTransferPickerVisible(true);
             }
-        } catch (error) {
+        } catch {
             message.error(t('history.loadTicketsError'));
         }
     };

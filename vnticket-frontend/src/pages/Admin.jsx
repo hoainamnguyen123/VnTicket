@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useCallback, useContext, useEffect, useState } from 'react';
 import { Table, Button, Modal, Form, Input, InputNumber, Select, DatePicker, message, Space, Popconfirm, Row, Col, Card, Statistic, Tag, Typography, Image, Divider, Tabs, Badge, Checkbox, Grid, Empty, Tooltip, Spin } from 'antd';
 import { EditOutlined, DeleteOutlined, PlusOutlined, MinusCircleOutlined, DollarOutlined, TagsOutlined, CheckCircleOutlined, BarChartOutlined, UserOutlined, EnvironmentOutlined, ClockCircleOutlined, ExclamationCircleOutlined, MailOutlined, PhoneOutlined, SaveOutlined, TagOutlined } from '@ant-design/icons';
 import dayjs from 'dayjs';
@@ -34,29 +34,22 @@ const Admin = () => {
     const [showOnlyFeatured, setShowOnlyFeatured] = useState(false);
     const [savingEvent, setSavingEvent] = useState(false);
 
-    const [pagination, setPagination] = useState({ current: 1, pageSize: 10, total: 0 });
-
     // Ticket type management state
     const [isTicketModalVisible, setIsTicketModalVisible] = useState(false);
     const [editingTicketTypes, setEditingTicketTypes] = useState([]);
     const [ticketModalEvent, setTicketModalEvent] = useState(null);
     const [ticketSaving, setTicketSaving] = useState(false);
 
-    useEffect(() => {
-        fetchEvents();
-        fetchStats();
-    }, []);
-
-    const fetchStats = async () => {
+    const fetchStats = useCallback(async () => {
         try {
             const res = await axiosClient.get('/bookings/statistics');
             setStats(res.data);
         } catch (error) {
             console.error(t('admin.loadStatsError'), error);
         }
-    };
+    }, [t]);
 
-    const fetchEvents = async () => {
+    const fetchEvents = useCallback(async () => {
         setLoading(true);
         try {
             // Fetch a large number of events to handle client-side filtering effectively
@@ -93,16 +86,17 @@ const Admin = () => {
             // Dispatch event to sync Navbar badge
             window.dispatchEvent(new CustomEvent('event-status-updated'));
 
-        } catch (error) {
+        } catch {
             message.error(t('admin.loadEventsError'));
         } finally {
             setLoading(false);
         }
-    };
+    }, [t]);
 
-    const handleTableChange = (newPagination) => {
-        setPagination(newPagination);
-    };
+    useEffect(() => {
+        fetchEvents();
+        fetchStats();
+    }, [fetchEvents, fetchStats]);
 
     const handleViewEventStats = (record) => {
         navigate(`/admin/event-stats/${record.id}`);
@@ -141,7 +135,7 @@ const Admin = () => {
                 setIsEventDetailVisible(false);
             }
             fetchEvents();
-        } catch (error) {
+        } catch {
             message.error(t('admin.deleteError'));
         }
     };
@@ -161,7 +155,7 @@ const Admin = () => {
             await axiosClient.put(url);
             message.success(t('admin.statusUpdateSuccess', { action: status === 'APPROVED' ? t('admin.approve') : t('admin.reject') }));
             fetchEvents();
-        } catch (error) {
+        } catch {
             message.error(t('admin.statusUpdateError'));
         }
     };

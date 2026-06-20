@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useEffect, useContext } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Row, Col, Typography, Input, message, Skeleton, Empty, Carousel, Button, Select, Grid } from 'antd';
+import { Row, Col, Typography, Skeleton, Empty, Carousel, Button, Select, Grid } from 'antd';
 import { useTranslation } from 'react-i18next';
 import axiosClient from '../api/axiosClient';
 import EventCard from '../components/EventCard';
@@ -115,7 +115,8 @@ const Home = () => {
                 if (!aIsFuture && bIsFuture) return 1;
                 
                 // Nếu cùng trạng thái, trộn ngẫu nhiên để tạo sự tươi mới
-                return Math.random() - 0.5;
+                return new Date(a.startTime) - new Date(b.startTime)
+                    || (b.id || 0) - (a.id || 0);
             })
             .slice(0, 8);
     }, [events]);

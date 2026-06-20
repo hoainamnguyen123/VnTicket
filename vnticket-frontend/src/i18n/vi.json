@@ -342,6 +342,11 @@
     "ticketDeleteWarning": "Chỉ có thể xóa khu vực chưa có ai mua vé thành công",
     "ticketQtyWarning": "Không thể giảm xuống dưới số đã bán"
   },
+  "eventStats": {
+    "exportPdf": "Xuất PDF",
+    "exportExcel": "Xuất Excel",
+    "exportError": "Không thể xuất báo cáo. Vui lòng thử lại."
+  },
   "admin": {
     "dashboard": "Tổng Quan (Dashboard)",
     "systemOverview": "Tổng Quan Hệ Thống",

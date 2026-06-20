@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect, useRef } from 'react';
+import React, { useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { Form, Input, Button, Card, Typography, message, Divider } from 'antd';
 import { UserOutlined, LockOutlined, GoogleOutlined } from '@ant-design/icons';
 import { useNavigate, Link } from 'react-router-dom';
@@ -18,6 +18,23 @@ const Login = () => {
     const navigate = useNavigate();
     const googleBtnRef = useRef(null);
     const { t, i18n } = useTranslation();
+
+    const handleGoogleCallback = useCallback(async (response) => {
+        setLoading(true);
+        try {
+            const res = await axiosClient.post('/auth/google', {
+                idToken: response.credential,
+            });
+            const { token, ...userData } = res.data;
+            login(userData, token);
+            message.success(t('login.googleSuccess'));
+            navigate('/');
+        } catch (error) {
+            message.error(error.message || t('login.googleFailed'));
+        } finally {
+            setLoading(false);
+        }
+    }, [login, navigate, t]);
 
     useEffect(() => {
         // Wait for Google Identity Services script to load
@@ -52,24 +69,7 @@ const Login = () => {
             }, 100);
             return () => clearInterval(interval);
         }
-    }, [i18n.language, isDark]);
-
-    const handleGoogleCallback = async (response) => {
-        setLoading(true);
-        try {
-            const res = await axiosClient.post('/auth/google', {
-                idToken: response.credential,
-            });
-            const { token, ...userData } = res.data;
-            login(userData, token);
-            message.success(t('login.googleSuccess'));
-            navigate('/');
-        } catch (error) {
-            message.error(error.message || t('login.googleFailed'));
-        } finally {
-            setLoading(false);
-        }
-    };
+    }, [handleGoogleCallback, i18n.language, isDark]);
 
     const onFinish = async (values) => {
         setLoading(true);

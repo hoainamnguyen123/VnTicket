@@ -34,7 +34,7 @@ const CreateEvent = () => {
         axios.get('https://provinces.open-api.vn/api/v2/p/')
             .then(res => setProvinces(res.data))
             .catch(err => console.error("Lỗi khi tải tỉnh thành:", err));
-    }, [user, navigate]);
+    }, [user, navigate, t]);
 
     const handleProvinceChange = (provinceName) => {
         const selectedProv = provinces.find(p => p.name === provinceName);
@@ -185,7 +185,7 @@ const CreateEvent = () => {
                             <>
                                 <Text strong style={{display: 'block', paddingBottom: '10px'}}>{t('createEventPage.extraImages')}</Text>
                                 <div style={{ background: 'transparent', padding: 16, borderRadius: 8, display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'flex-start', marginBottom: 16 }}>
-                                    {fields.map((field, index) => (
+                                    {fields.map((field) => (
                                         <div key={field.key} style={{ position: 'relative', width: '104px', height: '104px' }}>
                                             <div style={{ position: 'absolute', top: -10, right: -10, cursor: 'pointer', zIndex: 10 }}>
                                                 <Button type="primary" danger shape="circle" icon={<MinusCircleOutlined />} size="small" onClick={() => remove(field.name)} />

@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useState, useEffect } from 'react';
 import { jwtDecode } from 'jwt-decode';
 import axiosClient from '../api/axiosClient';
@@ -23,7 +24,7 @@ export const AuthProvider = ({ children }) => {
                     } else {
                         setUser(JSON.parse(localStorage.getItem('user')));
                     }
-                } catch (error) {
+                } catch {
                     // If refreshing fails or token is completely unreadable
                     logoutLocally();
                 }

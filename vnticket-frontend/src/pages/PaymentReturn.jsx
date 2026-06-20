@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Result, Button, Card, Typography, Descriptions, Spin, message, Grid } from 'antd';
+import { Result, Button, Card, Typography, Descriptions, Spin, Grid } from 'antd';
 import { CheckCircleOutlined, CloseCircleOutlined, SyncOutlined } from '@ant-design/icons';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';

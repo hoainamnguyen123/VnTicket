@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
-import { Row, Col, Typography, Input, message, Skeleton, Empty, Select, Pagination, Grid } from 'antd';
+import { Alert, Col, Empty, Grid, Pagination, Row, Select, Skeleton, Typography } from 'antd';
 import { useTranslation } from 'react-i18next';
 import axiosClient from '../api/axiosClient';
 import FeaturedEventCard from '../components/FeaturedEventCard';
@@ -12,45 +12,49 @@ const { Title } = Typography;
 const { Option } = Select;
 
 const AllEvents = () => {
-    const [searchParams] = useSearchParams();
-    const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
-    const [eventType, setEventType] = useState(searchParams.get('type') || '');
-    const [location, setLocation] = useState(searchParams.get('location') || '');
+    const [searchParams, setSearchParams] = useSearchParams();
+    const searchTerm = searchParams.get('search') || '';
+    const eventType = searchParams.get('type') || '';
+    const location = searchParams.get('location') || '';
     const { t } = useTranslation();
     const screens = Grid.useBreakpoint();
     const isMobile = !screens.md;
     
     // Đồng bộ state khi URL parameters thay đổi
-    useEffect(() => {
-        setSearchTerm(searchParams.get('search') || '');
-        setEventType(searchParams.get('type') || '');
-        setLocation(searchParams.get('location') || '');
-    }, [searchParams]);
-
     // Phân trang
     const [currentPage, setCurrentPage] = useState(1);
     const [pageSize, setPageSize] = useState(12);
 
     // Reset về trang 1 khi đổi bộ lọc
-    useEffect(() => {
+    const updateFilter = (name, value) => {
+        const nextParams = new URLSearchParams(searchParams);
+        if (value) {
+            nextParams.set(name, value);
+        } else {
+            nextParams.delete(name);
+        }
+        setSearchParams(nextParams);
         setCurrentPage(1);
-    }, [searchTerm, eventType, location]);
+    };
 
     // Sử dụng React-Query tự động Caching cho Phân Trang
     const { data, isLoading: loading, isError } = useQuery({
         queryKey: ['allEvents', currentPage, pageSize, searchTerm, eventType, location],
         queryFn: async () => {
-            let url = `/events?page=${currentPage - 1}&size=${pageSize}`;
-            if (searchTerm) url += `&search=${searchTerm}`;
-            if (eventType) url += `&type=${eventType}`;
-            if (location) url += `&location=${location}`;
-            const response = await axiosClient.get(url);
+            const params = new URLSearchParams({
+                page: String(currentPage - 1),
+                size: String(pageSize),
+            });
+            if (searchTerm) params.set('search', searchTerm);
+            if (eventType) params.set('type', eventType);
+            if (location) params.set('location', location);
+            const response = await axiosClient.get(`/events/cards?${params}`);
             return response.data;
         }
     });
 
     if (isError) {
-        message.error(t('allEvents.loadError'));
+        return <Alert type="error" showIcon message={t('allEvents.loadError')} />;
     }
 
     const events = data?.content || [];
@@ -85,7 +89,7 @@ const AllEvents = () => {
                         style={{ width: '100%', maxWidth: '200px', flex: '1 1 150px' }}
                         allowClear
                         value={eventType || undefined}
-                        onChange={setEventType}
+                        onChange={(value) => updateFilter('type', value)}
                         size={"large"}
                     >
                         <Option value="Âm Nhạc">{t('allEvents.musicConcert')}</Option>
@@ -99,7 +103,7 @@ const AllEvents = () => {
                     <EventSearchAutocomplete
                         placeholder={t('allEvents.searchPlaceholder')}
                         defaultValue={searchTerm}
-                        onSearch={setSearchTerm}
+                        onSearch={(value) => updateFilter('search', value)}
                         style={{ maxWidth: '300px', flex: '1 1 200px' }}
                     />
                 </div>

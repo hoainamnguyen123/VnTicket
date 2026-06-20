@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect } from 'react';
+import React, { useCallback, useContext, useEffect, useState } from 'react';
 import { Tabs, Typography, Card, Descriptions, Button, Form, Input, message, Spin, Grid } from 'antd';
 import { EditOutlined, SaveOutlined, CloseOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
@@ -27,24 +27,24 @@ const Profile = () => {
         }
     }, [location.state]);
 
-    useEffect(() => {
-        if (user) {
-            fetchProfile();
-        }
-    }, [user]);
-
-    const fetchProfile = async () => {
+    const fetchProfile = useCallback(async () => {
         try {
             setLoading(true);
             const res = await axiosClient.get('/users/me');
             setProfileData(res.data);
             form.setFieldsValue(res.data);
-        } catch (error) {
+        } catch {
             message.error(t('profile.loadError'));
         } finally {
             setLoading(false);
         }
-    };
+    }, [form, t]);
+
+    useEffect(() => {
+        if (user) {
+            fetchProfile();
+        }
+    }, [fetchProfile, user]);
 
     const handleUpdateProfile = async (values) => {
         try {

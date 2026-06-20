@@ -37,7 +37,7 @@ const ExportReportButtons = ({ eventId, eventName, isAdmin = false }) => {
   };
 
   return (
-    <Space direction="vertical" align="end" size={4}>
+    <Space orientation="vertical" align="end" size={4}>
       <Space wrap>
         <Button
           danger

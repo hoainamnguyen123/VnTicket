@@ -1,5 +1,5 @@
 import React, { useContext, useState, useEffect } from 'react';
-import { Layout, Menu, Button, Dropdown, message, Drawer, Grid, Badge } from 'antd';
+import { Layout, Menu, Button, Dropdown, Drawer, Grid, Badge } from 'antd';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import { ThemeContext } from '../context/ThemeContext';
@@ -92,7 +92,7 @@ const Navbar = () => {
                         const res = await axiosClient.get(`/admin/events?page=0&size=1000`);
                         const count = res.data.content ? res.data.content.filter(e => e.status === 'PENDING').length : 0;
                         setPendingCount(count);
-                    } catch (error) {
+                    } catch {
                         console.error("Failed to fetch pending events count");
                     }
                 };

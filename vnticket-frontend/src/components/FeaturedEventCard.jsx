@@ -30,8 +30,8 @@ const FeaturedEventCard = ({ event }) => {
     const { isDark } = useContext(ThemeContext);
 
     // Tính giá thấp nhất nếu có ticketTypes
-    let minPrice = 0;
-    if (event.ticketTypes && event.ticketTypes.length > 0) {
+    let minPrice = event.minPrice ?? 0;
+    if (!event.minPrice && event.ticketTypes && event.ticketTypes.length > 0) {
         minPrice = Math.min(...event.ticketTypes.map(t => t.price));
     }
 
