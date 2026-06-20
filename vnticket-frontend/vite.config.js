@@ -14,9 +14,12 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'html'],
       include: [
+        'src/api/adminEventApi.js',
         'src/api/bookingExportApi.js',
+        'src/components/AdminDashboardOverview.jsx',
         'src/components/ExportReportButtons.jsx',
         'src/utils/downloadFile.js',
+        'src/utils/navigationPolicy.js',
       ],
       thresholds: {
         lines: 80,
