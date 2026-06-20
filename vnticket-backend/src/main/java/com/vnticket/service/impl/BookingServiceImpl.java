@@ -7,6 +7,7 @@ import com.vnticket.dto.response.BookingStatsDTO;
 import com.vnticket.dto.TicketDTO;
 import com.vnticket.entity.*;
 import com.vnticket.enums.BookingStatus;
+import com.vnticket.enums.EventStatus;
 import com.vnticket.enums.TicketStatus;
 import com.vnticket.exception.BadRequestException;
 import com.vnticket.exception.ResourceNotFoundException;
@@ -15,6 +16,7 @@ import com.vnticket.repository.BookingRepository;
 import com.vnticket.repository.EventRepository;
 import com.vnticket.repository.TicketTypeRepository;
 import com.vnticket.repository.UserRepository;
+import com.vnticket.projection.BookingStatsProjection;
 import com.vnticket.service.BookingService;
 import com.vnticket.service.EmailService;
 import com.vnticket.service.TicketInventoryRedisService;
@@ -24,15 +26,16 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -53,6 +56,9 @@ public class BookingServiceImpl implements BookingService {
 
     @Value("${app.reservation.ttlMinutes:15}")
     private int reservationTtlMinutes;
+
+    @Value("${app.booking.single-pending-per-event:true}")
+    private boolean singlePendingPerEvent;
 
     public BookingServiceImpl(BookingRepository bookingRepository,
                               BookingDetailRepository bookingDetailRepository,
@@ -79,25 +85,16 @@ public class BookingServiceImpl implements BookingService {
     public BookingStatsDTO getStatistics() {
         log.info("Fetching booking statistics for admin dashboard");
 
-        long totalBookings = bookingRepository.count();
-        long paidBookings = bookingRepository.countByStatus(BookingStatus.PAID);
-        long pendingBookings = bookingRepository.countByStatus(BookingStatus.PENDING);
-        long cancelledBookings = bookingRepository.countByStatus(BookingStatus.CANCELLED);
-
-        long totalTicketsBooked = bookingRepository
-                .sumTicketsByStatuses(List.of(BookingStatus.PENDING, BookingStatus.PAID));
-        long totalTicketsPaid = bookingRepository.sumTicketsByStatuses(List.of(BookingStatus.PAID));
-
-        BigDecimal totalRevenue = bookingRepository.sumTotalAmountByStatus(BookingStatus.PAID);
+        BookingStatsProjection statistics = bookingRepository.getSystemStatistics();
 
         return BookingStatsDTO.builder()
-                .totalBookings(totalBookings)
-                .paidBookings(paidBookings)
-                .pendingBookings(pendingBookings)
-                .cancelledBookings(cancelledBookings)
-                .totalTicketsBooked(totalTicketsBooked)
-                .totalTicketsPaid(totalTicketsPaid)
-                .totalRevenue(totalRevenue)
+                .totalBookings(statistics.getTotalBookings())
+                .paidBookings(statistics.getPaidBookings())
+                .pendingBookings(statistics.getPendingBookings())
+                .cancelledBookings(statistics.getCancelledBookings())
+                .totalTicketsBooked(statistics.getTotalTicketsBooked())
+                .totalTicketsPaid(statistics.getTotalTicketsPaid())
+                .totalRevenue(statistics.getTotalRevenue())
                 .build();
     }
 
@@ -111,26 +108,16 @@ public class BookingServiceImpl implements BookingService {
             throw new ResourceNotFoundException("Event not found");
         }
 
-        long totalBookings = bookingRepository.countByEventId(eventId);
-        long paidBookings = bookingRepository.countByEventIdAndStatus(eventId, BookingStatus.PAID);
-        long pendingBookings = bookingRepository.countByEventIdAndStatus(eventId, BookingStatus.PENDING);
-        long cancelledBookings = bookingRepository.countByEventIdAndStatus(eventId, BookingStatus.CANCELLED);
-
-        long totalTicketsBooked = bookingRepository.sumTicketsByEventIdAndStatuses(eventId,
-                List.of(BookingStatus.PENDING, BookingStatus.PAID));
-        long totalTicketsPaid = bookingRepository.sumTicketsByEventIdAndStatuses(eventId,
-                List.of(BookingStatus.PAID));
-
-        BigDecimal totalRevenue = bookingRepository.sumTotalAmountByEventIdAndStatus(eventId, BookingStatus.PAID);
+        BookingStatsProjection statistics = bookingRepository.getEventStatistics(eventId);
 
         return BookingStatsDTO.builder()
-                .totalBookings(totalBookings)
-                .paidBookings(paidBookings)
-                .pendingBookings(pendingBookings)
-                .cancelledBookings(cancelledBookings)
-                .totalTicketsBooked(totalTicketsBooked)
-                .totalTicketsPaid(totalTicketsPaid)
-                .totalRevenue(totalRevenue)
+                .totalBookings(statistics.getTotalBookings())
+                .paidBookings(statistics.getPaidBookings())
+                .pendingBookings(statistics.getPendingBookings())
+                .cancelledBookings(statistics.getCancelledBookings())
+                .totalTicketsBooked(statistics.getTotalTicketsBooked())
+                .totalTicketsPaid(statistics.getTotalTicketsPaid())
+                .totalRevenue(statistics.getTotalRevenue())
                 .build();
     }
 
@@ -159,10 +146,13 @@ public class BookingServiceImpl implements BookingService {
             throw new BadRequestException("Invalid ticket quantity! You can only purchase a maximum of 5 tickets per order.");
         }
 
-        // NGĂN CHẶN GIAM VÉ: Nếu User đang có 1 đơn PENDING cho Sự kiện này, tước quyền mua thêm
-        if (bookingRepository.existsByUserIdAndEventIdAndStatus(userId, request.getEventId(), BookingStatus.PENDING)) {
-            log.warn("Booking rejected: User {} already has a PENDING booking for Event {}", userId, request.getEventId());
-            throw new BadRequestException("You already have a pending booking for this event. Please pay or cancel it before creating a new one.");
+        if (singlePendingPerEvent
+                && bookingRepository.existsByUserIdAndEventIdAndStatus(
+                        userId, request.getEventId(), BookingStatus.PENDING)) {
+            log.warn("Booking rejected: User {} already has a PENDING booking for Event {}",
+                    userId, request.getEventId());
+            throw new BadRequestException(
+                    "You already have a pending booking for this event. Please pay or cancel it before creating a new one.");
         }
 
         User user = userRepository.findById(userId)
@@ -181,6 +171,13 @@ public class BookingServiceImpl implements BookingService {
                     log.error("Booking failed: Event not found with ID: {}", request.getEventId());
                     return new ResourceNotFoundException("Event not found");
                 });
+
+        if (event.getStatus() != EventStatus.APPROVED) {
+            throw new BadRequestException("Event is not approved for booking");
+        }
+        if (event.getStartTime() != null && !event.getStartTime().isAfter(LocalDateTime.now())) {
+            throw new BadRequestException("Event has already started");
+        }
 
         TicketType ticketType = ticketTypeRepository.findById(request.getTicketTypeId())
                 .orElseThrow(() -> {
@@ -294,7 +291,7 @@ public class BookingServiceImpl implements BookingService {
     public BookingDTO cancelBooking(Long bookingId, Long userId) {
         log.info("Cancelling booking: bookingId={}, userId={}", bookingId, userId);
 
-        Booking booking = bookingRepository.findById(bookingId)
+        Booking booking = bookingRepository.findByIdForUpdate(bookingId)
                 .orElseThrow(() -> new ResourceNotFoundException("Booking not found"));
 
         if (!booking.getUser().getId().equals(userId)) {
@@ -331,44 +328,13 @@ public class BookingServiceImpl implements BookingService {
     // ──────────────────── Mock Payment ────────────────────
 
     @Override
-    @Transactional
+    @Transactional(noRollbackFor = BadRequestException.class)
     public BookingDTO mockPayBooking(Long bookingId, Long userId) {
         log.info("Mock payment: bookingId={}, userId={}", bookingId, userId);
-
-        Booking booking = bookingRepository.findById(bookingId)
+        validateBookingForPayment(bookingId, userId);
+        confirmBookingPayment(bookingId);
+        Booking savedBooking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new ResourceNotFoundException("Booking not found"));
-
-        if (!booking.getUser().getId().equals(userId)) {
-            throw new BadRequestException("You can only pay for your own bookings");
-        }
-        if (booking.getStatus() != BookingStatus.PENDING) {
-            throw new BadRequestException("Booking is not in PENDING state");
-        }
-
-        // Check expiration
-        if (Duration.between(booking.getBookingTime(), LocalDateTime.now()).toMinutes() >= reservationTtlMinutes) {
-            log.warn("Mock payment rejected: Booking {} expired", bookingId);
-            handleExpiredPaymentAttempt(booking);
-            throw new BadRequestException("Thời gian thanh toán đã hết hạn. Đơn hàng đã tự động bị hủy.");
-        }
-
-        // ═══ Thanh toán thành công ═══
-        confirmPayment(booking);
-
-        Booking savedBooking = bookingRepository.save(booking);
-        log.info("Mock payment successful: bookingId={}", bookingId);
-
-        // Gửi email xác nhận vé (bất đồng bộ, không block response)
-        // Đảm bảo chỉ gọi gửi email sau khi transaction đã thực sự COMMIT vào database
-        org.springframework.transaction.support.TransactionSynchronizationManager.registerSynchronization(
-            new org.springframework.transaction.support.TransactionSynchronization() {
-                @Override
-                public void afterCommit() {
-                    emailService.sendTicketConfirmationEmail(savedBooking);
-                }
-            }
-        );
-
         return mapToDto(savedBooking);
     }
 
@@ -377,30 +343,75 @@ public class BookingServiceImpl implements BookingService {
     @Override
     @Transactional
     public void processVnPayPayment(Long bookingId) {
-        log.info("Processing VNPay payment: bookingId={}", bookingId);
+        confirmBookingPayment(bookingId);
+    }
 
-        Booking booking = bookingRepository.findById(bookingId)
+    @Override
+    @Transactional(noRollbackFor = BadRequestException.class)
+    public Booking validateBookingForPayment(Long bookingId, Long userId) {
+        Booking booking = bookingRepository.findByIdForUpdate(bookingId)
+                .orElseThrow(() -> new ResourceNotFoundException("Booking not found"));
+
+        if (!booking.getUser().getId().equals(userId)) {
+            throw new BadRequestException("You can only pay for your own bookings");
+        }
+        if (booking.getStatus() != BookingStatus.PENDING) {
+            throw new BadRequestException("Booking is not in PENDING state");
+        }
+        if (Duration.between(booking.getBookingTime(), LocalDateTime.now()).toMinutes()
+                >= reservationTtlMinutes) {
+            handleExpiredPaymentAttempt(booking);
+            throw new BadRequestException(
+                    "Payment time has expired. The booking has been cancelled automatically.");
+        }
+        return booking;
+    }
+
+    @Override
+    @Transactional
+    public void confirmBookingPayment(Long bookingId) {
+        log.info("Confirming payment: bookingId={}", bookingId);
+
+        Booking booking = bookingRepository.findByIdForUpdate(bookingId)
                 .orElseThrow(() -> new ResourceNotFoundException("Booking not found"));
 
         if (booking.getStatus() != BookingStatus.PENDING) {
-            log.warn("Booking {} is not PENDING, skipping VNPay processing", bookingId);
+            log.info("Booking {} was already processed with status {}", bookingId, booking.getStatus());
             return;
         }
 
         confirmPayment(booking);
         Booking savedBooking = bookingRepository.save(booking);
-        log.info("VNPay payment confirmed: bookingId={}", bookingId);
+        runAfterCommit(() -> emailService.sendTicketConfirmationEmail(savedBooking));
+    }
 
-        // Gửi email xác nhận vé (bất đồng bộ, không block response)
-        // Đảm bảo chỉ gọi gửi email sau khi transaction đã thực sự COMMIT vào database
-        org.springframework.transaction.support.TransactionSynchronizationManager.registerSynchronization(
-            new org.springframework.transaction.support.TransactionSynchronization() {
+    @Override
+    @Transactional(noRollbackFor = BadRequestException.class)
+    public void freeCheckout(Long bookingId, Long userId) {
+        Booking booking = validateBookingForPayment(bookingId, userId);
+        if (booking.getTotalAmount().compareTo(BigDecimal.ZERO) > 0) {
+            throw new BadRequestException("This booking is not free. Please proceed to payment.");
+        }
+        confirmBookingPayment(bookingId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Optional<Booking> findBookingById(Long bookingId) {
+        return bookingRepository.findById(bookingId);
+    }
+
+    private void runAfterCommit(Runnable action) {
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
                 @Override
                 public void afterCommit() {
-                    emailService.sendTicketConfirmationEmail(savedBooking);
+                    action.run();
                 }
-            }
-        );
+            });
+        } else {
+            action.run();
+        }
     }
 
     // ──────────────────── Expired Bookings (Safety Net) ────────────────────

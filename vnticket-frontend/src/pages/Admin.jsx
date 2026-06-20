@@ -333,7 +333,7 @@ const Admin = () => {
                 <Empty description="Không có sự kiện phù hợp" style={{ padding: '48px 0' }} />
             ) : (
                 <>
-                <Row gutter={[18, 18]}>
+                <Row gutter={[0, 16]}>
                     {pageItems.map((event) => {
                         const status = getStatusMeta(event.status);
                         const sold = (event.ticketTypes || []).reduce(
@@ -341,12 +341,25 @@ const Admin = () => {
                             0,
                         );
                         return (
-                            <Col xs={24} sm={12} xl={8} xxl={6} key={event.id}>
+                            <Col span={24} key={event.id}>
                                 <Card
                                     hoverable
                                     onClick={() => handleViewEventDetail(event)}
-                                    cover={(
-                                        <div style={{ height: 180, position: 'relative', overflow: 'hidden' }}>
+                                    styles={{ body: { padding: 0 } }}
+                                    style={{ borderRadius: 16, overflow: 'hidden' }}
+                                >
+                                    <div style={{
+                                        display: 'grid',
+                                        gridTemplateColumns: isMobile ? '1fr' : '280px minmax(0, 1fr) 190px',
+                                        minHeight: isMobile ? 'auto' : 184,
+                                    }}>
+                                        <div style={{
+                                            height: isMobile ? 180 : '100%',
+                                            minHeight: 180,
+                                            position: 'relative',
+                                            overflow: 'hidden',
+                                            background: isDark ? '#1f1f1f' : '#f5f5f5',
+                                        }}>
                                             <img
                                                 src={event.imageUrl || 'https://via.placeholder.com/600x340?text=VNTicket'}
                                                 alt={event.name}
@@ -361,49 +374,86 @@ const Admin = () => {
                                             <Tag color={status.color} style={{ position: 'absolute', top: 12, left: 12, margin: 0 }}>
                                                 {status.text}
                                             </Tag>
-                                            <span style={{
-                                                position: 'absolute',
-                                                right: 12,
-                                                bottom: 10,
-                                                color: '#fff',
-                                                fontWeight: 700,
-                                                fontSize: 12,
-                                            }}>
-                                                #{event.id}
-                                            </span>
                                         </div>
-                                    )}
-                                    styles={{ body: { padding: 16 } }}
-                                    style={{ borderRadius: 16, overflow: 'hidden', height: '100%' }}
-                                >
-                                    <Space orientation="vertical" size={9} style={{ width: '100%' }}>
-                                        <Typography.Title level={5} ellipsis={{ rows: 2 }} style={{ margin: 0, minHeight: 48 }}>
-                                            {event.name}
-                                        </Typography.Title>
-                                        <Typography.Text type="secondary" ellipsis>
-                                            <ClockCircleOutlined /> {dayjs(event.startTime).format('HH:mm · DD/MM/YYYY')}
-                                        </Typography.Text>
-                                        <Typography.Text type="secondary" ellipsis>
-                                            <EnvironmentOutlined /> {event.location || 'Chưa cập nhật địa điểm'}
-                                        </Typography.Text>
-                                        <Space wrap size={[4, 4]}>
-                                            <Tag color="blue">{event.type || 'Khác'}</Tag>
-                                            {event.isSlider && <Tag color="magenta">Slider</Tag>}
-                                            {event.isFeatured && <Tag color="geekblue">{t('admin.featured')}</Tag>}
-                                        </Space>
+
                                         <div style={{
+                                            padding: isMobile ? 16 : '18px 22px',
+                                            minWidth: 0,
                                             display: 'flex',
-                                            justifyContent: 'space-between',
-                                            alignItems: 'center',
-                                            borderTop: `1px solid ${isDark ? '#303030' : '#f0f0f0'}`,
-                                            paddingTop: 12,
+                                            flexDirection: 'column',
+                                            justifyContent: 'center',
                                         }}>
-                                            <Typography.Text type="secondary">{sold} vé đã bán</Typography.Text>
-                                            <Button type="link" icon={<EyeOutlined />} style={{ padding: 0 }}>
+                                            <div style={{
+                                                display: 'flex',
+                                                justifyContent: 'space-between',
+                                                alignItems: 'flex-start',
+                                                gap: 12,
+                                                marginBottom: 12,
+                                            }}>
+                                                <Typography.Title
+                                                    level={4}
+                                                    ellipsis={{ rows: 2 }}
+                                                    style={{ margin: 0, lineHeight: 1.35 }}
+                                                >
+                                                    {event.name}
+                                                </Typography.Title>
+                                                <Typography.Text type="secondary" style={{ whiteSpace: 'nowrap', fontSize: 12 }}>
+                                                    #{event.id}
+                                                </Typography.Text>
+                                            </div>
+
+                                            <Space orientation="vertical" size={8} style={{ width: '100%' }}>
+                                                <Typography.Text type="secondary" ellipsis>
+                                                    <ClockCircleOutlined /> {dayjs(event.startTime).format('HH:mm · DD/MM/YYYY')}
+                                                </Typography.Text>
+                                                <Typography.Text type="secondary" ellipsis>
+                                                    <EnvironmentOutlined /> {event.location || 'Chưa cập nhật địa điểm'}
+                                                </Typography.Text>
+                                                <Space wrap size={[4, 4]}>
+                                                    <Tag color="blue">{event.type || 'Khác'}</Tag>
+                                                    {event.isSlider && <Tag color="magenta">Slider</Tag>}
+                                                    {event.isFeatured && <Tag color="geekblue">{t('admin.featured')}</Tag>}
+                                                </Space>
+                                            </Space>
+                                        </div>
+
+                                        <div style={{
+                                            padding: 18,
+                                            borderLeft: isMobile ? 'none' : `1px solid ${isDark ? '#303030' : '#f0f0f0'}`,
+                                            borderTop: isMobile ? `1px solid ${isDark ? '#303030' : '#f0f0f0'}` : 'none',
+                                            background: isDark ? '#181818' : '#fafafa',
+                                            display: 'flex',
+                                            flexDirection: isMobile ? 'row' : 'column',
+                                            alignItems: isMobile ? 'center' : 'stretch',
+                                            justifyContent: 'space-between',
+                                            gap: 14,
+                                        }}>
+                                            <div>
+                                                <Typography.Text type="secondary" style={{ display: 'block', fontSize: 12 }}>
+                                                    ĐÃ BÁN
+                                                </Typography.Text>
+                                                <Typography.Title level={4} style={{ margin: '2px 0 0' }}>
+                                                    {sold} vé
+                                                </Typography.Title>
+                                                {!isMobile && (
+                                                    <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+                                                        {(event.ticketTypes || []).length} loại vé
+                                                    </Typography.Text>
+                                                )}
+                                            </div>
+                                            <Button
+                                                type="primary"
+                                                icon={<EyeOutlined />}
+                                                block={!isMobile}
+                                                onClick={(clickEvent) => {
+                                                    clickEvent.stopPropagation();
+                                                    handleViewEventDetail(event);
+                                                }}
+                                            >
                                                 Quản lý
                                             </Button>
                                         </div>
-                                    </Space>
+                                    </div>
                                 </Card>
                             </Col>
                         );

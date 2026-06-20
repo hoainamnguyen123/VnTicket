@@ -213,21 +213,14 @@ const EventStats = () => {
           </Space>
         </Space>
 
-        <Space orientation="vertical" align={isMobile ? 'start' : 'end'}>
-          <ExportReportButtons
-            eventId={id}
-            eventName={eventDetail.name}
-            isAdmin={isAdmin}
-          />
-          <Button
-            type="text"
-            size="small"
-            icon={<ReloadOutlined spin={isFetching} />}
-            onClick={() => refetch()}
-          >
-            Làm mới dữ liệu
-          </Button>
-        </Space>
+        <Button
+          type="text"
+          size="small"
+          icon={<ReloadOutlined spin={isFetching} />}
+          onClick={() => refetch()}
+        >
+          Làm mới dữ liệu
+        </Button>
       </header>
 
       <Card
@@ -333,10 +326,25 @@ const EventStats = () => {
         <Col xs={24} lg={16}>
           <Card
             title={(
-              <Space style={{ width: '100%', justifyContent: 'space-between' }}>
-                <span>Đơn hàng thanh toán thành công</span>
-                <Tag color="green">{orders.length} đơn</Tag>
-              </Space>
+              <div style={{ padding: '8px 0 4px' }}>
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 12,
+                }}>
+                  <span>Đơn hàng thanh toán thành công</span>
+                  <Tag color="green" style={{ margin: 0 }}>{orders.length} đơn</Tag>
+                </div>
+                <div style={{ marginTop: 12 }}>
+                  <ExportReportButtons
+                    eventId={id}
+                    eventName={eventDetail.name}
+                    isAdmin={isAdmin}
+                    align="start"
+                  />
+                </div>
+              </div>
             )}
             style={{ borderRadius: 12 }}
           >

@@ -30,7 +30,7 @@ import com.vnticket.service.EmailService;
 import com.vnticket.dto.request.ForgotPasswordRequest;
 import com.vnticket.dto.request.ResetPasswordRequest;
 import java.util.concurrent.TimeUnit;
-import java.util.Random;
+import java.security.SecureRandom;
 import java.util.UUID;
 
 @Slf4j
@@ -46,6 +46,8 @@ public class AuthServiceImpl implements AuthService {
 
     @Value("${app.google.clientId}")
     private String googleClientId;
+
+    private final SecureRandom random = new SecureRandom();
 
     public AuthServiceImpl(AuthenticationManager authenticationManager, UserRepository userRepository,
             PasswordEncoder encoder, JwtUtils jwtUtils, StringRedisTemplate redisTemplate, EmailService emailService) {
@@ -116,9 +118,9 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public void sendEmailVerificationOtp(String email) {
         // Không cần user tồn tại (resend có thể gọi riêng)
-        String otp = String.format("%06d", new Random().nextInt(999999));
+        String otp = String.format("%06d", random.nextInt(1_000_000));
         String key = "otp:email_verify:" + email;
-        redisTemplate.opsForValue().set(key, otp, 15, TimeUnit.MINUTES);
+        redisTemplate.opsForValue().set(key, otp, 5, TimeUnit.MINUTES);
         emailService.sendEmailVerificationOtp(email, otp);
         log.info("Email verification OTP sent to {}", email);
     }
@@ -243,7 +245,7 @@ public class AuthServiceImpl implements AuthService {
         }
 
         // 3. Generate OTP
-        String otp = String.format("%06d", new Random().nextInt(999999));
+        String otp = String.format("%06d", random.nextInt(1_000_000));
         
         // 4. Save to Redis
         String otpKey = "otp:forgot_password:" + email;

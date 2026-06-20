@@ -1,5 +1,6 @@
 package com.vnticket.service;
 
+import com.vnticket.dto.EventCardDTO;
 import com.vnticket.dto.EventDTO;
 import com.vnticket.dto.TicketTypeDTO;
 import org.springframework.data.domain.Page;
@@ -11,6 +12,8 @@ import com.vnticket.enums.EventStatus;
 import java.util.List;
 
 public interface EventService {
+    Page<EventCardDTO> getApprovedEventCards(String type, String search, String location, Pageable pageable);
+
     Page<EventDTO> getApprovedEvents(String type, String search, String location, Pageable pageable);
 
     Page<EventDTO> getAdminAllEvents(String type, String search, Pageable pageable);
@@ -44,4 +47,6 @@ public interface EventService {
      * Chuyển trạng thái sang PENDING_EDIT để admin xét duyệt.
      */
     EventDTO updateMyTicketTypes(Long userId, Long eventId, List<TicketTypeDTO> ticketTypes);
+
+    void assertEventOwnership(Long eventId, Long userId);
 }

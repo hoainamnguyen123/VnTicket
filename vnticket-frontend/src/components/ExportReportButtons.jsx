@@ -7,7 +7,7 @@ import { downloadBlob } from '../utils/downloadFile';
 
 const { Text } = Typography;
 
-const ExportReportButtons = ({ eventId, eventName, isAdmin = false }) => {
+const ExportReportButtons = ({ eventId, eventName, isAdmin = false, align = 'end' }) => {
   const { t } = useTranslation();
   const inFlightRef = useRef(null);
   const [downloading, setDownloading] = useState(null);
@@ -37,7 +37,7 @@ const ExportReportButtons = ({ eventId, eventName, isAdmin = false }) => {
   };
 
   return (
-    <Space orientation="vertical" align="end" size={4}>
+    <Space orientation="vertical" align={align} size={4}>
       <Space wrap>
         <Button
           danger

@@ -4,13 +4,15 @@ import com.vnticket.dto.BookingDTO;
 import com.vnticket.dto.request.BookingRequest;
 import com.vnticket.dto.response.ApiResponse;
 import com.vnticket.dto.TicketDTO;
-import com.vnticket.security.services.UserDetailsImpl;
 import com.vnticket.service.BookingService;
+import com.vnticket.service.EventService;
+import com.vnticket.service.ExportService;
+import com.vnticket.util.SecurityUtils;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import com.vnticket.dto.response.BookingStatsDTO;
@@ -23,9 +25,16 @@ import java.util.List;
 public class BookingController {
 
     private final BookingService bookingService;
+    private final EventService eventService;
+    private final ExportService exportService;
 
-    public BookingController(BookingService bookingService) {
+    public BookingController(
+            BookingService bookingService,
+            EventService eventService,
+            ExportService exportService) {
         this.bookingService = bookingService;
+        this.eventService = eventService;
+        this.exportService = exportService;
     }
 
     @GetMapping("/statistics")
@@ -49,6 +58,7 @@ public class BookingController {
     public ResponseEntity<ApiResponse<BookingStatsDTO>> getMyEventStatistics(@PathVariable Long eventId) {
         Long userId = getCurrentUserId();
         log.info("User ID [{}] fetching booking statistics for event ID {}", userId, eventId);
+        eventService.assertEventOwnership(eventId, userId);
         BookingStatsDTO statistics = bookingService.getEventStatistics(eventId);
         return ResponseEntity.ok(ApiResponse.success("Fetched event statistics successfully", statistics));
     }
@@ -66,15 +76,59 @@ public class BookingController {
     public ResponseEntity<ApiResponse<List<BookingDTO>>> getPaidBookingsForUser(@PathVariable Long eventId) {
         Long userId = getCurrentUserId();
         log.info("User ID [{}] fetching paid bookings for event ID {}", userId, eventId);
-        // Security check should ideally verify event ownership here
+        eventService.assertEventOwnership(eventId, userId);
         List<BookingDTO> bookings = bookingService.getPaidBookingsByEvent(eventId);
         return ResponseEntity.ok(ApiResponse.success("Fetched paid bookings successfully", bookings));
     }
 
     private Long getCurrentUserId() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-        return userDetails.getId();
+        return SecurityUtils.getCurrentUserId();
+    }
+
+    @GetMapping("/my-event/{eventId}/export/pdf")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<byte[]> exportMyEventPdf(@PathVariable Long eventId) throws Exception {
+        Long userId = getCurrentUserId();
+        byte[] report = exportService.exportBookingsToPdf(eventId, userId, false);
+        return download(report, "bookings_event_" + eventId + ".pdf", MediaType.APPLICATION_PDF);
+    }
+
+    @GetMapping("/my-event/{eventId}/export/excel")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<byte[]> exportMyEventExcel(@PathVariable Long eventId) throws Exception {
+        Long userId = getCurrentUserId();
+        byte[] report = exportService.exportBookingsToExcel(eventId, userId, false);
+        return download(
+                report,
+                "bookings_event_" + eventId + ".xlsx",
+                MediaType.parseMediaType(
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+    }
+
+    @GetMapping("/event/{eventId}/export/pdf")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<byte[]> exportEventPdf(@PathVariable Long eventId) throws Exception {
+        byte[] report = exportService.exportBookingsToPdf(eventId, null, true);
+        return download(report, "bookings_event_" + eventId + ".pdf", MediaType.APPLICATION_PDF);
+    }
+
+    @GetMapping("/event/{eventId}/export/excel")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<byte[]> exportEventExcel(@PathVariable Long eventId) throws Exception {
+        byte[] report = exportService.exportBookingsToExcel(eventId, null, true);
+        return download(
+                report,
+                "bookings_event_" + eventId + ".xlsx",
+                MediaType.parseMediaType(
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+    }
+
+    private ResponseEntity<byte[]> download(byte[] content, String filename, MediaType mediaType) {
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                .contentType(mediaType)
+                .contentLength(content.length)
+                .body(content);
     }
 
     @PostMapping

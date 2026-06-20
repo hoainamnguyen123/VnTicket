@@ -3,7 +3,9 @@ package com.vnticket.security;
 import com.vnticket.filter.TraceIdFilter;
 import com.vnticket.security.jwt.AuthEntryPointJwt;
 import com.vnticket.security.jwt.AuthTokenFilter;
+import com.vnticket.security.jwt.JwtUtils;
 import com.vnticket.security.services.UserDetailsServiceImpl;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -29,21 +31,24 @@ public class WebSecurityConfig {
     private final UserDetailsServiceImpl userDetailsService;
     private final AuthEntryPointJwt unauthorizedHandler;
     private final TraceIdFilter traceIdFilter;
+    private final JwtUtils jwtUtils;
 
-    @org.springframework.beans.factory.annotation.Value("${app.cors.allowed-origins:http://localhost:5173}")
+    @Value("${app.cors.allowed-origins:http://localhost:5173}")
     private String allowedOrigins;
 
     public WebSecurityConfig(UserDetailsServiceImpl userDetailsService,
                              AuthEntryPointJwt unauthorizedHandler,
-                             TraceIdFilter traceIdFilter) {
+                             TraceIdFilter traceIdFilter,
+                             JwtUtils jwtUtils) {
         this.userDetailsService = userDetailsService;
         this.unauthorizedHandler = unauthorizedHandler;
         this.traceIdFilter = traceIdFilter;
+        this.jwtUtils = jwtUtils;
     }
 
     @Bean
     public AuthTokenFilter authenticationJwtTokenFilter() {
-        return new AuthTokenFilter();
+        return new AuthTokenFilter(jwtUtils, userDetailsService);
     }
 
     @Bean

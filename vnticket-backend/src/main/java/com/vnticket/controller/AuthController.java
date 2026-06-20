@@ -18,6 +18,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.beans.factory.annotation.Value;
 
 @Slf4j
 @RestController
@@ -29,11 +30,14 @@ public class AuthController {
     private final JwtUtils jwtUtils;
     private final UserRepository userRepository;
 
-    @org.springframework.beans.factory.annotation.Value("${app.cookie.secure:false}")
+    @Value("${app.cookie.secure:false}")
     private boolean cookieSecure;
 
-    @org.springframework.beans.factory.annotation.Value("${app.cookie.sameSite:Lax}")
+    @Value("${app.cookie.sameSite:Lax}")
     private String cookieSameSite;
+
+    @Value("${app.cookie.max-age-seconds:864000}")
+    private long cookieMaxAgeSeconds;
 
     public AuthController(AuthService authService, RefreshTokenService refreshTokenService, JwtUtils jwtUtils,
             UserRepository userRepository) {
@@ -52,7 +56,7 @@ public class AuthController {
         String refreshTokenStr = refreshTokenService.createRefreshToken(jwtResponse.getId());
 
         ResponseCookie jwtRefreshCookie = ResponseCookie.from("vnticket-refresh", refreshTokenStr)
-                .maxAge(24 * 60 * 60) // 30 days
+                .maxAge(cookieMaxAgeSeconds)
                 .httpOnly(true)
                 .secure(cookieSecure)
                 .sameSite(cookieSameSite)
@@ -82,7 +86,7 @@ public class AuthController {
         String refreshTokenStr = refreshTokenService.createRefreshToken(jwtResponse.getId());
 
         ResponseCookie jwtRefreshCookie = ResponseCookie.from("vnticket-refresh", refreshTokenStr)
-                .maxAge(24 * 60 * 60) // 30 days
+                .maxAge(cookieMaxAgeSeconds)
                 .httpOnly(true)
                 .secure(cookieSecure)
                 .sameSite(cookieSameSite)

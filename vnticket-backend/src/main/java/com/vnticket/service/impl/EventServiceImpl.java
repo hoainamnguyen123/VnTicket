@@ -1,11 +1,13 @@
 package com.vnticket.service.impl;
 
+import com.vnticket.dto.EventCardDTO;
 import com.vnticket.dto.EventDTO;
 import com.vnticket.dto.TicketTypeDTO;
 import com.vnticket.entity.Event;
 import com.vnticket.entity.TicketType;
 import com.vnticket.exception.BadRequestException;
 import com.vnticket.exception.ResourceNotFoundException;
+import com.vnticket.projection.EventCardProjection;
 import com.vnticket.repository.BookingDetailRepository;
 import com.vnticket.repository.EventRepository;
 import com.vnticket.repository.TicketTypeRepository;
@@ -46,7 +48,30 @@ public class EventServiceImpl implements EventService {
 
     @Override
     @Transactional(readOnly = true)
-    @Cacheable(value = "events", key = "{'approved', #type, #search, #location, #pageable.pageNumber, #pageable.pageSize}")
+    @Cacheable(value = "eventCards", key = "{#type, #search, #location, #pageable.pageNumber, #pageable.pageSize, #pageable.sort}")
+    public Page<EventCardDTO> getApprovedEventCards(
+            String type, String search, String location, Pageable pageable) {
+        Page<EventCardProjection> events;
+        if (search != null && !search.isBlank()) {
+            events = eventRepository.searchCardsByStatus(search, com.vnticket.enums.EventStatus.APPROVED, pageable);
+        } else if (location != null && !location.isBlank()) {
+            events = "others".equalsIgnoreCase(location)
+                    ? eventRepository.findOtherLocationCards(
+                            com.vnticket.enums.EventStatus.APPROVED, pageable)
+                    : eventRepository.findCardByLocationAndStatus(
+                            location, com.vnticket.enums.EventStatus.APPROVED, pageable);
+        } else if (type != null && !type.isBlank()) {
+            events = eventRepository.findCardByTypeAndStatus(
+                    type, com.vnticket.enums.EventStatus.APPROVED, pageable);
+        } else {
+            events = eventRepository.findCardByStatus(com.vnticket.enums.EventStatus.APPROVED, pageable);
+        }
+        return events.map(this::mapToCardDto);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    @Cacheable(value = "events", key = "{'approved', #type, #search, #location, #pageable.pageNumber, #pageable.pageSize, #pageable.sort}")
     public Page<EventDTO> getApprovedEvents(String type, String search, String location, Pageable pageable) {
         log.debug("Executing getApprovedEvents with type: {}, search: {}, location: {}", type, search, location);
         Page<Event> events;
@@ -73,7 +98,7 @@ public class EventServiceImpl implements EventService {
 
     @Override
     @Transactional(readOnly = true)
-    @Cacheable(value = "events", key = "{'admin', #type, #search, #pageable.pageNumber, #pageable.pageSize}")
+    @Cacheable(value = "events", key = "{'admin', #type, #search, #pageable.pageNumber, #pageable.pageSize, #pageable.sort}")
     public Page<EventDTO> getAdminAllEvents(String type, String search, Pageable pageable) {
         log.debug("Executing getAdminAllEvents with type: {}, search: {}", type, search);
         Page<Event> events;
@@ -91,15 +116,7 @@ public class EventServiceImpl implements EventService {
     @Transactional(readOnly = true)
     public Page<EventDTO> getMyEvents(Long userId, Pageable pageable) {
         log.debug("Fetching events organized by user ID: {}", userId);
-        List<Event> events = eventRepository.findByOrganizerId(userId);
-
-        // Manual pagination or custom query for page. For simplicity with existing list
-        // interface logic:
-        int start = (int) pageable.getOffset();
-        int end = Math.min((start + pageable.getPageSize()), events.size());
-        List<EventDTO> pagedEvents = events.subList(start, end).stream().map(this::mapToDto)
-                .collect(Collectors.toList());
-        return new org.springframework.data.domain.PageImpl<>(pagedEvents, pageable, events.size());
+        return eventRepository.findByOrganizerId(userId, pageable).map(this::mapToDto);
     }
 
     @Override
@@ -117,7 +134,7 @@ public class EventServiceImpl implements EventService {
 
     @Override
     @Transactional
-    @CacheEvict(value = { "events", "eventDetail" }, allEntries = true)
+    @CacheEvict(value = { "events", "eventCards", "eventDetail" }, allEntries = true)
     public EventDTO updateEvent(Long id, EventDTO EventDTO) {
         log.info("Updating event ID: {}", id);
         Event event = eventRepository.findById(id)
@@ -153,12 +170,13 @@ public class EventServiceImpl implements EventService {
 
     @Override
     @Transactional
-    @CacheEvict(value = { "events", "eventDetail" }, allEntries = true)
+    @CacheEvict(value = { "events", "eventCards", "eventDetail" }, allEntries = true)
     public EventDTO updateEventStatus(Long id, com.vnticket.enums.EventStatus status, String rejectionReason) {
         log.info("Updating status for event ID: {} to {}", id, status);
         Event event = eventRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Event not found with id: " + id));
 
+        com.vnticket.enums.EventStatus oldStatus = event.getStatus();
         event.setStatus(status);
         if (status == com.vnticket.enums.EventStatus.REJECTED) {
             event.setRejectionReason(rejectionReason);
@@ -166,12 +184,21 @@ public class EventServiceImpl implements EventService {
             event.setRejectionReason(null);
         }
         Event updatedEvent = eventRepository.save(event);
+
+        if (status == com.vnticket.enums.EventStatus.APPROVED
+                && oldStatus != com.vnticket.enums.EventStatus.APPROVED) {
+            ticketTypeRepository.findByEventId(id).forEach(ticketType ->
+                    inventoryRedisService.initStock(
+                            ticketType.getId(),
+                            ticketType.getRemainingQuantity(),
+                            event.getStartTime()));
+        }
         return mapToDto(updatedEvent);
     }
 
     @Override
     @Transactional
-    @CacheEvict(value = { "events", "eventDetail" }, allEntries = true)
+    @CacheEvict(value = { "events", "eventCards", "eventDetail" }, allEntries = true)
     public void deleteMyEvent(Long userId, Long eventId) {
         log.info("User {} deleting their rejected event ID: {}", userId, eventId);
         Event event = eventRepository.findById(eventId)
@@ -188,7 +215,7 @@ public class EventServiceImpl implements EventService {
 
     @Override
     @Transactional
-    @CacheEvict(value = { "events", "eventDetail" }, allEntries = true)
+    @CacheEvict(value = { "events", "eventCards", "eventDetail" }, allEntries = true)
     public EventDTO createAdminEvent(EventDTO EventDTO) {
         log.info("Creating new admin event (auto-approved): {}", EventDTO.getName());
         Event event = mapToEntity(EventDTO);
@@ -201,7 +228,7 @@ public class EventServiceImpl implements EventService {
 
     @Override
     @Transactional
-    @CacheEvict(value = { "events", "eventDetail" }, allEntries = true)
+    @CacheEvict(value = { "events", "eventCards", "eventDetail" }, allEntries = true)
     public EventDTO createMyEvent(Long userId, EventDTO EventDTO) {
         log.info("Creating user event (pending approval) for user: {}", userId);
         Event event = mapToEntity(EventDTO);
@@ -219,7 +246,7 @@ public class EventServiceImpl implements EventService {
 
     @Override
     @Transactional
-    @CacheEvict(value = { "events", "eventDetail" }, allEntries = true)
+    @CacheEvict(value = { "events", "eventCards", "eventDetail" }, allEntries = true)
     public EventDTO updateMyEvent(Long userId, Long eventId, EventDTO EventDTO) {
         log.info("User {} updating their event ID: {}", userId, eventId);
         Event event = eventRepository.findById(eventId)
@@ -263,18 +290,20 @@ public class EventServiceImpl implements EventService {
             List<TicketType> savedTicketTypes = ticketTypeRepository.saveAll(ticketTypes);
             savedEvent.setTicketTypes(savedTicketTypes);
 
-            // Sync inventory to Redis for new ticket types
-            savedTicketTypes.forEach(tt -> {
-                inventoryRedisService.initStock(tt.getId(), tt.getRemainingQuantity());
-                log.info("Initialized Redis inventory for new ticket type {}: {}", tt.getId(),
-                        tt.getRemainingQuantity());
-            });
+            if (savedEvent.getStatus() == com.vnticket.enums.EventStatus.APPROVED) {
+                savedTicketTypes.forEach(tt -> {
+                    inventoryRedisService.initStock(
+                            tt.getId(), tt.getRemainingQuantity(), savedEvent.getStartTime());
+                    log.info("Initialized Redis inventory for new ticket type {}: {}", tt.getId(),
+                            tt.getRemainingQuantity());
+                });
+            }
         }
     }
 
     @Override
     @Transactional
-    @CacheEvict(value = { "events", "eventDetail" }, allEntries = true)
+    @CacheEvict(value = { "events", "eventCards", "eventDetail" }, allEntries = true)
     public void deleteEvent(Long id) {
         log.info("Attempting to delete event ID: {}", id);
         if (!eventRepository.existsById(id)) {
@@ -289,7 +318,7 @@ public class EventServiceImpl implements EventService {
 
     @Override
     @Transactional
-    @CacheEvict(value = { "events", "eventDetail" }, allEntries = true)
+    @CacheEvict(value = { "events", "eventCards", "eventDetail" }, allEntries = true)
     public EventDTO updateAdminTicketTypes(Long eventId, List<TicketTypeDTO> ticketTypes) {
         log.info("Admin updating ticket types for event ID: {}", eventId);
         Event event = eventRepository.findById(eventId)
@@ -304,7 +333,7 @@ public class EventServiceImpl implements EventService {
 
     @Override
     @Transactional
-    @CacheEvict(value = { "events", "eventDetail" }, allEntries = true)
+    @CacheEvict(value = { "events", "eventCards", "eventDetail" }, allEntries = true)
     public EventDTO updateMyTicketTypes(Long userId, Long eventId, List<TicketTypeDTO> ticketTypes) {
         log.info("User {} updating ticket types for event ID: {}", userId, eventId);
         Event event = eventRepository.findById(eventId)
@@ -325,6 +354,16 @@ public class EventServiceImpl implements EventService {
         Event saved = eventRepository.save(event);
         log.info("User {} updated ticket types for event ID: {}, status → PENDING_EDIT", userId, eventId);
         return mapToDto(saved);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public void assertEventOwnership(Long eventId, Long userId) {
+        Event event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new ResourceNotFoundException("Event not found with id: " + eventId));
+        if (event.getOrganizer() == null || !event.getOrganizer().getId().equals(userId)) {
+            throw new BadRequestException("You do not have permission to access this event");
+        }
     }
 
     /**
@@ -355,7 +394,7 @@ public class EventServiceImpl implements EventService {
                         "Không thể xóa khu vực '" + tt.getZoneName() + "' vì đã có người mua vé thành công.");
                 }
                 // Xóa Redis key trước
-                inventoryRedisService.initStock(tt.getId(), 0);
+                inventoryRedisService.initStock(tt.getId(), 0, event.getStartTime());
                 ticketTypeRepository.delete(tt);
                 log.info("Deleted ticket type ID: {} (zoneName={})", tt.getId(), tt.getZoneName());
             }
@@ -400,7 +439,8 @@ public class EventServiceImpl implements EventService {
                         .remainingQuantity(dto.getTotalQuantity())
                         .build();
                 TicketType savedTt = ticketTypeRepository.save(newTt);
-                inventoryRedisService.initStock(savedTt.getId(), savedTt.getTotalQuantity());
+                inventoryRedisService.initStock(
+                        savedTt.getId(), savedTt.getTotalQuantity(), event.getStartTime());
                 log.info("Created new ticket type ID: {} for event ID: {}", savedTt.getId(), event.getId());
             }
         }
@@ -435,6 +475,21 @@ public class EventServiceImpl implements EventService {
                 .isSlider(event.getIsSlider())
                 .isFeatured(event.getIsFeatured())
                 .rejectionReason(event.getRejectionReason())
+                .build();
+    }
+
+    private EventCardDTO mapToCardDto(EventCardProjection projection) {
+        return EventCardDTO.builder()
+                .id(projection.getId())
+                .name(projection.getName())
+                .imageUrl(projection.getImageUrl())
+                .startTime(projection.getStartTime())
+                .location(projection.getLocation())
+                .type(projection.getType())
+                .status(projection.getStatus())
+                .isSlider(projection.getIsSlider())
+                .isFeatured(projection.getIsFeatured())
+                .minPrice(projection.getMinPrice() != null ? projection.getMinPrice() : java.math.BigDecimal.ZERO)
                 .build();
     }
 

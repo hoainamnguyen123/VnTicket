@@ -1,9 +1,11 @@
 package com.vnticket.controller;
 
+import com.vnticket.dto.EventCardDTO;
 import com.vnticket.dto.EventDTO;
 import com.vnticket.dto.TicketTypeDTO;
 import com.vnticket.dto.response.ApiResponse;
 import com.vnticket.service.EventService;
+import com.vnticket.util.SecurityUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -26,6 +28,21 @@ public class EventController {
     }
 
     // Public API
+    @GetMapping("/events/cards")
+    public ResponseEntity<ApiResponse<Page<EventCardDTO>>> getEventCards(
+            @RequestParam(required = false) String type,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String location,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id") String sortBy,
+            @RequestParam(defaultValue = "DESC") String direction) {
+        Sort.Direction sortDirection = Sort.Direction.fromString(direction.toUpperCase());
+        Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sortBy));
+        Page<EventCardDTO> events = eventService.getApprovedEventCards(type, search, location, pageable);
+        return ResponseEntity.ok(ApiResponse.success("Fetched event cards", events));
+    }
+
     @GetMapping("/events")
     public ResponseEntity<ApiResponse<Page<EventDTO>>> getAllEvents(
             @RequestParam(required = false) String type,
@@ -52,11 +69,7 @@ public class EventController {
     }
 
     private Long getCurrentUserId() {
-        org.springframework.security.core.Authentication authentication = org.springframework.security.core.context.SecurityContextHolder
-                .getContext().getAuthentication();
-        com.vnticket.security.services.UserDetailsImpl userDetails = (com.vnticket.security.services.UserDetailsImpl) authentication
-                .getPrincipal();
-        return userDetails.getId();
+        return SecurityUtils.getCurrentUserId();
     }
 
     // User API (My Events)

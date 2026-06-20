@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
@@ -17,6 +18,7 @@ import java.time.LocalDateTime;
  */
 @Slf4j
 @Component
+@Transactional(readOnly = true)
 public class TicketInventorySyncRunner implements ApplicationRunner {
 
     private final TicketTypeRepository ticketTypeRepository;
@@ -38,6 +40,12 @@ public class TicketInventorySyncRunner implements ApplicationRunner {
         LocalDateTime pendingCutoff = LocalDateTime.now().minusMinutes(15);
 
         ticketTypeRepository.findAll().forEach(ticketType -> {
+            if (ticketType.getEvent() != null
+                    && ticketType.getEvent().getStartTime() != null
+                    && ticketType.getEvent().getStartTime().plusDays(1).isBefore(LocalDateTime.now())) {
+                return;
+            }
+
             int dbStock = ticketType.getRemainingQuantity();
 
             // Trừ đi số vé đang bị giữ bởi booking PENDING chưa hết hạn
@@ -55,7 +63,10 @@ public class TicketInventorySyncRunner implements ApplicationRunner {
                 effectiveStock = 0;
             }
 
-            inventoryRedisService.initStock(ticketType.getId(), effectiveStock);
+            inventoryRedisService.initStock(
+                    ticketType.getId(),
+                    effectiveStock,
+                    ticketType.getEvent() != null ? ticketType.getEvent().getStartTime() : null);
             log.info("Synced ticketTypeId={}: dbStock={}, pendingHeld={}, effectiveStock={}",
                     ticketType.getId(), dbStock, pendingQuantity, effectiveStock);
         });

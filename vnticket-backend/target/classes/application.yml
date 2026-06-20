@@ -43,7 +43,7 @@ app:
     api-key: "re_..." # Điền API Key của Resend vào đây
   jwt:
     secret: VNTicketSuperSecretKeyForJwtGenerationMustBeLongEnoughToBeSecureVNTicketSuperSecretKeyForJwtGenerationMustBeLongEnoughToBeSecure
-    expirationMs: 86400000 # 5 minutes
+    expirationMs: 900000
     jwtRefreshExpirationMs: 864000000 # 1 day
   google:
     clientId: 626920740184-b50brg5oc6psqva23adt7f9a7632fhp4.apps.googleusercontent.com
@@ -54,11 +54,20 @@ app:
     returnUrl: http://localhost:5173/payment-return
   reservation:
     ttlMinutes: 15
+  booking:
+    single-pending-per-event: true
+  inventory:
+    retention-hours-after-event: 24
+  rate-limit:
+    global-per-second: 2000
+    per-ip-per-second: 100
+    cleanup-interval-ms: 600000
   cors:
     allowed-origins: http://localhost:5173
   cookie:
     secure: false
     sameSite: Lax
+    max-age-seconds: 864000
 
 cloudinary:
   cloud-name: "dilx7nhbv"

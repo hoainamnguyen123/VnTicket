@@ -3,13 +3,10 @@ package com.vnticket.controller;
 import com.vnticket.dto.TicketTransferDTO;
 import com.vnticket.dto.request.TicketTransferRequest;
 import com.vnticket.dto.response.ApiResponse;
-import com.vnticket.exception.BadRequestException;
-import com.vnticket.security.services.UserDetailsImpl;
 import com.vnticket.service.TicketTransferService;
+import com.vnticket.util.SecurityUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -51,11 +48,6 @@ public class TicketTransferController {
     }
 
     private Long getCurrentUserId() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !(authentication.getPrincipal() instanceof UserDetailsImpl)) {
-            throw new BadRequestException("User not authenticated");
-        }
-        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
-        return userDetails.getId();
+        return SecurityUtils.getCurrentUserId();
     }
 }

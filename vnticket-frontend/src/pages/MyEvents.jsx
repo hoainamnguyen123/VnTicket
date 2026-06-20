@@ -1,66 +1,175 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, Badge, Button, Card, Col, Divider, Empty, Form, Grid, Image, Input, InputNumber, message, Modal, Row, Space, Table, Tabs, Tag, Tooltip, Typography } from 'antd';
-import { BarChartOutlined, CheckCircleOutlined, ClockCircleOutlined, CloseCircleOutlined, DeleteOutlined, EditOutlined, EnvironmentOutlined, ExclamationCircleOutlined, PlusOutlined, SaveOutlined, TagOutlined, TagsOutlined } from '@ant-design/icons';
+import React, { useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { Alert, Badge, Button, Card, Col, Divider, Empty, Form, Grid, Image, Input, InputNumber, message, Modal, Row, Space, Spin, Table, Tabs, Tag, Tooltip, Typography } from 'antd';
+import { BarChartOutlined, CheckCircleOutlined, ClockCircleOutlined, CloseCircleOutlined, DeleteOutlined, EditOutlined, EnvironmentOutlined, ExclamationCircleOutlined, EyeOutlined, PlusOutlined, SaveOutlined, TagOutlined, TagsOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import axiosClient from '../api/axiosClient';
 import { useNavigate } from 'react-router-dom';
 import EventFormModal from '../components/EventFormModal';
 import { formatDate } from '../utils/formatters';
 import dayjs from 'dayjs';
+import { ThemeContext } from '../context/ThemeContext';
 
 const { Text } = Typography;
 
-const MobileEventCard = ({ event, onClick, onEdit, onStats, t }) => {
+const ManagementEventCard = ({ event, onClick, onEdit, onManageTickets, onStats, t, isMobile, isDark }) => {
     const statusColor = event.status === 'APPROVED' ? 'green' : (event.status === 'PENDING' ? 'gold' : (event.status === 'PENDING_EDIT' ? 'orange' : 'red'));
-    const statusText = event.status === 'APPROVED' ? t('myEvents.approved', 'Đã duyệt') 
+    const statusText = event.status === 'APPROVED' ? t('myEvents.approved', 'Đã duyệt')
                      : event.status === 'PENDING' ? t('myEvents.pendingStatus', 'Chờ duyệt')
                      : event.status === 'PENDING_EDIT' ? t('myEvents.pendingEdit', 'Chờ duyệt (Chỉnh sửa)')
                      : t('myEvents.rejected', 'Từ chối');
+    const sold = (event.ticketTypes || []).reduce(
+        (total, ticket) => total + Math.max(0, ticket.totalQuantity - (ticket.remainingQuantity ?? ticket.totalQuantity)),
+        0,
+    );
 
     return (
-        <Card 
-            size="small" 
-            style={{ marginBottom: '16px', borderRadius: '16px', borderLeft: `5px solid ${statusColor === 'green' ? '#52c41a' : (statusColor === 'gold' ? '#faad14' : '#ff4d4f')}`, overflow: 'hidden', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}
-            bodyStyle={{ padding: '16px' }}
+        <Card
+            hoverable
+            onClick={onClick}
+            styles={{ body: { padding: 0 } }}
+            style={{ borderRadius: 16, overflow: 'hidden' }}
         >
-            <div onClick={onClick} style={{ cursor: 'pointer' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
-                    <Text strong style={{ fontSize: '16px', color: '#1f1f1f', flex: 1, marginRight: '8px' }}>{event.name}</Text>
-                    <Tag color={statusColor} style={{ margin: 0, borderRadius: '4px' }}>{statusText}</Tag>
+            <div style={{
+                display: 'grid',
+                gridTemplateColumns: isMobile ? '1fr' : '280px minmax(0, 1fr) 250px',
+                minHeight: isMobile ? 'auto' : 184,
+            }}>
+                <div style={{
+                    height: isMobile ? 180 : '100%',
+                    minHeight: 180,
+                    position: 'relative',
+                    overflow: 'hidden',
+                    background: isDark ? '#1f1f1f' : '#f5f5f5',
+                }}>
+                    <img
+                        src={event.imageUrl || 'https://via.placeholder.com/600x340?text=VNTicket'}
+                        alt={event.name}
+                        loading="lazy"
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                    />
+                    <div style={{
+                        position: 'absolute',
+                        inset: 0,
+                        background: 'linear-gradient(180deg, transparent 50%, rgba(0,0,0,.55) 100%)',
+                    }} />
+                    <Tag color={statusColor} style={{ position: 'absolute', top: 12, left: 12, margin: 0 }}>
+                        {statusText}
+                    </Tag>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '16px' }}>
-                    <Text type="secondary" style={{ fontSize: '13px', display: 'flex', alignItems: 'center' }}>
-                        <EnvironmentOutlined style={{ marginRight: '8px', color: '#1890ff' }} /> {event.location}
-                    </Text>
-                    <Text type="secondary" style={{ fontSize: '13px', display: 'flex', alignItems: 'center' }}>
-                        <ClockCircleOutlined style={{ marginRight: '8px', color: '#1890ff' }} /> {formatDate(event.startTime)}
-                    </Text>
+
+                <div style={{
+                    padding: isMobile ? 16 : '18px 22px',
+                    minWidth: 0,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center',
+                }}>
+                    <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'flex-start',
+                        gap: 12,
+                        marginBottom: 12,
+                    }}>
+                        <Typography.Title level={4} ellipsis={{ rows: 2 }} style={{ margin: 0, lineHeight: 1.35 }}>
+                            {event.name}
+                        </Typography.Title>
+                        <Text type="secondary" style={{ whiteSpace: 'nowrap', fontSize: 12 }}>#{event.id}</Text>
+                    </div>
+
+                    <Space orientation="vertical" size={8} style={{ width: '100%' }}>
+                        <Text type="secondary" ellipsis>
+                            <ClockCircleOutlined /> {formatDate(event.startTime)}
+                        </Text>
+                        <Text type="secondary" ellipsis>
+                            <EnvironmentOutlined /> {event.location || 'Chưa cập nhật địa điểm'}
+                        </Text>
+                        <Space wrap size={[4, 4]}>
+                            <Tag color="blue">{event.type || 'Khác'}</Tag>
+                            {event.isSlider && <Tag color="magenta">Slider</Tag>}
+                            {event.isFeatured && <Tag color="geekblue">{t('admin.featured', 'Nổi bật')}</Tag>}
+                        </Space>
+                    </Space>
                 </div>
-            </div>
-            
-            <Divider style={{ margin: '0 0 12px 0' }} />
-            
-            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                <Button 
-                    size="small" 
-                    icon={<EditOutlined />} 
-                    onClick={(e) => { e.stopPropagation(); onEdit(event); }} 
-                    style={{ borderRadius: '6px' }}
-                >
-                    {t('common.edit', 'Sửa')}
-                </Button>
-                {event.status === 'APPROVED' && (
-                    <Button 
-                        size="small" 
-                        type="primary" 
-                        ghost
-                        icon={<BarChartOutlined />} 
-                        onClick={(e) => { e.stopPropagation(); onStats(event); }} 
-                        style={{ borderRadius: '6px' }}
-                    >
-                        {t('myEvents.viewStats', 'Thống kê')}
-                    </Button>
-                )}
+
+                <div style={{
+                    padding: 18,
+                    borderLeft: isMobile ? 'none' : `1px solid ${isDark ? '#303030' : '#f0f0f0'}`,
+                    borderTop: isMobile ? `1px solid ${isDark ? '#303030' : '#f0f0f0'}` : 'none',
+                    background: isDark ? '#181818' : '#fafafa',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
+                    gap: 14,
+                }}>
+                    <div style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'flex-end',
+                        gap: 12,
+                    }}>
+                        <div>
+                            <Text type="secondary" style={{ display: 'block', fontSize: 12 }}>ĐÃ BÁN</Text>
+                            <Typography.Title level={4} style={{ margin: '2px 0 0' }}>{sold} vé</Typography.Title>
+                        </div>
+                        <Text type="secondary" style={{ fontSize: 12 }}>
+                            {(event.ticketTypes || []).length} loại vé
+                        </Text>
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        <Space.Compact block>
+                            <Tooltip title={t('common.edit', 'Chỉnh sửa')}>
+                                <Button
+                                    icon={<EditOutlined />}
+                                    onClick={(clickEvent) => {
+                                        clickEvent.stopPropagation();
+                                        onEdit(event);
+                                    }}
+                                />
+                            </Tooltip>
+                            {event.status === 'APPROVED' && (
+                                <Button
+                                    icon={<TagOutlined />}
+                                    style={{ flex: 1 }}
+                                    onClick={(clickEvent) => {
+                                        clickEvent.stopPropagation();
+                                        onManageTickets(event);
+                                    }}
+                                >
+                                    Loại vé
+                                </Button>
+                            )}
+                            {event.status === 'APPROVED' && (
+                                <Tooltip title={t('myEvents.viewStats', 'Xem thống kê')}>
+                                    <Button
+                                        icon={<BarChartOutlined />}
+                                        onClick={(clickEvent) => {
+                                            clickEvent.stopPropagation();
+                                            onStats(event);
+                                        }}
+                                    />
+                                </Tooltip>
+                            )}
+                        </Space.Compact>
+                        <Button
+                            type="primary"
+                            icon={<EyeOutlined />}
+                            block
+                            onClick={(clickEvent) => {
+                                clickEvent.stopPropagation();
+                                onClick();
+                            }}
+                        >
+                            Quản lý
+                        </Button>
+                    </div>
+                    {event.status === 'PENDING_EDIT' && (
+                        <Text type="warning" style={{ fontSize: 12 }}>
+                            Thay đổi đang chờ Admin duyệt lại
+                        </Text>
+                    )}
+                </div>
             </div>
         </Card>
     );
@@ -81,6 +190,7 @@ const MyEvents = () => {
     const [form] = Form.useForm();
     const { t } = useTranslation();
     const navigate = useNavigate();
+    const { isDark } = useContext(ThemeContext);
     const approvedEvents = useMemo(
         () => events.filter(event => event.status === 'APPROVED'),
         [events],
@@ -275,7 +385,9 @@ const MyEvents = () => {
             await axiosClient.put(`/events/my/${ticketModalEvent.id}/ticket-types`, payload);
             message.success(t('myEvents.ticketUpdatedSuccess', 'Cập nhật loại vé thành công! Đã gửi yêu cầu chờ Admin duyệt lại.'));
             setIsTicketModalVisible(false);
-            fetchMyEvents();
+            setTicketModalEvent(null);
+            setActiveTab('PENDING');
+            await fetchMyEvents();
         } catch (error) {
             message.error(error.response?.data?.message || t('myEvents.ticketUpdatedError', 'Lỗi khi cập nhật loại vé'));
         } finally {
@@ -283,67 +395,31 @@ const MyEvents = () => {
         }
     };
 
-    const columns = [
-        {
-            title: t('myEvents.eventName', 'Tên Sự Kiện'),
-            dataIndex: 'name',
-            key: 'name',
-        },
-        {
-            title: t('myEvents.location', 'Địa Điểm'),
-            dataIndex: 'location',
-            key: 'location',
-        },
-        {
-            title: t('myEvents.time', 'Thời Gian'),
-            dataIndex: 'startTime',
-            key: 'startTime',
-            render: (time) => formatDate(time),
-        },
-        {
-            title: t('myEvents.status', 'Trạng Thái'),
-            dataIndex: 'status',
-            key: 'status',
-            render: (status) => {
-                let color = status === 'APPROVED' ? 'green' : (status === 'PENDING' ? 'gold' : (status === 'PENDING_EDIT' ? 'orange' : 'red'));
-                let text = status === 'APPROVED' ? t('myEvents.approved', 'Đã duyệt') 
-                         : status === 'PENDING' ? t('myEvents.pendingStatus', 'Chờ duyệt')
-                         : status === 'PENDING_EDIT' ? t('myEvents.pendingEdit', 'Chờ duyệt (Chỉnh sửa)')
-                         : t('myEvents.rejected', 'Từ chối');
-                return <Tag color={color}>{text}</Tag>;
-            }
-        }
-    ];
-
     const renderEvents = (eventList) => {
-        if (isMobile) {
-            return (
-                <div style={{ paddingTop: '12px' }}>
+        return (
+            <Spin spinning={loading}>
+                <div style={{ paddingTop: 12 }}>
                     {eventList.length === 0 ? (
-                        <Empty description={t('myEvents.noEvents', 'Chưa có sự kiện nào')} />
+                        <Empty description={t('myEvents.noEvents', 'Chưa có sự kiện nào')} style={{ padding: '42px 0' }} />
                     ) : (
-                        eventList.map(event => (
-                            <MobileEventCard 
-                                key={event.id} 
-                                event={event} 
-                                onClick={() => handleViewEventDetail(event)} 
-                                onEdit={handleEditClick}
-                                onStats={handleViewEventStats}
-                                t={t} 
-                            />
-                        ))
+                        <Space orientation="vertical" size={16} style={{ width: '100%' }}>
+                            {eventList.map(event => (
+                                <ManagementEventCard
+                                    key={event.id}
+                                    event={event}
+                                    onClick={() => handleViewEventDetail(event)}
+                                    onEdit={handleEditClick}
+                                    onManageTickets={handleManageMyTickets}
+                                    onStats={handleViewEventStats}
+                                    t={t}
+                                    isMobile={isMobile}
+                                    isDark={isDark}
+                                />
+                            ))}
+                        </Space>
                     )}
                 </div>
-            );
-        }
-        return (
-            <Table
-                columns={columns}
-                dataSource={eventList}
-                rowKey="id"
-                loading={loading}
-                onRow={(record) => ({ onClick: () => handleViewEventDetail(record), style: { cursor: 'pointer' } })}
-            />
+            </Spin>
         );
     };
 

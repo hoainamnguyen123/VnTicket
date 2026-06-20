@@ -35,6 +35,14 @@ spring:
     virtual-host: ${RABBITMQ_VHOST:/}
     ssl:
       enabled: true
+    listener:
+      simple:
+        concurrency: ${RABBITMQ_CONCURRENCY:2}
+        max-concurrency: ${RABBITMQ_MAX_CONCURRENCY:8}
+        prefetch: ${RABBITMQ_PREFETCH:5}
+    cache:
+      channel:
+        size: ${RABBITMQ_CHANNEL_CACHE_SIZE:25}
   jpa:
     hibernate:
       ddl-auto: update
@@ -52,7 +60,7 @@ app:
     api-key: ${RESEND_API_KEY}
   jwt:
     secret: ${JWT_SECRET}
-    expirationMs: 86400000
+    expirationMs: 900000
     jwtRefreshExpirationMs: 864000000
   google:
     clientId: ${GOOGLE_CLIENT_ID}
@@ -66,8 +74,17 @@ app:
   cookie:
     secure: true
     sameSite: None
+    max-age-seconds: 864000
   reservation:
     ttlMinutes: 15
+  booking:
+    single-pending-per-event: ${SINGLE_PENDING_PER_EVENT:true}
+  inventory:
+    retention-hours-after-event: 24
+  rate-limit:
+    global-per-second: ${GLOBAL_RATE_LIMIT_PER_SECOND:2000}
+    per-ip-per-second: ${IP_RATE_LIMIT_PER_SECOND:100}
+    cleanup-interval-ms: 600000
 
 cloudinary:
   cloud-name: ${CLOUDINARY_CLOUD_NAME}

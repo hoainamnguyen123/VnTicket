@@ -74,10 +74,24 @@ public class GlobalExceptionHandler {
                                 .body(ApiResponse.error(HttpStatus.FORBIDDEN.value(), ex.getMessage(), getTraceId()));
         }
 
-        // Bỏ qua ngoại lệ của Spring Security để lớp bảo mật (AuthEntryPointJwt) tự xử lý trả về 401/403
-        @ExceptionHandler({ AccessDeniedException.class, AuthenticationException.class })
-        public void handleSecurityExceptions(Exception ex) throws Exception {
-                throw ex;
+        @ExceptionHandler(AccessDeniedException.class)
+        public ResponseEntity<ApiResponse<Object>> handleAccessDeniedException(AccessDeniedException ex) {
+                log.warn("Access denied: {}", ex.getMessage());
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                                .body(ApiResponse.error(
+                                                HttpStatus.FORBIDDEN.value(),
+                                                "You do not have permission to access this resource",
+                                                getTraceId()));
+        }
+
+        @ExceptionHandler(AuthenticationException.class)
+        public ResponseEntity<ApiResponse<Object>> handleAuthenticationException(AuthenticationException ex) {
+                log.warn("Authentication failed: {}", ex.getMessage());
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                                .body(ApiResponse.error(
+                                                HttpStatus.UNAUTHORIZED.value(),
+                                                "Authentication is required",
+                                                getTraceId()));
         }
 
         @ExceptionHandler(Exception.class)
@@ -85,6 +99,6 @@ public class GlobalExceptionHandler {
                 log.error("Unhandled Exception caught globally: ", ex);
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                                 .body(ApiResponse.error(HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                                                "Internal Server Error: " + ex.getMessage(), getTraceId()));
+                                                "Internal server error", getTraceId()));
         }
 }

@@ -1,12 +1,20 @@
 package com.vnticket.service;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.data.redis.core.script.RedisScript;
 import org.springframework.stereotype.Service;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 
+import com.vnticket.entity.TicketType;
+import com.vnticket.enums.BookingStatus;
+import com.vnticket.repository.BookingDetailRepository;
+import com.vnticket.repository.TicketTypeRepository;
+
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -38,9 +46,59 @@ public class TicketInventoryRedisService {
             new DefaultRedisScript<>(LUA_DECREMENT_SCRIPT, Long.class);
 
     private final StringRedisTemplate redisTemplate;
+    private final TicketTypeRepository ticketTypeRepository;
+    private final BookingDetailRepository bookingDetailRepository;
 
-    public TicketInventoryRedisService(StringRedisTemplate redisTemplate) {
+    @Value("${app.inventory.retention-hours-after-event:24}")
+    private long retentionHoursAfterEvent;
+
+    public TicketInventoryRedisService(StringRedisTemplate redisTemplate,
+                                       TicketTypeRepository ticketTypeRepository,
+                                       BookingDetailRepository bookingDetailRepository) {
         this.redisTemplate = redisTemplate;
+        this.ticketTypeRepository = ticketTypeRepository;
+        this.bookingDetailRepository = bookingDetailRepository;
+    }
+
+    /**
+     * Đồng bộ lại stock từ DB (Cache Aside) khi key bị thiếu do Redis sập.
+     * Chặn race condition bằng setIfAbsent.
+     */
+    private void ensureStockInitialized(Long ticketTypeId) {
+        String key = STOCK_PREFIX + ticketTypeId;
+        Boolean hasKey = redisTemplate.hasKey(key);
+        if (Boolean.TRUE.equals(hasKey)) {
+            return;
+        }
+
+        log.warn("Redis key {} is MISSING. Triggering Cache-Aside fallback to sync from DB...", key);
+
+        TicketType ticketType = ticketTypeRepository.findById(ticketTypeId).orElse(null);
+        if (ticketType == null) {
+            log.error("TicketType {} not found in DB during fallback sync", ticketTypeId);
+            return;
+        }
+
+        LocalDateTime pendingCutoff = LocalDateTime.now().minusMinutes(15);
+        int dbStock = ticketType.getRemainingQuantity();
+        int pendingQuantity = bookingDetailRepository
+                .sumQuantityByTicketTypeAndBookingStatus(
+                        ticketType.getId(),
+                        BookingStatus.PENDING,
+                        pendingCutoff
+                );
+
+        int effectiveStock = dbStock - pendingQuantity;
+        if (effectiveStock < 0) {
+            effectiveStock = 0;
+        }
+
+        // Dùng setIfAbsent để đảm bảo chỉ có 1 thread được set giá trị ban đầu nếu có nhiều thread cùng phát hiện rỗng
+        Boolean initialized = redisTemplate.opsForValue().setIfAbsent(key, String.valueOf(effectiveStock));
+        if (Boolean.TRUE.equals(initialized)) {
+            applyStockTtl(key, ticketType.getEvent() != null ? ticketType.getEvent().getStartTime() : null);
+        }
+        log.info("Cache-Aside Sync OK: ticketTypeId={} → stock={}", ticketTypeId, effectiveStock);
     }
 
     // ──────────────────── Stock Operations ────────────────────
@@ -49,9 +107,15 @@ public class TicketInventoryRedisService {
      * Khởi tạo stock cho một loại vé trong Redis.
      */
     public void initStock(Long ticketTypeId, int quantity) {
+        initStock(ticketTypeId, quantity, null);
+    }
+
+    public void initStock(Long ticketTypeId, int quantity, LocalDateTime eventTime) {
         String key = STOCK_PREFIX + ticketTypeId;
         redisTemplate.opsForValue().set(key, String.valueOf(quantity));
-        log.info("Initialized Redis stock for ticketTypeId={} → {}", ticketTypeId, quantity);
+        applyStockTtl(key, eventTime);
+        log.info("Initialized Redis stock for ticketTypeId={} → {}, eventTime={}",
+                ticketTypeId, quantity, eventTime);
     }
 
     /**
@@ -62,6 +126,8 @@ public class TicketInventoryRedisService {
      */
     @CircuitBreaker(name = "redisInventory", fallbackMethod = "decrementStockFallback")
     public boolean decrementStock(Long ticketTypeId, int quantity) {
+        ensureStockInitialized(ticketTypeId);
+
         String key = STOCK_PREFIX + ticketTypeId;
         Long result = redisTemplate.execute(
                 decrementScript,
@@ -84,7 +150,7 @@ public class TicketInventoryRedisService {
      * Fallback method cho decrementStock khi Circuit Breaker mở (Redis không khả dụng).
      * Trả về false để từ chối booking nhanh chóng thay vì chờ timeout.
      */
-    public boolean decrementStockFallback(Long ticketTypeId, int quantity, Exception e) {
+    public boolean decrementStockFallback(Long ticketTypeId, int quantity, Throwable e) {
         log.error("Circuit Breaker OPEN: Redis unavailable for decrementStock. ticketTypeId={}, quantity={}", 
                   ticketTypeId, quantity, e);
         return false;
@@ -95,6 +161,8 @@ public class TicketInventoryRedisService {
      */
     @CircuitBreaker(name = "redisInventory", fallbackMethod = "incrementStockFallback")
     public void incrementStock(Long ticketTypeId, int quantity) {
+        ensureStockInitialized(ticketTypeId);
+
         String key = STOCK_PREFIX + ticketTypeId;
         Long result = redisTemplate.opsForValue().increment(key, quantity);
         log.debug("Incremented stock for ticketTypeId={} by {}, new stock={}", ticketTypeId, quantity, result);
@@ -113,6 +181,8 @@ public class TicketInventoryRedisService {
      * Lấy stock hiện tại từ Redis.
      */
     public int getStock(Long ticketTypeId) {
+        ensureStockInitialized(ticketTypeId);
+
         String key = STOCK_PREFIX + ticketTypeId;
         String value = redisTemplate.opsForValue().get(key);
         return value != null ? Integer.parseInt(value) : 0;
@@ -154,5 +224,19 @@ public class TicketInventoryRedisService {
     public void removeReservationMember(String member) {
         redisTemplate.opsForZSet().remove(RESERVATIONS_KEY, member);
         log.debug("Removed reservation member: {}", member);
+    }
+
+    private void applyStockTtl(String key, LocalDateTime eventTime) {
+        if (eventTime == null) {
+            return;
+        }
+        Duration ttl = Duration.between(
+                LocalDateTime.now(),
+                eventTime.plusHours(retentionHoursAfterEvent));
+        if (ttl.isNegative() || ttl.isZero()) {
+            redisTemplate.delete(key);
+            return;
+        }
+        redisTemplate.expire(key, ttl);
     }
 }

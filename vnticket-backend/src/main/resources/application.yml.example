@@ -23,8 +23,8 @@ spring:
 app:
   jwt:
     secret: YOUR_JWT_SECRET_KEY_MUST_BE_AT_LEAST_64_CHARS_LONG
-    expirationMs: 600000         # 10 phút
-    jwtRefreshExpirationMs: 2592000000  # 30 ngày
+    expirationMs: 900000
+    jwtRefreshExpirationMs: 864000000
   google:
     clientId: YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com
   vnpay:
@@ -32,3 +32,17 @@ app:
     hashSecret: YOUR_VNPAY_HASH_SECRET
     payUrl: https://sandbox.vnpayment.vn/paymentv2/vpcpay.html
     returnUrl: http://localhost:5173/payment-return
+  cookie:
+    secure: false
+    sameSite: Lax
+    max-age-seconds: 864000
+  reservation:
+    ttlMinutes: 15
+  booking:
+    single-pending-per-event: true
+  inventory:
+    retention-hours-after-event: 24
+  rate-limit:
+    global-per-second: 2000
+    per-ip-per-second: 100
+    cleanup-interval-ms: 600000

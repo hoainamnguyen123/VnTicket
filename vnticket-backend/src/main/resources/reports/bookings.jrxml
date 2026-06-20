@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports"
+              xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+              xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd"
+              name="BookingsReport"
+              pageWidth="842"
+              pageHeight="595"
+              orientation="Landscape"
+              columnWidth="802"
+              leftMargin="20"
+              rightMargin="20"
+              topMargin="20"
+              bottomMargin="20">
+    <style name="Base" isDefault="true" fontName="DejaVu Sans" pdfEncoding="Identity-H" isPdfEmbedded="true"/>
+    <parameter name="eventName" class="java.lang.String"/>
+    <parameter name="reportDate" class="java.lang.String"/>
+    <field name="id" class="java.lang.Long"/>
+    <field name="username" class="java.lang.String"/>
+    <field name="email" class="java.lang.String"/>
+    <field name="bookingTimeStr" class="java.lang.String"/>
+    <field name="ticketDetails" class="java.lang.String"/>
+    <field name="totalAmount" class="java.math.BigDecimal"/>
+    <title>
+        <band height="55">
+            <staticText>
+                <reportElement x="0" y="0" width="802" height="26"/>
+                <textElement textAlignment="Center">
+                    <font size="16" isBold="true"/>
+                </textElement>
+                <text><![CDATA[DANH SÁCH ĐƠN HÀNG - VNTICKET]]></text>
+            </staticText>
+            <textField>
+                <reportElement x="0" y="28" width="802" height="20"/>
+                <textElement textAlignment="Center"/>
+                <textFieldExpression><![CDATA["Sự kiện: " + $P{eventName} + " | Ngày xuất: " + $P{reportDate}]]></textFieldExpression>
+            </textField>
+        </band>
+    </title>
+    <columnHeader>
+        <band height="28">
+            <staticText>
+                <reportElement mode="Opaque" backcolor="#E6E6E6" x="0" y="0" width="60" height="28"/>
+                <box><pen lineWidth="0.5"/></box>
+                <textElement textAlignment="Center" verticalAlignment="Middle"><font isBold="true"/></textElement>
+                <text><![CDATA[Mã đơn]]></text>
+            </staticText>
+            <staticText>
+                <reportElement mode="Opaque" backcolor="#E6E6E6" x="60" y="0" width="140" height="28"/>
+                <box><pen lineWidth="0.5"/></box>
+                <textElement textAlignment="Center" verticalAlignment="Middle"><font isBold="true"/></textElement>
+                <text><![CDATA[Khách hàng]]></text>
+            </staticText>
+            <staticText>
+                <reportElement mode="Opaque" backcolor="#E6E6E6" x="200" y="0" width="180" height="28"/>
+                <box><pen lineWidth="0.5"/></box>
+                <textElement textAlignment="Center" verticalAlignment="Middle"><font isBold="true"/></textElement>
+                <text><![CDATA[Email]]></text>
+            </staticText>
+            <staticText>
+                <reportElement mode="Opaque" backcolor="#E6E6E6" x="380" y="0" width="110" height="28"/>
+                <box><pen lineWidth="0.5"/></box>
+                <textElement textAlignment="Center" verticalAlignment="Middle"><font isBold="true"/></textElement>
+                <text><![CDATA[Ngày đặt]]></text>
+            </staticText>
+            <staticText>
+                <reportElement mode="Opaque" backcolor="#E6E6E6" x="490" y="0" width="210" height="28"/>
+                <box><pen lineWidth="0.5"/></box>
+                <textElement textAlignment="Center" verticalAlignment="Middle"><font isBold="true"/></textElement>
+                <text><![CDATA[Chi tiết vé]]></text>
+            </staticText>
+            <staticText>
+                <reportElement mode="Opaque" backcolor="#E6E6E6" x="700" y="0" width="102" height="28"/>
+                <box><pen lineWidth="0.5"/></box>
+                <textElement textAlignment="Center" verticalAlignment="Middle"><font isBold="true"/></textElement>
+                <text><![CDATA[Tổng tiền]]></text>
+            </staticText>
+        </band>
+    </columnHeader>
+    <detail>
+        <band height="30" splitType="Stretch">
+            <textField isBlankWhenNull="true">
+                <reportElement x="0" y="0" width="60" height="30"/>
+                <box padding="3"><pen lineWidth="0.5"/></box>
+                <textElement textAlignment="Center" verticalAlignment="Middle"/>
+                <textFieldExpression><![CDATA[$F{id}]]></textFieldExpression>
+            </textField>
+            <textField isBlankWhenNull="true">
+                <reportElement x="60" y="0" width="140" height="30"/>
+                <box padding="3"><pen lineWidth="0.5"/></box>
+                <textElement verticalAlignment="Middle"/>
+                <textFieldExpression><![CDATA[$F{username}]]></textFieldExpression>
+            </textField>
+            <textField isBlankWhenNull="true">
+                <reportElement x="200" y="0" width="180" height="30"/>
+                <box padding="3"><pen lineWidth="0.5"/></box>
+                <textElement verticalAlignment="Middle"/>
+                <textFieldExpression><![CDATA[$F{email}]]></textFieldExpression>
+            </textField>
+            <textField isBlankWhenNull="true">
+                <reportElement x="380" y="0" width="110" height="30"/>
+                <box padding="3"><pen lineWidth="0.5"/></box>
+                <textElement textAlignment="Center" verticalAlignment="Middle"/>
+                <textFieldExpression><![CDATA[$F{bookingTimeStr}]]></textFieldExpression>
+            </textField>
+            <textField isBlankWhenNull="true" textAdjust="StretchHeight">
+                <reportElement x="490" y="0" width="210" height="30"/>
+                <box padding="3"><pen lineWidth="0.5"/></box>
+                <textElement verticalAlignment="Middle"/>
+                <textFieldExpression><![CDATA[$F{ticketDetails}]]></textFieldExpression>
+            </textField>
+            <textField isBlankWhenNull="true" pattern="#,##0">
+                <reportElement x="700" y="0" width="102" height="30"/>
+                <box padding="3"><pen lineWidth="0.5"/></box>
+                <textElement textAlignment="Right" verticalAlignment="Middle"/>
+                <textFieldExpression><![CDATA[$F{totalAmount}]]></textFieldExpression>
+            </textField>
+        </band>
+    </detail>
+</jasperReport>

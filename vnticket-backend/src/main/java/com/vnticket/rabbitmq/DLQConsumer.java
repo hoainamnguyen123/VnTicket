@@ -32,7 +32,7 @@ public class DLQConsumer {
 
     @RabbitListener(queues = RabbitMQConfig.DLQ_QUEUE)
     public void handleFailedBooking(BookingMessageDTO message) {
-        log.error("🚨 [DLQ] Booking PERMANENTLY FAILED! userId={}, eventId={}, ticketTypeId={}, qty={}",
+        log.error(" Booking PERMANENTLY FAILED! userId={}, eventId={}, ticketTypeId={}, qty={}",
                 message.getUserId(), message.getEventId(),
                 message.getTicketTypeId(), message.getQuantity());
 
@@ -43,11 +43,11 @@ public class DLQConsumer {
         try {
             inventoryRedisService.incrementStock(
                     message.getTicketTypeId(), message.getQuantity());
-            log.info("[DLQ] ✅ Restored {} tickets for ticketTypeId={}",
+            log.info("Restored {} tickets for ticketTypeId={}",
                     message.getQuantity(), message.getTicketTypeId());
         } catch (Exception e) {
             // Redis cũng lỗi → Cần can thiệp thủ công
-            log.error("[DLQ] ❌ CRITICAL: Failed to restore stock for ticketTypeId={}! " +
+            log.error("CRITICAL: Failed to restore stock for ticketTypeId={}! " +
                             "MANUAL INTERVENTION REQUIRED! Quantity to restore: {}",
                     message.getTicketTypeId(), message.getQuantity(), e);
         }

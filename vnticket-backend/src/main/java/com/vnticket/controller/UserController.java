@@ -6,11 +6,10 @@ import com.vnticket.dto.response.ApiResponse;
 import com.vnticket.entity.User;
 import com.vnticket.exception.ResourceNotFoundException;
 import com.vnticket.repository.UserRepository;
-import com.vnticket.security.services.UserDetailsImpl;
+import com.vnticket.util.SecurityUtils;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -24,9 +23,7 @@ public class UserController {
     }
 
     private User getCurrentUser() {
-        UserDetailsImpl userDetails = (UserDetailsImpl) SecurityContextHolder.getContext()
-                .getAuthentication().getPrincipal();
-        return userRepository.findById(userDetails.getId())
+        return userRepository.findById(SecurityUtils.getCurrentUserId())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
     }
 

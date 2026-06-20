@@ -3,57 +3,43 @@ import { check, sleep } from 'k6';
 import { Counter, Rate, Trend } from 'k6/metrics';
 
 // ── Custom metrics ──────────────────────────────────────
-const bookingSuccess  = new Counter('booking_success');
-const bookingFail     = new Counter('booking_fail');
-const errorRate       = new Rate('error_rate');
+const bookingSuccess = new Counter('booking_success');
+const bookingFail = new Counter('booking_fail');
+const errorRate = new Rate('error_rate');
 const bookingDuration = new Trend('booking_duration_ms', true);
 
 // ── Cấu hình test ───────────────────────────────────────
 export const options = {
   scenarios: {
 
-    // Kịch bản 1: Tăng dần (Warm up → Peak → Cool down)
+    // Kịch bản: Ramping (Tăng dần) để tìm giới hạn đặt vé
     ramp_up: {
       executor: 'ramping-vus',
       startVUs: 0,
       stages: [
-        { duration: '30s', target: 50  },  // Tăng lên 50 user trong 30s
-        { duration: '1m',  target: 100 },  // Giữ 100 user trong 1 phút
-        { duration: '30s', target: 200 },  // Đẩy lên 200 user
-        { duration: '1m',  target: 200 },  // Giữ 200 user trong 1 phút (peak)
-        { duration: '30s', target: 0   },  // Giảm về 0
+        { duration: '15s', target: 500 },  // Khởi động 500 bot
+        { duration: '30s', target: 1000 }, // Rồ ga lên 1000 bot
+        { duration: '15s', target: 0 },    // Kết thúc
       ],
     },
-
-    // // Kịch bản 2: Flash sale — 500 người cùng lúc trong 30 giây
-    // flash_sale: {
-    //   executor: 'constant-vus',
-    //   vus: 500,
-    //   duration: '30s',
-    // },
   },
 
   // Ngưỡng PASS/FAIL
   thresholds: {
     http_req_duration: ['p(95)<500'],  // 95% request phải < 500ms
-    error_rate:        ['rate<0.05'],  // Tỷ lệ lỗi < 5%
-    http_req_failed:   ['rate<0.1'],   // Tỷ lệ HTTP fail < 10%
+    error_rate: ['rate<0.05'],  // Tỷ lệ lỗi < 5%
+    http_req_failed: ['rate<0.1'],   // Tỷ lệ HTTP fail < 10%
   },
 };
 
 // ── Dữ liệu test ────────────────────────────────────────
-const BASE_URL    = 'http://localhost:8080';
-const EVENT_ID    = 1;     // ← Đổi thành event ID thực trong DB
+const BASE_URL = 'http://localhost:8080';
+const EVENT_ID = 1;     // ← Đổi thành event ID thực trong DB
 const TICKET_TYPE_ID = 1;  // ← Đổi thành ticket type ID thực
 
-// Tài khoản test (cần tạo sẵn trong DB)
-// Dùng nhiều account để tránh bị chặn "đã có đơn PENDING"
+// Tài khoản test: BẠN HÃY THAY BẰNG 1 TÀI KHOẢN ĐANG CÓ TRONG DATABASE CỦA BẠN NHÉ!
 const TEST_USERS = [
-  { username: 'testuser1', password: 'password123' },
-  { username: 'testuser2', password: 'password123' },
-  { username: 'testuser3', password: 'password123' },
-  { username: 'testuser4', password: 'password123' },
-  { username: 'testuser5', password: 'password123' },
+  { username: 'nam08123', password: 'Nam08122003' } // Sửa username và password ở đây
 ];
 
 // ── Setup: Đăng nhập lấy token trước ────────────────────
@@ -68,7 +54,8 @@ export function setup() {
 
     if (res.status === 200) {
       const body = JSON.parse(res.body);
-      tokens[user.username] = body.data?.accessToken || body.accessToken;
+      // Sửa lại: Backend trả về trường "token" chứ không phải "accessToken"
+      tokens[user.username] = body.data?.token || body.token;
       console.log(`✅ Logged in: ${user.username}`);
     } else {
       console.error(`❌ Login failed for ${user.username}: ${res.status}`);
@@ -82,8 +69,8 @@ export function setup() {
 export default function (tokens) {
   // Mỗi VU dùng 1 user ngẫu nhiên
   const userIndex = __VU % TEST_USERS.length;
-  const user      = TEST_USERS[userIndex];
-  const token     = tokens[user.username];
+  const user = TEST_USERS[userIndex];
+  const token = tokens[user.username];
 
   if (!token) {
     console.error(`No token for ${user.username}`);
@@ -99,7 +86,8 @@ export default function (tokens) {
   const eventRes = http.get(`${BASE_URL}/api/events/${EVENT_ID}`, { headers });
   check(eventRes, { 'get event 200': (r) => r.status === 200 });
 
-  sleep(0.5); // Simulate user reading the page
+  // Đã xóa lệnh sleep() ở đây để bot chạy liên tục
+
 
   // ── Step 2: Đặt vé (POST) — đây là điểm quan trọng nhất ──
   const startTime = Date.now();
@@ -107,9 +95,9 @@ export default function (tokens) {
   const bookingRes = http.post(
     `${BASE_URL}/api/bookings`,
     JSON.stringify({
-      eventId:      EVENT_ID,
-      ticketTypeId: TICKET_TYPE_ID,
-      quantity:     1,
+      eventId: 2,
+      ticketTypeId: 6,
+      quantity: 1,
     }),
     { headers }
   );
@@ -117,7 +105,7 @@ export default function (tokens) {
   const duration = Date.now() - startTime;
   bookingDuration.add(duration);
 
-  const isSuccess = bookingRes.status === 200 || bookingRes.status === 201;
+  const isSuccess = bookingRes.status === 200 || bookingRes.status === 201 || bookingRes.status === 202;
   errorRate.add(!isSuccess);
 
   if (isSuccess) {
@@ -131,7 +119,7 @@ export default function (tokens) {
       if (bookingId) {
         http.delete(`${BASE_URL}/api/bookings/${bookingId}`, null, { headers });
       }
-    } catch (_) {}
+    } catch (_) { }
 
   } else {
     bookingFail.add(1);
@@ -139,7 +127,7 @@ export default function (tokens) {
     console.warn(`❌ VU${__VU} booking failed (${bookingRes.status}): ${msg}`);
   }
 
-  sleep(1); // Giữa các iteration
+  // Đã xóa lệnh sleep(1) ở đây để bot không nghỉ ngơi
 }
 
 // ── Teardown: In kết quả tóm tắt ────────────────────────

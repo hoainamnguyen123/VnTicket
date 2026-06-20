@@ -4,7 +4,6 @@ import com.vnticket.entity.*;
 import com.vnticket.enums.BookingStatus;
 import com.vnticket.enums.TicketStatus;
 import com.vnticket.repository.BookingRepository;
-import com.vnticket.repository.TicketTypeRepository;
 import com.vnticket.service.TicketInventoryRedisService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -23,14 +22,11 @@ public class ReservationCleanupTask {
 
     private final TicketInventoryRedisService inventoryRedisService;
     private final BookingRepository bookingRepository;
-    private final TicketTypeRepository ticketTypeRepository;
 
     public ReservationCleanupTask(TicketInventoryRedisService inventoryRedisService,
-                                  BookingRepository bookingRepository,
-                                  TicketTypeRepository ticketTypeRepository) {
+                                  BookingRepository bookingRepository) {
         this.inventoryRedisService = inventoryRedisService;
         this.bookingRepository = bookingRepository;
-        this.ticketTypeRepository = ticketTypeRepository;
     }
 
     @Scheduled(fixedRate = 30000) // 30 giây
@@ -67,7 +63,7 @@ public class ReservationCleanupTask {
         Long ticketTypeId = Long.parseLong(parts[1]);
         int quantity = Integer.parseInt(parts[2]);
 
-        Booking booking = bookingRepository.findById(bookingId).orElse(null);
+        Booking booking = bookingRepository.findByIdForUpdate(bookingId).orElse(null);
         if (booking == null) {
             log.warn("Booking {} not found, removing stale reservation", bookingId);
             inventoryRedisService.removeReservationMember(member);

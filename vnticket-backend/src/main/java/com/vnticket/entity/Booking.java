@@ -10,7 +10,10 @@ import java.util.List;
 
 @Entity
 @Table(name = "bookings", indexes = {
-    @Index(name = "idx_booking_status", columnList = "status")
+    @Index(name = "idx_booking_status", columnList = "status"),
+    @Index(name = "idx_booking_status_time", columnList = "status, booking_time"),
+    @Index(name = "idx_booking_event_status", columnList = "event_id, status"),
+    @Index(name = "idx_booking_user_time", columnList = "user_id, booking_time")
 })
 @Getter
 @Setter
