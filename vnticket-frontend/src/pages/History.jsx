@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { Table, Typography, Tag, Button, Modal, message, Skeleton, Card, Tabs, Input, Alert, Spin } from 'antd';
-import { ExclamationCircleOutlined, SyncOutlined, WalletOutlined, CreditCardOutlined, EyeOutlined, CloseCircleOutlined, SwapOutlined, GiftOutlined, MailOutlined } from '@ant-design/icons';
+import { Table, Typography, Tag, Button, Modal, message, Skeleton, Card, Tabs, Input, Alert, Spin, Space } from 'antd';
+import { ArrowRightOutlined, CalendarOutlined, ClockCircleOutlined, ExclamationCircleOutlined, SyncOutlined, WalletOutlined, CreditCardOutlined, EyeOutlined, CloseCircleOutlined, SwapOutlined, GiftOutlined, MailOutlined } from '@ant-design/icons';
 import { useTranslation } from 'react-i18next';
 import axiosClient from '../api/axiosClient';
 import { formatCurrency, formatDate } from '../utils/formatters';
@@ -124,105 +124,202 @@ const PaymentMethodCard = ({ name, imgSrc, borderColor, bgColor, disabled, comin
     </div>
 );
 
-/* ── Booking Card cho Mobile ── */
-const BookingCard = ({ booking, onPay, onViewTickets, onCancel, onExpire, onTransfer, t }) => {
+/* ── Thẻ đơn vé dùng chung cho desktop và mobile ── */
+const BookingCard = ({
+    booking,
+    onPay,
+    onViewTickets,
+    onCancel,
+    onExpire,
+    onTransfer,
+    onOpenEvent,
+    t,
+    isMobile,
+    isDark,
+}) => {
     const statusColor = booking.status === 'PAID' ? 'green' : (booking.status === 'PENDING' ? 'gold' : 'red');
     const statusText = booking.status === 'PAID' ? t('history.paid') : (booking.status === 'PENDING' ? t('history.pending') : t('history.cancelled'));
+    const canPay = booking.status === 'PENDING' && !isBookingExpired(booking.bookingTime);
 
     return (
         <Card
-            size="small"
+            hoverable
+            styles={{ body: { padding: 0 } }}
             style={{
-                marginBottom: '12px',
-                borderRadius: '12px',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                border: booking.status === 'PENDING' ? '1px solid #faad14' : (booking.status === 'PAID' ? '1px solid #52c41a' : '1px solid #f0f0f0'),
+                borderRadius: 18,
+                overflow: 'hidden',
+                border: `1px solid ${isDark ? '#303030' : '#e8edf3'}`,
+                boxShadow: isDark ? '0 10px 28px rgba(0,0,0,.22)' : '0 10px 28px rgba(31,54,88,.08)',
             }}
         >
-            {/* Header: Mã đơn + Trạng thái */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                <Text strong style={{ fontSize: '14px' }}>#{booking.id}</Text>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <Tag color={statusColor} style={{ margin: 0 }}>{statusText}</Tag>
-                    {booking.status === 'PENDING' && (
-                        <CountdownTimer bookingTime={booking.bookingTime} onExpire={onExpire} />
-                    )}
+            <div style={{
+                display: 'grid',
+                gridTemplateColumns: isMobile ? '1fr' : 'minmax(0, 1fr) 230px',
+                minHeight: isMobile ? 'auto' : 190,
+                borderLeft: `5px solid ${
+                    booking.status === 'PAID'
+                        ? '#52c41a'
+                        : booking.status === 'PENDING'
+                            ? '#faad14'
+                            : '#bfbfbf'
+                }`,
+            }}>
+                <div style={{
+                    padding: isMobile ? 16 : '22px 26px',
+                    minWidth: 0,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center',
+                }}>
+                    <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: 12,
+                        marginBottom: 12,
+                    }}>
+                        <Space size={8} wrap>
+                            <Tag color={statusColor} style={{ margin: 0 }}>{statusText}</Tag>
+                            <Text type="secondary" style={{ fontSize: 12, fontWeight: 600 }}>
+                                Đơn #{booking.id}
+                            </Text>
+                            {booking.status === 'PENDING' && (
+                                <CountdownTimer bookingTime={booking.bookingTime} onExpire={onExpire} />
+                            )}
+                        </Space>
+                    </div>
+
+                    <button
+                        type="button"
+                        onClick={() => onOpenEvent(booking.eventId)}
+                        style={{
+                            padding: 0,
+                            border: 0,
+                            background: 'transparent',
+                            color: isDark ? '#f5f5f5' : '#172033',
+                            textAlign: 'left',
+                            cursor: 'pointer',
+                            font: 'inherit',
+                            marginBottom: 14,
+                        }}
+                    >
+                        <Title level={4} ellipsis={{ rows: 2 }} style={{ margin: 0, lineHeight: 1.35 }}>
+                            {booking.eventName}
+                        </Title>
+                        <Text style={{ color: '#1677ff', fontSize: 12, fontWeight: 600 }}>
+                            Xem chi tiết sự kiện <ArrowRightOutlined />
+                        </Text>
+                    </button>
+
+                    <Space orientation="vertical" size={7} style={{ width: '100%' }}>
+                        {booking.eventStartTime && (
+                            <Text type="secondary">
+                                <CalendarOutlined style={{ color: '#1677ff', marginRight: 8 }} />
+                                {formatDate(booking.eventStartTime)}
+                            </Text>
+                        )}
+                        <Text type="secondary">
+                            <ClockCircleOutlined style={{ color: '#8c8c8c', marginRight: 8 }} />
+                            {t('history.bookingDate')}: {formatDate(booking.bookingTime)}
+                        </Text>
+                    </Space>
+
+                    <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        flexWrap: 'wrap',
+                        gap: 7,
+                        marginTop: 14,
+                    }}>
+                        {booking.bookingDetails?.map((detail, index) => (
+                            <Tag
+                                key={`${detail.ticketTypeId || detail.zoneName}-${index}`}
+                                color="blue"
+                                style={{ margin: 0, padding: '3px 9px', borderRadius: 6 }}
+                            >
+                                {detail.zoneName} · {detail.quantity} vé
+                            </Tag>
+                        ))}
+                    </div>
                 </div>
-            </div>
 
-            {/* Tên sự kiện */}
-            <Text strong style={{ color: '#1890ff', fontSize: '15px', display: 'block', marginBottom: '6px' }}>
-                {booking.eventName}
-            </Text>
+                <div style={{
+                    padding: isMobile ? 16 : 20,
+                    borderLeft: isMobile ? 'none' : `1px solid ${isDark ? '#303030' : '#edf0f3'}`,
+                    borderTop: isMobile ? `1px solid ${isDark ? '#303030' : '#edf0f3'}` : 'none',
+                    background: isDark ? '#181818' : '#f8fafc',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
+                    gap: 16,
+                }}>
+                    <div>
+                        <Text type="secondary" style={{ display: 'block', fontSize: 12, letterSpacing: .6 }}>
+                            {t('history.totalAmount')}
+                        </Text>
+                        <Title level={3} style={{
+                            margin: '3px 0 0',
+                            color: booking.totalAmount === 0 ? '#52c41a' : '#cf1322',
+                        }}>
+                            {formatCurrency(booking.totalAmount)}
+                        </Title>
+                    </div>
 
-            {/* Ngày đặt */}
-            <Text type="secondary" style={{ fontSize: '12px', display: 'block', marginBottom: '6px' }}>
-                📅 {formatDate(booking.bookingTime)}
-            </Text>
-
-            {/* Chi tiết vé */}
-            <div style={{ marginBottom: '8px' }}>
-                {booking.bookingDetails?.map((d, index) => (
-                    <span key={index} style={{ marginRight: '6px' }}>
-                        <Tag color="blue" style={{ margin: '2px 0' }}>{d.zoneName}</Tag>
-                        <Text style={{ fontSize: '12px' }}>x{d.quantity}</Text>
-                    </span>
-                ))}
-            </div>
-
-            {/* Tổng tiền */}
-            <Text type="danger" strong style={{ fontSize: '16px', display: 'block', marginBottom: '10px' }}>
-                {formatCurrency(booking.totalAmount)}
-            </Text>
-
-            {/* Nút hành động */}
-            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                {booking.status === 'PAID' && (
-                    <>
-                    <Button
-                        type="primary"
-                        ghost
-                        size="small"
-                        icon={<EyeOutlined />}
-                        onClick={() => onViewTickets(booking.id)}
-                    >
-                        {t('history.viewTickets')}
-                    </Button>
-                    <Button
-                        size="small"
-                        icon={<GiftOutlined />}
-                        onClick={() => onTransfer(booking.id)}
-                        style={{ borderColor: '#722ed1', color: '#722ed1' }}
-                    >
-                        {t('eTicket.transferBtn')}
-                    </Button>
-                    </>
-                )}
-                {booking.status === 'PENDING' && (
-                    <>
-                        {!isBookingExpired(booking.bookingTime) ? (
+                    <Space orientation="vertical" size={8} style={{ width: '100%' }}>
+                        {booking.status === 'PAID' && (
+                            <>
+                                <Button
+                                    type="primary"
+                                    block
+                                    icon={<EyeOutlined />}
+                                    onClick={() => onViewTickets(booking.id)}
+                                >
+                                    {t('history.viewTickets')}
+                                </Button>
+                                <Button
+                                    block
+                                    icon={<GiftOutlined />}
+                                    onClick={() => onTransfer(booking.id)}
+                                    style={{ borderColor: '#722ed1', color: '#722ed1' }}
+                                >
+                                    {t('eTicket.transferBtn')}
+                                </Button>
+                            </>
+                        )}
+                        {booking.status === 'PENDING' && (
+                            <>
+                            {canPay ? (
                             <Button
                                 type="primary"
-                                size="small"
+                                block
                                 icon={<WalletOutlined />}
                                 style={{ background: 'linear-gradient(135deg, #1890ff, #722ed1)', borderColor: 'transparent' }}
                                 onClick={() => onPay(booking)}
                             >
                                 {booking.totalAmount === 0 ? t('history.getFreeTicket', 'Nhận vé miễn phí') : t('history.pay')}
                             </Button>
-                        ) : (
-                            <Tag color="error" style={{ display: 'flex', alignItems: 'center' }}>Đã quá hạn</Tag>
+                            ) : (
+                                <Tag color="error" style={{ margin: 0, padding: '5px 10px', textAlign: 'center' }}>
+                                    Đã quá hạn thanh toán
+                                </Tag>
+                            )}
+                            <Button
+                                danger
+                                block
+                                icon={<CloseCircleOutlined />}
+                                onClick={() => onCancel(booking.id)}
+                            >
+                                {t('history.cancelTicket')}
+                            </Button>
+                            </>
                         )}
-                        <Button
-                            danger
-                            size="small"
-                            icon={<CloseCircleOutlined />}
-                            onClick={() => onCancel(booking.id)}
-                        >
-                            {t('history.cancelTicket')}
-                        </Button>
-                    </>
-                )}
+                        {booking.status === 'CANCELLED' && (
+                            <Button block onClick={() => onOpenEvent(booking.eventId)}>
+                                Xem lại sự kiện
+                            </Button>
+                        )}
+                    </Space>
+                </div>
             </div>
         </Card>
     );
@@ -446,113 +543,6 @@ const History = () => {
         }
     };
 
-    /* ── Columns cho Table (Desktop) ── */
-    const columns = [
-        {
-            title: t('history.orderId'),
-            dataIndex: 'id',
-            key: 'id',
-            width: 80,
-            render: id => <strong>#{id}</strong>
-        },
-        {
-            title: t('history.event'),
-            dataIndex: 'eventName',
-            key: 'eventName',
-            render: text => <strong style={{ color: '#1890ff' }}>{text}</strong>
-        },
-        {
-            title: t('history.bookingDate'),
-            dataIndex: 'bookingTime',
-            key: 'bookingTime',
-            width: 160,
-            render: time => formatDate(time)
-        },
-        {
-            title: t('history.ticketDetails'),
-            dataIndex: 'bookingDetails',
-            key: 'details',
-            render: details => (
-                <div>
-                    {details.map((d, index) => (
-                        <div key={index}>
-                            <Tag color="blue">{d.zoneName}</Tag> x {d.quantity} {t('common.tickets')}
-                        </div>
-                    ))}
-                </div>
-            )
-        },
-        {
-            title: t('history.totalAmount'),
-            dataIndex: 'totalAmount',
-            key: 'totalAmount',
-            width: 130,
-            render: amount => <Text type="danger" strong>{formatCurrency(amount)}</Text>
-        },
-        {
-            title: t('history.status'),
-            dataIndex: 'status',
-            key: 'status',
-            width: 150,
-            render: (status, record) => {
-                let color = status === 'PAID' ? 'green' : (status === 'PENDING' ? 'gold' : 'red');
-                let text = status === 'PAID' ? t('history.paid') : (status === 'PENDING' ? t('history.pending') : t('history.cancelled'));
-                return (
-                    <div>
-                        <Tag color={color}>{text}</Tag>
-                        {status === 'PENDING' && (
-                            <CountdownTimer bookingTime={record.bookingTime} onExpire={() => fetchBookings(true)} />
-                        )}
-                    </div>
-                );
-            }
-        },
-        {
-            title: t('history.actions'),
-            key: 'action',
-            width: 220,
-            render: (_, record) => (
-                <div style={{ display: 'flex', gap: '8px' }}>
-                    {record.status === 'PAID' && (
-                        <>
-                            <Button type="primary" ghost onClick={() => handleViewTickets(record.id)}>
-                                {t('history.viewTickets')}
-                            </Button>
-                            <Button
-                                icon={<GiftOutlined />}
-                                onClick={() => handleOpenTransfer(record.id)}
-                                style={{ borderColor: '#722ed1', color: '#722ed1' }}
-                            >
-                                {t('eTicket.transferBtn')}
-                            </Button>
-                        </>
-                    )}
-                    {record.status === 'PENDING' && (
-                        <>
-                            {!isBookingExpired(record.bookingTime) && (
-                                <Button
-                                    type="primary"
-                                    icon={<WalletOutlined />}
-                                    style={{ background: 'linear-gradient(135deg, #1890ff, #722ed1)', borderColor: 'transparent' }}
-                                    onClick={() => openPaymentModal(record)}
-                                >
-                                    {record.totalAmount === 0 ? t('history.getFreeTicket', 'Nhận vé miễn phí') : t('history.pay')}
-                                </Button>
-                            )}
-                            <Button
-                                type="link"
-                                danger
-                                onClick={() => handleCancel(record.id)}
-                            >
-                                {t('history.cancelTicket')}
-                            </Button>
-                        </>
-                    )}
-                </div>
-            ),
-        }
-    ];
-
     if (loading) return <Skeleton active paragraph={{ rows: 10 }} />;
 
     const pendingBookings = bookings.filter(b => b.status === 'PENDING');
@@ -564,15 +554,15 @@ const History = () => {
     const pastPaidBookings = paidBookings.filter(b => b.eventStartTime && new Date(b.eventStartTime) < new Date());
 
     const renderBookingsList = (bookingList) => {
-        if (isMobile) {
-            return (
-                <div style={{ paddingTop: 12 }}>
-                    {bookingList.length === 0 ? (
-                        <Card style={{ textAlign: 'center', padding: '40px' }}>
-                            <Text type="secondary">{t('history.noBookings')}</Text>
-                        </Card>
-                    ) : (
-                        bookingList.map(booking => (
+        return (
+            <div style={{ paddingTop: 14 }}>
+                {bookingList.length === 0 ? (
+                    <Card style={{ textAlign: 'center', padding: '40px', borderRadius: 16 }}>
+                        <Text type="secondary">{t('history.noBookings')}</Text>
+                    </Card>
+                ) : (
+                    <Space orientation="vertical" size={16} style={{ width: '100%' }}>
+                        {bookingList.map(booking => (
                             <BookingCard
                                 key={booking.id}
                                 booking={booking}
@@ -580,25 +570,16 @@ const History = () => {
                                 onViewTickets={handleViewTickets}
                                 onCancel={handleCancel}
                                 onTransfer={handleOpenTransfer}
+                                onOpenEvent={(eventId) => navigate(`/event/${eventId}`)}
                                 onExpire={() => fetchBookings(true)}
                                 t={t}
+                                isMobile={isMobile}
+                                isDark={isDark}
                             />
-                        ))
-                    )}
-                </div>
-            );
-        }
-
-        return (
-            <Table
-                style={{ paddingTop: 12 }}
-                columns={columns}
-                dataSource={bookingList}
-                rowKey="id"
-                pagination={{ pageSize: 10 }}
-                scroll={{ x: 900 }}
-                locale={{ emptyText: t('history.noBookings') }}
-            />
+                        ))}
+                    </Space>
+                )}
+            </div>
         );
     };
 
